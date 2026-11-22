@@ -10,6 +10,7 @@ import {
   ServerInfo,
 } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import './CalendarFeedSection.css'
 
 export const CALENDAR_FEED_QUERY_KEY = ['calendar-feed'] as const
@@ -26,7 +27,7 @@ export function CalendarFeedSection({ serverInfo }: { serverInfo: ServerInfo | n
   const supported = serverSupports(serverInfo, 'calendarFeed')
   // Only set in this page session: the moment the URL can be shown.
   const [created, setCreated] = useState<CreatedCalendarFeed | null>(null)
-  const [copied, setCopied] = useState(false)
+  const { copied, copy, reset: resetCopied } = useCopyToClipboard()
   const urlInputRef = useRef<HTMLInputElement>(null)
 
   const statusQuery = useQuery({
@@ -39,7 +40,7 @@ export function CalendarFeedSection({ serverInfo }: { serverInfo: ServerInfo | n
     mutationFn: createCalendarFeed,
     onSuccess: (feed) => {
       setCreated(feed)
-      setCopied(false)
+      resetCopied()
       queryClient.invalidateQueries({ queryKey: CALENDAR_FEED_QUERY_KEY })
     },
   })
@@ -48,7 +49,7 @@ export function CalendarFeedSection({ serverInfo }: { serverInfo: ServerInfo | n
     mutationFn: revokeCalendarFeed,
     onSuccess: () => {
       setCreated(null)
-      setCopied(false)
+      resetCopied()
       queryClient.invalidateQueries({ queryKey: CALENDAR_FEED_QUERY_KEY })
     },
   })
@@ -68,14 +69,8 @@ export function CalendarFeedSection({ serverInfo }: { serverInfo: ServerInfo | n
 
   async function copyUrl() {
     if (!created) return
-    try {
-      await navigator.clipboard.writeText(created.url)
-      setCopied(true)
-    } catch {
-      // Clipboard access can be denied (insecure origin, permissions):
-      // select the text so the member can copy it by hand.
-      urlInputRef.current?.select()
-    }
+    // Clipboard access can be denied: select the text to copy by hand.
+    if (!(await copy(created.url))) urlInputRef.current?.select()
   }
 
   const error = createMutation.isError

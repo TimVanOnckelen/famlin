@@ -449,6 +449,28 @@
         "denied": "Recusada",
         "undetermined": "Por decidir"
       }
+    },
+    "calendarFeed": {
+      "title": "Subscrição de calendário",
+      "description": "Subscreva uma ligação privada e os eventos de todas as suas famílias aparecem na sua própria aplicação de calendário, com a sua resposta. Atualiza-se automaticamente.",
+      "create": "Criar ligação de subscrição",
+      "shownOnce": "A sua ligação privada só é mostrada desta vez. Qualquer pessoa com ela pode ver os eventos da sua família, por isso não a partilhe.",
+      "addToCalendar": "Adicionar ao calendário",
+      "copy": "Copiar ou partilhar ligação",
+      "instructions": "Calendário da Apple e Outlook: toque em \"Adicionar ao calendário\" ou adicione a ligação como subscrição de calendário. Google Calendar: a aplicação não consegue adicionar ligações, por isso abra calendar.google.com num computador e use Outros calendários → A partir do URL. As aplicações de calendário atualizam de poucas em poucas horas.",
+      "createdAt": "Criada {{date}}",
+      "lastUsedAt": "Obtida por uma aplicação de calendário {{date}}",
+      "neverUsed": "Ainda não obtida por nenhuma aplicação de calendário",
+      "lostLink": "Perdeu a ligação? Gere uma nova.",
+      "regenerate": "Gerar nova ligação",
+      "regenerateTitle": "Gerar nova ligação?",
+      "regenerateMessage": "A sua ligação atual deixa de funcionar. Os calendários subscritos precisam da nova ligação.",
+      "revoke": "Desativar",
+      "revokeTitle": "Desativar a subscrição de calendário?",
+      "revokeMessage": "A sua ligação deixa de funcionar e os calendários subscritos deixam de ser atualizados.",
+      "openFailedTitle": "Nenhuma aplicação de calendário encontrada",
+      "openFailedMessage": "Copie a ligação e adicione-a como subscrição na sua aplicação de calendário.",
+      "error": "Algo correu mal. Tente novamente."
     }
   },
   "tabs": {

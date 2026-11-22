@@ -1,10 +1,11 @@
-import { createHash, randomBytes } from 'crypto'
+import { randomBytes } from 'crypto'
 import { prisma } from '../db.js'
 import i18n from '../i18n/index.js'
 import { getAllSettings } from './settings.js'
 import { getBrandName } from './branding/index.js'
 import { visiblePostsWhereFor } from './circles.js'
 import { getUserGroupIds } from './groups.js'
+import { hashToken, LAST_USED_WRITE_INTERVAL_MS } from './apiTokens.js'
 
 // Personal iCal subscription feed of family events (issue #499):
 // GET /api/calendar/<token>/famlin.ics (routes/calendar.ts), managed from
@@ -15,34 +16,26 @@ import { getUserGroupIds } from './groups.js'
 // hash, and it unlocks nothing but this one read-only feed. One per user;
 // regenerating replaces the row. Like a PAT it is independent of
 // User.tokenVersion: a password reset doesn't break calendar subscriptions.
-export const CALENDAR_FEED_TOKEN_PREFIX = 'famlin_cal_'
+const CALENDAR_FEED_TOKEN_PREFIX = 'famlin_cal_'
 
 // `famlin_cal_` + base64url of 32 random bytes (43 chars, no padding).
 const CALENDAR_FEED_TOKEN_RE = /^famlin_cal_[A-Za-z0-9_-]{43}$/
 
-// lastUsedAt is informational ("is a calendar app still subscribed?"), so,
-// like ApiToken.lastUsedAt, it's written at most this often.
-const LAST_USED_WRITE_INTERVAL_MS = 5 * 60_000
-
 // Events that started up to this long ago stay in the feed (plus every
 // future event), so a calendar app keeps recent history without the feed
 // growing forever.
-export const CALENDAR_FEED_PAST_MONTHS = 3
+const CALENDAR_FEED_PAST_MONTHS = 3
 
 // Safety cap on one feed's size. A family generating more events than this
 // inside the window is far beyond normal use; the newest-created ones win.
-export const CALENDAR_FEED_MAX_EVENTS = 1000
+const CALENDAR_FEED_MAX_EVENTS = 1000
 
 // Events with no end time are shown as one hour long.
 const DEFAULT_EVENT_DURATION_MS = 60 * 60_000
 
-export function hashCalendarFeedToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
-}
-
 export function generateCalendarFeedToken() {
   const token = `${CALENDAR_FEED_TOKEN_PREFIX}${randomBytes(32).toString('base64url')}`
-  return { token, tokenHash: hashCalendarFeedToken(token) }
+  return { token, tokenHash: hashToken(token) }
 }
 
 // Resolves a feed token to its owner's user id, or null when it's malformed,
@@ -51,13 +44,14 @@ export async function resolveCalendarFeedToken(token: string): Promise<string | 
   if (!CALENDAR_FEED_TOKEN_RE.test(token)) return null
 
   const record = await prisma.calendarFeedToken.findUnique({
-    where: { tokenHash: hashCalendarFeedToken(token) },
+    where: { tokenHash: hashToken(token) },
     select: { id: true, userId: true, lastUsedAt: true },
   })
   if (!record) return null
 
   if (!record.lastUsedAt || Date.now() - record.lastUsedAt.getTime() > LAST_USED_WRITE_INTERVAL_MS) {
-    // Fire-and-forget: usage tracking must never fail or slow the feed.
+    // Informational ("is a calendar app still subscribed?"), so throttled
+    // like ApiToken.lastUsedAt. Fire-and-forget: never fails or slows the feed.
     prisma.calendarFeedToken.update({ where: { id: record.id }, data: { lastUsedAt: new Date() } }).catch(() => {})
   }
   return record.userId
@@ -142,7 +136,7 @@ function readEventTypeData(value: unknown): EventTypeData | null {
   }
 }
 
-export interface CalendarFeedContext {
+interface CalendarFeedContext {
   // The publicUrl setting's origin when set, else the request's.
   origin: string
   // Whether `origin` came from the publicUrl setting — post links are only
@@ -150,7 +144,7 @@ export interface CalendarFeedContext {
   hasPublicUrl: boolean
 }
 
-export function calendarFeedCutoff(now = new Date()): Date {
+function calendarFeedCutoff(now = new Date()): Date {
   const cutoff = new Date(now)
   cutoff.setUTCMonth(cutoff.getUTCMonth() - CALENDAR_FEED_PAST_MONTHS)
   return cutoff

@@ -11,9 +11,11 @@ export const API_TOKEN_PREFIX = 'famlin_pat_'
 
 // lastUsedAt is informational ("is this token still in use?"), so it's
 // written at most this often per token instead of on every request.
-const LAST_USED_WRITE_INTERVAL_MS = 5 * 60_000
+export const LAST_USED_WRITE_INTERVAL_MS = 5 * 60_000
 
-function hashToken(token: string): string {
+// SHA-256 hex of a bearer secret — what's stored instead of the secret
+// itself (PATs here, the calendar feed token in services/calendarFeed.ts).
+export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex')
 }
 

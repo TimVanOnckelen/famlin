@@ -447,6 +447,28 @@
         "denied": "Denegado",
         "undetermined": "Sin decidir"
       }
+    },
+    "calendarFeed": {
+      "title": "Suscripción de calendario",
+      "description": "Suscríbete a un enlace privado y los eventos de todas tus familias aparecerán en tu propia aplicación de calendario, con tu respuesta. Se actualiza automáticamente.",
+      "create": "Crear enlace de suscripción",
+      "shownOnce": "Tu enlace privado solo se muestra esta vez. Cualquiera que lo tenga puede ver los eventos de tu familia, así que no lo compartas.",
+      "addToCalendar": "Añadir al calendario",
+      "copy": "Copiar o compartir enlace",
+      "instructions": "Calendario de Apple y Outlook: toca «Añadir al calendario» o añade el enlace como suscripción de calendario. Google Calendar: la aplicación no puede añadir enlaces, así que abre calendar.google.com en un ordenador y usa Otros calendarios → Desde URL. Las aplicaciones de calendario se actualizan cada pocas horas.",
+      "createdAt": "Creado {{date}}",
+      "lastUsedAt": "Última consulta de una aplicación de calendario {{date}}",
+      "neverUsed": "Aún no consultado por ninguna aplicación de calendario",
+      "lostLink": "¿Perdiste el enlace? Genera uno nuevo.",
+      "regenerate": "Generar nuevo enlace",
+      "regenerateTitle": "¿Generar nuevo enlace?",
+      "regenerateMessage": "Tu enlace actual dejará de funcionar. Los calendarios suscritos necesitarán el nuevo enlace.",
+      "revoke": "Desactivar",
+      "revokeTitle": "¿Desactivar la suscripción de calendario?",
+      "revokeMessage": "Tu enlace dejará de funcionar y los calendarios suscritos dejarán de actualizarse.",
+      "openFailedTitle": "No se encontró ninguna aplicación de calendario",
+      "openFailedMessage": "Copia el enlace y añádelo como suscripción en tu aplicación de calendario.",
+      "error": "Algo salió mal. Inténtalo de nuevo."
     }
   },
   "tabs": {

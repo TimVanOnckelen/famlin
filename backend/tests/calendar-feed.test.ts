@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../src/db.js'
 import { updateSettings } from '../src/services/settings.js'
-import { generateApiToken } from '../src/services/apiTokens.js'
-import { escapeIcalText, foldIcalLine, formatIcalDate, hashCalendarFeedToken } from '../src/services/calendarFeed.js'
+import { generateApiToken, hashToken } from '../src/services/apiTokens.js'
+import { escapeIcalText, foldIcalLine, formatIcalDate } from '../src/services/calendarFeed.js'
 import { redactLoggedUrl, requestLogSerializer } from '../src/utils/logRedaction.js'
 import { buildTestApp, createUser, createGroupWithMember, addMember, authHeader } from './helpers.js'
 
@@ -184,7 +184,7 @@ describe('calendar feed', () => {
       // Only the hash is stored.
       const token = first.path.split('/')[3]
       const row = await prisma.calendarFeedToken.findUniqueOrThrow({ where: { userId: user.id } })
-      expect(row.tokenHash).toBe(hashCalendarFeedToken(token))
+      expect(row.tokenHash).toBe(hashToken(token))
       expect(JSON.stringify(row)).not.toContain(token)
 
       const second = await enableFeed(user)

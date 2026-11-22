@@ -449,6 +449,28 @@
         "denied": "Geweigerd",
         "undetermined": "Nog niet gekozen"
       }
+    },
+    "calendarFeed": {
+      "title": "Agenda-abonnement",
+      "description": "Abonneer je op een privélink en de activiteiten van al je families verschijnen in je eigen agenda-app, met je antwoord. Het werkt zichzelf bij.",
+      "create": "Abonnementslink maken",
+      "shownOnce": "Je privélink wordt alleen nu getoond. Iedereen met deze link kan je familie-activiteiten zien, dus deel hem niet.",
+      "addToCalendar": "Toevoegen aan agenda",
+      "copy": "Link kopiëren of delen",
+      "instructions": "Apple Agenda en Outlook: tik op \"Toevoegen aan agenda\" of voeg de link toe als agenda-abonnement. Google Agenda: de app kan geen links toevoegen, dus open calendar.google.com op een computer en kies Andere agenda's → Via URL. Agenda-apps verversen om de paar uur.",
+      "createdAt": "Gemaakt {{date}}",
+      "lastUsedAt": "Laatst opgehaald door een agenda-app {{date}}",
+      "neverUsed": "Nog niet opgehaald door een agenda-app",
+      "lostLink": "Link kwijt? Maak een nieuwe aan.",
+      "regenerate": "Nieuwe link maken",
+      "regenerateTitle": "Nieuwe link maken?",
+      "regenerateMessage": "Je huidige link werkt dan niet meer. Agenda's die erop geabonneerd zijn, hebben de nieuwe link nodig.",
+      "revoke": "Uitschakelen",
+      "revokeTitle": "Agenda-abonnement uitschakelen?",
+      "revokeMessage": "Je link werkt dan niet meer en geabonneerde agenda's worden niet meer bijgewerkt.",
+      "openFailedTitle": "Geen agenda-app gevonden",
+      "openFailedMessage": "Kopieer de link en voeg hem als abonnement toe aan je agenda-app.",
+      "error": "Er ging iets mis. Probeer het opnieuw."
     }
   },
   "tabs": {

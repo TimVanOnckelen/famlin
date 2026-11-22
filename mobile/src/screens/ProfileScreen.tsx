@@ -27,6 +27,8 @@ import { colors } from '@/constants/colors'
 import { Logo } from '@/components/Logo'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
+import { CalendarFeedSection } from '@/components/CalendarFeedSection'
+import { profileSectionStyles } from '@/components/profileSectionStyles'
 import { useAuthStore } from '@/stores/authStore'
 import { useScrollDiagnosticsStore } from '@/stores/scrollDiagnosticsStore'
 import {
@@ -455,6 +457,8 @@ export function ProfileScreen() {
           </View>
         )}
 
+        <CalendarFeedSection />
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
           <View style={styles.serverInfo}>
@@ -842,31 +846,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.white,
   },
-  section: {
-    backgroundColor: colors.white,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
+  section: profileSectionStyles.section,
   giftListRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     paddingVertical: 8,
   },
-  sectionTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 12,
-    color: colors.textMuted,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginBottom: 14,
-  },
+  sectionTitle: profileSectionStyles.sectionTitle,
   deviceLoading: {
     marginTop: 12,
     alignSelf: 'flex-start',
@@ -1052,32 +1039,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
   },
-  exportDescription: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textBody,
-    marginBottom: 12,
-  },
-  exportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 100,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: colors.white,
-  },
+  exportDescription: profileSectionStyles.sectionDescription,
+  exportButton: profileSectionStyles.outlineButton,
   exportButtonDisabled: {
     opacity: 0.6,
   },
-  exportButtonText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 15,
-    color: colors.primary,
-  },
+  exportButtonText: profileSectionStyles.outlineButtonText,
   dangerSection: {
     marginTop: 28,
     padding: 18,

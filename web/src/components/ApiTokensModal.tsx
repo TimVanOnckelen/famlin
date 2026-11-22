@@ -2,6 +2,7 @@ import { FormEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createApiToken, fetchApiTokens, revokeApiToken, CreatedApiToken } from '@famlin/api-client'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import './ApiTokensModal.css'
 
@@ -20,7 +21,7 @@ export function ApiTokensModal({ onClose, isAdmin = false }: { onClose: () => vo
   // The secret of the token created in this modal session — the only time
   // it's ever visible, so it stays on screen until the modal closes.
   const [createdToken, setCreatedToken] = useState<CreatedApiToken | null>(null)
-  const [copied, setCopied] = useState(false)
+  const { copied, copy, reset: resetCopied } = useCopyToClipboard()
   const cardRef = useRef<HTMLDivElement>(null)
   useModalFocus(cardRef, onClose)
 
@@ -31,7 +32,7 @@ export function ApiTokensModal({ onClose, isAdmin = false }: { onClose: () => vo
       createApiToken({ name: name.trim(), expiresInDays, ...(isAdmin && adminAccess ? { adminAccess: true } : {}) }),
     onSuccess: (token) => {
       setCreatedToken(token)
-      setCopied(false)
+      resetCopied()
       setName('')
       setAdminAccess(false)
       queryClient.invalidateQueries({ queryKey: ['api-tokens'] })
@@ -51,10 +52,8 @@ export function ApiTokensModal({ onClose, isAdmin = false }: { onClose: () => vo
     if (name.trim() && !createMutation.isPending) createMutation.mutate()
   }
 
-  async function copyToken() {
-    if (!createdToken) return
-    await navigator.clipboard.writeText(createdToken.token)
-    setCopied(true)
+  function copyToken() {
+    if (createdToken) void copy(createdToken.token)
   }
 
   const tokens = tokensQuery.data ?? []

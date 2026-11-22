@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { getT } from '../i18n/index.js'
 import { getAllSettings } from '../services/settings.js'
-import { buildCalendarFeed, hashCalendarFeedToken, resolveCalendarFeedToken } from '../services/calendarFeed.js'
+import { buildCalendarFeed, resolveCalendarFeedToken } from '../services/calendarFeed.js'
+import { hashToken } from '../services/apiTokens.js'
 import { getPublicOrigin } from '../utils/publicOrigin.js'
 
 // Calendar apps poll a subscription on their own schedule (typically every
@@ -43,7 +44,7 @@ export default async function calendarRoutes(fastify: FastifyInstance) {
       config: {
         rateLimit: {
           ...FEED_RATE_LIMIT,
-          keyGenerator: (request) => `calendar-feed:${hashCalendarFeedToken(tokenParam(request))}`,
+          keyGenerator: (request) => `calendar-feed:${hashToken(tokenParam(request))}`,
         },
       },
     },

@@ -449,6 +449,28 @@
         "denied": "Refusé",
         "undetermined": "Pas encore choisi"
       }
+    },
+    "calendarFeed": {
+      "title": "Abonnement au calendrier",
+      "description": "Abonnez-vous à un lien privé et les événements de toutes vos familles apparaissent dans votre propre application de calendrier, avec votre réponse. Il se met à jour automatiquement.",
+      "create": "Créer un lien d'abonnement",
+      "shownOnce": "Votre lien privé n'est affiché qu'une seule fois. Toute personne qui le possède peut voir vos événements familiaux, ne le partagez donc pas.",
+      "addToCalendar": "Ajouter au calendrier",
+      "copy": "Copier ou partager le lien",
+      "instructions": "Calendrier Apple et Outlook : touchez « Ajouter au calendrier » ou ajoutez le lien comme abonnement de calendrier. Google Agenda : l'application ne peut pas ajouter de liens, ouvrez donc calendar.google.com sur un ordinateur et utilisez Autres agendas → À partir de l'URL. Les applications de calendrier s'actualisent toutes les quelques heures.",
+      "createdAt": "Créé {{date}}",
+      "lastUsedAt": "Dernière récupération par une application de calendrier {{date}}",
+      "neverUsed": "Pas encore récupéré par une application de calendrier",
+      "lostLink": "Lien perdu ? Régénérez-le pour en obtenir un nouveau.",
+      "regenerate": "Régénérer le lien",
+      "regenerateTitle": "Régénérer le lien ?",
+      "regenerateMessage": "Votre lien actuel cessera de fonctionner. Les calendriers abonnés auront besoin du nouveau lien.",
+      "revoke": "Désactiver",
+      "revokeTitle": "Désactiver l'abonnement au calendrier ?",
+      "revokeMessage": "Votre lien cessera de fonctionner et les calendriers abonnés ne seront plus mis à jour.",
+      "openFailedTitle": "Aucune application de calendrier trouvée",
+      "openFailedMessage": "Copiez le lien et ajoutez-le comme abonnement dans votre application de calendrier.",
+      "error": "Une erreur s'est produite. Veuillez réessayer."
     }
   },
   "tabs": {

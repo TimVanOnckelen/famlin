@@ -449,6 +449,28 @@
         "denied": "已拒绝",
         "undetermined": "未选择"
       }
+    },
+    "calendarFeed": {
+      "title": "日历订阅",
+      "description": "订阅一个私人链接，你所有家庭的活动就会显示在你自己的日历应用中，并包含你的回复。它会自动更新。",
+      "create": "创建订阅链接",
+      "shownOnce": "你的私人链接只显示这一次。任何拥有该链接的人都能看到你的家庭活动，请勿分享。",
+      "addToCalendar": "添加到日历",
+      "copy": "复制或分享链接",
+      "instructions": "Apple 日历和 Outlook：点按“添加到日历”，或将链接添加为日历订阅。Google 日历：其应用无法添加链接，请在电脑上打开 calendar.google.com，选择“其他日历”→“通过网址添加”。日历应用每隔几小时刷新一次。",
+      "createdAt": "创建于 {{date}}",
+      "lastUsedAt": "日历应用最近获取于 {{date}}",
+      "neverUsed": "尚未被日历应用获取",
+      "lostLink": "链接丢失了？重新生成一个新的链接。",
+      "regenerate": "重新生成链接",
+      "regenerateTitle": "重新生成链接？",
+      "regenerateMessage": "你当前的链接将失效。已订阅的日历需要使用新链接。",
+      "revoke": "关闭",
+      "revokeTitle": "关闭日历订阅？",
+      "revokeMessage": "你的链接将失效，已订阅的日历将不再更新。",
+      "openFailedTitle": "未找到日历应用",
+      "openFailedMessage": "请复制链接，并在日历应用中将其添加为订阅。",
+      "error": "出了点问题，请重试。"
     }
   },
   "tabs": {
