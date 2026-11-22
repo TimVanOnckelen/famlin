@@ -3,7 +3,14 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { makeUser, renderWithQueryClient } from '@/test/fixtures'
-import { downloadMyExport, fetchNotificationConfig, fetchServerInfo, updateMe, uploadFiles } from '@famlin/api-client'
+import {
+  downloadMyExport,
+  fetchCalendarFeed,
+  fetchNotificationConfig,
+  fetchServerInfo,
+  updateMe,
+  uploadFiles,
+} from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -12,6 +19,7 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   updateMe: vi.fn(),
   downloadMyExport: vi.fn(),
   uploadFiles: vi.fn(),
+  fetchCalendarFeed: vi.fn(),
 }))
 
 vi.mock('@/utils/avatar-image', async (original) => ({
@@ -52,6 +60,20 @@ describe('ProfilePage', () => {
     renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />)
     await user.click(screen.getByRole('button', { name: 'Download my data' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('try again in an hour')
+  })
+
+  it('shows the calendar subscription section only on servers that support it', async () => {
+    const { unmount } = renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />)
+    expect(await screen.findByText('Server version 1.2.3')).toBeInTheDocument()
+    expect(screen.queryByText('Calendar subscription')).not.toBeInTheDocument()
+    expect(fetchCalendarFeed).not.toHaveBeenCalled()
+    unmount()
+
+    vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.2.3', features: ['calendarFeed'] })
+    vi.mocked(fetchCalendarFeed).mockResolvedValue({ enabled: false, createdAt: null, lastUsedAt: null })
+    renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />)
+    expect(await screen.findByText('Calendar subscription')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Create subscription link' })).toBeInTheDocument()
   })
 
   it('shows the user identity and server version', async () => {

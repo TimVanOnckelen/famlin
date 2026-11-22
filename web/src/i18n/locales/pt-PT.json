@@ -709,5 +709,30 @@
     "saveFailed": "Não foi possível guardar a página.",
     "save": "Guardar",
     "saving": "A guardar…"
+  },
+  "calendarFeed": {
+    "title": "Subscrição de calendário",
+    "description": "Subscreva os eventos da sua família no Google Calendar, no Calendário da Apple ou no Outlook. O feed contém os eventos de todas as suas famílias (os últimos 3 meses e tudo o que está para vir) e mostra se vai participar.",
+    "create": "Criar ligação de subscrição",
+    "urlLabel": "A sua ligação de subscrição",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "shownOnce": "Esta ligação só é mostrada uma vez, por isso copie-a agora. Mantenha-a privada: qualquer pessoa que a tenha pode ver os eventos da sua família.",
+    "openInApp": "Abrir na app de calendário",
+    "createdAt": "Criada a {{date}}",
+    "lastUsed": "Última utilização a {{date}}",
+    "neverUsed": "Ainda não foi usada por uma app de calendário",
+    "regenerate": "Gerar nova ligação",
+    "regenerateConfirm": "Criar uma nova ligação? A ligação antiga deixa de funcionar e os calendários subscritos deixam de ser atualizados.",
+    "revoke": "Desativar",
+    "revokeConfirm": "Desativar a subscrição de calendário? A ligação deixa de funcionar e os calendários subscritos deixam de ser atualizados.",
+    "createFailed": "Não foi possível criar a ligação de subscrição. Tente novamente.",
+    "revokeFailed": "Não foi possível desativar a subscrição. Tente novamente.",
+    "loadFailed": "Não foi possível carregar a sua subscrição de calendário.",
+    "howTo": "Como subscrever",
+    "howToGoogle": "Google Calendar: Outros calendários → + → A partir do URL e cole a ligação.",
+    "howToApple": "Calendário da Apple: Ficheiro → Nova subscrição de calendário e cole a ligação.",
+    "howToOutlook": "Outlook: Adicionar calendário → Subscrever a partir da Web e cole a ligação.",
+    "howToNote": "As apps de calendário atualizam as subscrições ao seu próprio ritmo, por isso as alterações podem demorar algumas horas a aparecer."
   }
 }

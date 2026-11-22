@@ -709,5 +709,30 @@
     "saveFailed": "Couldn't save the page.",
     "save": "Save",
     "saving": "Saving…"
+  },
+  "calendarFeed": {
+    "title": "Calendar subscription",
+    "description": "Subscribe to your family events in Google Calendar, Apple Calendar or Outlook. The feed contains the events from all your families (the past 3 months and everything upcoming) and shows whether you're going.",
+    "create": "Create subscription link",
+    "urlLabel": "Your subscription link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "shownOnce": "This link is only shown once, so copy it now. Keep it private: anyone who has it can see your family events.",
+    "openInApp": "Open in calendar app",
+    "createdAt": "Created {{date}}",
+    "lastUsed": "Last used {{date}}",
+    "neverUsed": "Not used by a calendar app yet",
+    "regenerate": "Regenerate link",
+    "regenerateConfirm": "Create a new link? The old link stops working, so calendars subscribed to it will stop updating.",
+    "revoke": "Turn off",
+    "revokeConfirm": "Turn off the calendar subscription? The link stops working and subscribed calendars will stop updating.",
+    "createFailed": "The subscription link couldn't be created. Please try again.",
+    "revokeFailed": "The subscription couldn't be turned off. Please try again.",
+    "loadFailed": "Your calendar subscription couldn't be loaded.",
+    "howTo": "How to subscribe",
+    "howToGoogle": "Google Calendar: Other calendars → + → From URL, then paste the link.",
+    "howToApple": "Apple Calendar: File → New Calendar Subscription, then paste the link.",
+    "howToOutlook": "Outlook: Add calendar → Subscribe from web, then paste the link.",
+    "howToNote": "Calendar apps refresh subscriptions on their own schedule, so changes can take a few hours to appear."
   }
 }
