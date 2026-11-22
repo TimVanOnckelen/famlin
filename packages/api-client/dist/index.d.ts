@@ -41,6 +41,8 @@ export type { DiagnosticFrameStats, FeedScrollReportData, FeedScrollDiagnosticRe
 export { sendDiagnosticReport } from './diagnostics';
 export type { ApiToken, CreatedApiToken } from './apiTokens';
 export { fetchApiTokens, createApiToken, revokeApiToken } from './apiTokens';
+export type { CalendarFeedStatus, CreatedCalendarFeed } from './calendarFeed';
+export { fetchCalendarFeed, createCalendarFeed, revokeCalendarFeed } from './calendarFeed';
 export type { Story, StoryAuthor, StoryTray, StoryTrayAuthor, StoryHighlightsPage, StoryViewer, StoryReactor, StoryReply, CreateStoryBody, } from './stories';
 export { fetchStoryTray, fetchStoryHighlights, fetchStory, createStory, markStoryViewed, fetchStoryViews, reactToStory, fetchStoryReactions, replyToStory, fetchStoryReplies, pinStory, unpinStory, deleteStory, isStoryLive, } from './stories';
 export type { Circle, CircleMember } from './types';
