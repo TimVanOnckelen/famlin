@@ -1,5 +1,59 @@
 # Changelog
 
+## [0.10.0](https://github.com/TimVanOnckelen/famlin/compare/v0.9.2...v0.10.0) (2026-11-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **backend:** posts now accept at most maxAttachments (default 10) photos/videos instead of 20; raise maxAttachments in the admin settings to allow more.
+
+### Features
+
+* add server-side filtering for user list with search, group, and role options; update documentation ([0120f8a](https://github.com/TimVanOnckelen/famlin/commit/0120f8a9431e9a36598633b336c7ef66d958e754))
+* **admin:** integrations section (work in progress, awaiting review) ([df141af](https://github.com/TimVanOnckelen/famlin/commit/df141af8fdfc62f4ae39a07fd7b35f3ea7115704))
+* **admin:** translate and document the integrations section ([d7c53d8](https://github.com/TimVanOnckelen/famlin/commit/d7c53d838a3e46413e583143891671223d168107)), closes [#459](https://github.com/TimVanOnckelen/famlin/issues/459)
+* **backend:** admin-configurable attachment, video duration and upload size limits ([#436](https://github.com/TimVanOnckelen/famlin/issues/436)) ([d96337e](https://github.com/TimVanOnckelen/famlin/commit/d96337eafe2e293af5b946021875e8293587ad59))
+* encrypted backups with a generated key and emergency kit ([#495](https://github.com/TimVanOnckelen/famlin/issues/495)) ([ce2a424](https://github.com/TimVanOnckelen/famlin/commit/ce2a4247827842df27b27e189036f648d239831f))
+* encrypted backups with a generated key and emergency kit ([#495](https://github.com/TimVanOnckelen/famlin/issues/495)) ([665a94f](https://github.com/TimVanOnckelen/famlin/commit/665a94fa0ca912cfdd9a3add9863ba7daa3e22fc))
+* enhance admin UI with tabs for groups, circles, and invites; add feature chips and update translations ([077c774](https://github.com/TimVanOnckelen/famlin/commit/077c774df55637b1d36f8f6fefa5454f42a6e6f4))
+* enhance members page with search and filter functionality ([ca0d366](https://github.com/TimVanOnckelen/famlin/commit/ca0d36653a5da8dd962f9aca11390508d26aff6d))
+* **mobile:** add Spanish translation ([186e6ee](https://github.com/TimVanOnckelen/famlin/commit/186e6ee65a19a0abd74322db681dee8a4feda1bb))
+* **mobile:** create and RSVP to event posts ([0117dcd](https://github.com/TimVanOnckelen/famlin/commit/0117dcdba5b7c9b300bdf908934fb361ffb9fa9f))
+* **mobile:** create and RSVP to event posts ([d93d30c](https://github.com/TimVanOnckelen/famlin/commit/d93d30ccd3b4449f9a3bb8c8d82abb9e9fdefc7c))
+* **mobile:** follow the server's attachment, video length and upload size limits ([#436](https://github.com/TimVanOnckelen/famlin/issues/436)) ([fdcce60](https://github.com/TimVanOnckelen/famlin/commit/fdcce60c937a2118934250a9446e9f2ac16fb421))
+* opt-in per-family mirror of Famlin uploads into Immich ([16d012e](https://github.com/TimVanOnckelen/famlin/commit/16d012e90705193b40886872ae6471904ae6d9e7))
+* opt-in per-family mirror of Famlin uploads into Immich ([f1ac5c6](https://github.com/TimVanOnckelen/famlin/commit/f1ac5c6bb10fb8f28517c000b1f4a320e40bf250))
+* optimize admin UI components and enhance documentation clarity ([dee7a9f](https://github.com/TimVanOnckelen/famlin/commit/dee7a9fff2b63ebf03aac08fe5b68a485da3d06d))
+* optimize admin UI with dropdown menu and system alerts integration ([98c2503](https://github.com/TimVanOnckelen/famlin/commit/98c2503f0b7802798326329fe6d3aa9886b7710f))
+* paginate a post's comment thread, opt-in ([#130](https://github.com/TimVanOnckelen/famlin/issues/130)) ([3187880](https://github.com/TimVanOnckelen/famlin/commit/31878806cfac902d59b7b1939dbe644d7759147f))
+* paginate a post's comment thread, opt-in ([#130](https://github.com/TimVanOnckelen/famlin/issues/130)) ([6692435](https://github.com/TimVanOnckelen/famlin/commit/66924351bce51aad35f34640976cbc765c47dfb3))
+* translate web, admin and backend to Spanish ([bff30f1](https://github.com/TimVanOnckelen/famlin/commit/bff30f1b97b6d61cbcaaec61bb4259afe62da865))
+* **web,admin:** configurable upload limits in the composer and admin settings ([#436](https://github.com/TimVanOnckelen/famlin/issues/436)) ([594a17d](https://github.com/TimVanOnckelen/famlin/commit/594a17d7b3be6c6123aa588ce6bf3b691b84f8bb))
+
+
+### Bug Fixes
+
+* **admin:** address review of the integrations section ([675ea89](https://github.com/TimVanOnckelen/famlin/commit/675ea89f1987144a9d8d6443cefbcd5c843bc4e3))
+* **admin:** refine Spanish translation terms ([68d48be](https://github.com/TimVanOnckelen/famlin/commit/68d48be75c7b722bdd45282b2dd1ff1d292f226f))
+* **backend:** type Apple token payload via jwtVerify generic for jose 6.2.17 ([f495b4d](https://github.com/TimVanOnckelen/famlin/commit/f495b4d36d82d9221d673a8fa2b92e30075fca6d))
+* batch uploads above 10 files, allow edits of over-limit posts, align docs ([#436](https://github.com/TimVanOnckelen/famlin/issues/436)) ([75c9e58](https://github.com/TimVanOnckelen/famlin/commit/75c9e5870bfffb0a49daf894662567f48b7b4b51))
+* confirm the kit before a new backup key is used, and review fixes ([#495](https://github.com/TimVanOnckelen/famlin/issues/495)) ([146f83d](https://github.com/TimVanOnckelen/famlin/commit/146f83dbb782eddb041f6e7fdcc035fcb43a0f88))
+* **deps:** keep docs' nested picomatch at the version main already ships ([3f8e332](https://github.com/TimVanOnckelen/famlin/commit/3f8e33220c1ff7ea8c17a1d10c507b88c21031a7))
+* **deps:** keep mobile lockfile installable with npm ci ([1dbf2c1](https://github.com/TimVanOnckelen/famlin/commit/1dbf2c1257aa36c0d3191126da8324c7769b5bb1))
+* **deps:** narrow the docs change to serialize-javascript ([3cf8926](https://github.com/TimVanOnckelen/famlin/commit/3cf89261db0f7d10098615ed959fb1a9ddc73a97))
+* **deps:** resolve fixable Dependabot security alerts ([a180ebb](https://github.com/TimVanOnckelen/famlin/commit/a180ebbe322150e4ecf150595a50d7f15a9a1923))
+* **deps:** resolve fixable Dependabot security alerts ([72d5fe5](https://github.com/TimVanOnckelen/famlin/commit/72d5fe59e15b39f2cffe8afe1bd81d8c4ac5d6d6))
+* harden the Immich upload mirror after review ([a4b3453](https://github.com/TimVanOnckelen/famlin/commit/a4b3453702903a20e0af4eba2a610d796754efb8))
+* **i18n:** refine Spanish translations for trip and check-in sections ([035f3be](https://github.com/TimVanOnckelen/famlin/commit/035f3be917e30780ea3544d669ccfe9095f06bd9))
+* **mobile:** judge the JS thread's scroll frames against its own tick rate ([312f3f4](https://github.com/TimVanOnckelen/famlin/commit/312f3f43c5fc80a5ae0de8168fa7c78cbb13bd1e))
+* optimize query structure for admin user search functionality ([2c1212f](https://github.com/TimVanOnckelen/famlin/commit/2c1212f9c6b551e1c0dc88323ecc04f8a5b89612))
+
+
+### Performance Improvements
+
+* **mobile:** fix JS-thread scroll diagnostics on 120 Hz phones, widen feed window ([5e52a40](https://github.com/TimVanOnckelen/famlin/commit/5e52a40e4a8d56feb49255c4e82c4c207d0d837c))
+* **mobile:** keep more feed cards mounted around the viewport ([0dac349](https://github.com/TimVanOnckelen/famlin/commit/0dac34988aeec51693b0ccf75e23b1ae9c42f603))
+
 ## [0.9.2](https://github.com/TimVanOnckelen/famlin/compare/v0.9.1...v0.9.2) (2026-11-16)
 
 
