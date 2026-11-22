@@ -76,23 +76,7 @@ import { DIAGNOSTIC_REPORT_RETENTION_DAYS } from '../services/diagnosticReports.
 import adminBackupRoutes from './adminBackups.js'
 import adminMediaMirrorRoutes, { isMirroredElsewhere } from './adminMediaMirror.js'
 import { getIntegrationsOverview, invalidateIntegrationChecks } from '../services/integrations.js'
-
-// Builds the invite link's origin from the request that reached us, since
-// this app has no dedicated PUBLIC_URL env var — self-hosted deployments
-// vary, but the reverse proxy (or the admin's own browser, for a direct
-// connection) tells us the address that actually works. request.protocol and
-// request.host already resolve X-Forwarded-Proto/Host correctly when
-// TRUST_PROXY is enabled (see app.ts), and fall back to the raw connection
-// otherwise — so a directly-exposed server can't have its origin spoofed by
-// a client-supplied header.
-//
-// request.host, not request.hostname: Fastify 5 redefined hostname to exclude
-// the port (4 included it) and added host as the port-carrying property. An
-// origin built from hostname would silently drop the port on any deployment
-// not served on 80/443, producing invite links that don't resolve.
-function getPublicOrigin(request: FastifyRequest): string {
-  return `${request.protocol}://${request.host}`
-}
+import { getPublicOrigin } from '../utils/publicOrigin.js'
 
 // Safety cap on GET /media/:provider/people's combined (own + cross-owner
 // discovered) catalog size — this feeds an admin "map this person" picker,

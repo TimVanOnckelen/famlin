@@ -239,5 +239,13 @@
     "created": "Creado",
     "publicKey": "Clave pública",
     "body": "Guarda este archivo en un lugar distinto de tu servidor de Famlin: un gestor de contraseñas, una copia impresa, otro ordenador.\nAbre todas las copias de seguridad que este servidor cifró con esta clave. Sin él, esas copias no se pueden restaurar en otro servidor, y nadie puede recuperar una clave perdida.\n\nPara restaurar en un servidor de Famlin nuevo: elige la copia de seguridad en la pantalla de configuración y sube este archivo cuando se te pida.\nPara descifrar a mano con la herramienta age (https://age-encryption.org):"
+  },
+  "calendarFeed": {
+    "family": "Familia: {{name}}",
+    "postedBy": "Publicado por {{name}}",
+    "rsvpYes": "Vas a ir",
+    "rsvpMaybe": "Quizás vayas",
+    "rsvpNo": "Has declinado",
+    "openInFamlin": "Abrir en Famlin: {{url}}"
   }
 }

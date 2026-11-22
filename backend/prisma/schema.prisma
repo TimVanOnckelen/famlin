@@ -36,6 +36,7 @@ model User {
   createdInvites    Invite[]          @relation("InviteCreatedBy")
   usedInvites       Invite[]          @relation("InviteUsedBy")
   apiTokens         ApiToken[]
+  calendarFeedToken CalendarFeedToken?
   mediaPersonLinks  MediaPersonLink[]
   postInteractions  PostInteraction[]
   triggeredPushLogs PushDeliveryLog[]
@@ -90,6 +91,25 @@ model ApiToken {
   createdAt    DateTime  @default(now())
 
   @@index([userId])
+}
+
+// The secret behind a member's personal iCal subscription feed of family
+// events (issue #499, GET /api/calendar/<token>/famlin.ics). At most one per
+// user: regenerating replaces the row, so the previous URL stops working at
+// once. Only a SHA-256 hash of the `famlin_cal_...` secret is stored — the
+// URL is returned once at creation. It only ever reads that one feed (it is
+// no bearer credential anywhere else), and is independent of
+// User.tokenVersion like ApiToken: a password reset keeps calendar
+// subscriptions working. Deleting the user cascades. Never exported or
+// restored: a restored instance starts without feed URLs.
+model CalendarFeedToken {
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  // Throttled like ApiToken.lastUsedAt (services/calendarFeed.ts).
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
 }
 
 model Group {

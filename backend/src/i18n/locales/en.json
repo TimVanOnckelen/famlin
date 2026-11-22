@@ -240,5 +240,13 @@
     "created": "Created",
     "publicKey": "Public key",
     "body": "Keep this file somewhere other than your Famlin server: a password manager, a printout, another computer.\nIt opens every backup this server encrypted with this key. Without it, those backups can't be restored on another server, and nobody can recover a lost key.\n\nTo restore on a new Famlin server: choose the backup on the setup screen and upload this file when asked.\nTo decrypt by hand with the age tool (https://age-encryption.org):"
+  },
+  "calendarFeed": {
+    "family": "Family: {{name}}",
+    "postedBy": "Posted by {{name}}",
+    "rsvpYes": "You're going",
+    "rsvpMaybe": "You might go",
+    "rsvpNo": "You declined",
+    "openInFamlin": "Open in Famlin: {{url}}"
   }
 }

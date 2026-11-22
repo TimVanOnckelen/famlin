@@ -15,8 +15,8 @@
 // rather than open.
 //
 // The exclusions from export.ts's header all still apply — Setting,
-// passwordHash/tokenVersion, Invite (a live credential), PushToken/ApiToken,
-// Notification/PushDeliveryLog — plus a few that only matter once the
+// passwordHash/tokenVersion, Invite (a live credential), PushToken/ApiToken/
+// CalendarFeedToken, Notification/PushDeliveryLog — plus a few that only matter once the
 // caller isn't the server owner:
 //  - Other members' Device rows: only the caller's own diagnostics are included.
 //  - Other members' email notification/push preferences and isAdmin: not

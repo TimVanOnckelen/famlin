@@ -38,6 +38,8 @@ import { SETUP_ADVISORY_LOCK_KEY } from '../services/setupLock.js'
 import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
+import { calendarFeedUrls, generateCalendarFeedToken } from '../services/calendarFeed.js'
+import { getPublicOrigin } from '../utils/publicOrigin.js'
 import {
   appleLoginBodySchema,
   loginBodySchema,
@@ -969,6 +971,59 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.send(archive)
     }
   )
+
+  // Personal iCal feed of family events (issue #499, served by
+  // routes/calendar.ts). All three require an interactive login session —
+  // like minting a PAT, a leaked API token must not be able to read the
+  // feed's secret URL or swap it for one of its own.
+  fastify.get('/me/calendar-feed', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+    }
+    const feed = await prisma.calendarFeedToken.findUnique({
+      where: { userId: request.user!.id },
+      select: { createdAt: true, lastUsedAt: true },
+    })
+    return { enabled: !!feed, createdAt: feed?.createdAt ?? null, lastUsedAt: feed?.lastUsedAt ?? null }
+  })
+
+  // Creates the feed, or regenerates it: the row is replaced, so the old URL
+  // 404s from the next fetch on. The only response that carries the secret.
+  fastify.post(
+    '/me/calendar-feed',
+    {
+      preHandler: [fastify.authenticate],
+      config: { rateLimit: { max: 20, timeWindow: '15 minutes' } },
+    },
+    async (request, reply) => {
+      if (request.authMethod !== 'session') {
+        return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+      }
+      const userId = request.user!.id
+      const { token, tokenHash } = generateCalendarFeedToken()
+      // Delete + create rather than an update, so the new row gets a fresh
+      // createdAt/lastUsedAt and nothing of the old secret survives.
+      const [, created] = await prisma.$transaction([
+        prisma.calendarFeedToken.deleteMany({ where: { userId } }),
+        prisma.calendarFeedToken.create({ data: { userId, tokenHash }, select: { createdAt: true } }),
+      ])
+
+      // publicUrl when the admin set one (the address calendar apps should
+      // poll from anywhere), else the address this request came in on.
+      const { publicUrl } = await getAllSettings()
+      const { url, webcalUrl } = calendarFeedUrls(publicUrl || getPublicOrigin(request), token)
+      reply.header('cache-control', 'no-store')
+      return reply.status(201).send({ url, webcalUrl, createdAt: created.createdAt })
+    }
+  )
+
+  fastify.delete('/me/calendar-feed', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+    }
+    await prisma.calendarFeedToken.deleteMany({ where: { userId: request.user!.id } })
+    return { success: true }
+  })
 
   // Self-service account deletion — the same permanent, cascading delete an
   // admin can perform via DELETE /api/admin/users/:id, but initiated by the

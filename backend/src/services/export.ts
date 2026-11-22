@@ -30,6 +30,8 @@
 //    exporting it would hand out a working credential.
 //  - `ApiToken`: a token revoked after a leak must not come back through a
 //    restore; members create new ones.
+//  - `CalendarFeedToken`: same reasoning — a regenerated (or revoked)
+//    calendar feed URL must not start working again after a restore.
 //  - `Device`/`PushToken`: device diagnostics and push tokens are
 //    operational state that the apps re-register on their own.
 //  - `DiagnosticReport`: performance reports members sent to the admin —

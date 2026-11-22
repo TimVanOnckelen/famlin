@@ -240,5 +240,13 @@
     "created": "Aangemaakt",
     "publicKey": "Publieke sleutel",
     "body": "Bewaar dit bestand ergens anders dan op je Famlin-server: in een wachtwoordbeheerder, op papier, op een andere computer.\nHet opent elke back-up die deze server met deze sleutel versleuteld heeft. Zonder dit bestand kun je die back-ups niet op een andere server terugzetten, en niemand kan een verloren sleutel herstellen.\n\nTerugzetten op een nieuwe Famlin-server: kies de back-up op het installatiescherm en upload dit bestand als daarom gevraagd wordt.\nZelf ontsleutelen met de age-tool (https://age-encryption.org):"
+  },
+  "calendarFeed": {
+    "family": "Familie: {{name}}",
+    "postedBy": "Geplaatst door {{name}}",
+    "rsvpYes": "Je gaat",
+    "rsvpMaybe": "Je gaat misschien",
+    "rsvpNo": "Je hebt afgezegd",
+    "openInFamlin": "Openen in Famlin: {{url}}"
   }
 }

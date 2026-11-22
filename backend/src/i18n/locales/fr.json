@@ -240,5 +240,13 @@
     "created": "Créé le",
     "publicKey": "Clé publique",
     "body": "Conservez ce fichier ailleurs que sur votre serveur Famlin : un gestionnaire de mots de passe, une version imprimée, un autre ordinateur.\nIl ouvre toutes les sauvegardes que ce serveur a chiffrées avec cette clé. Sans lui, ces sauvegardes ne peuvent pas être restaurées sur un autre serveur, et personne ne peut récupérer une clé perdue.\n\nPour restaurer sur un nouveau serveur Famlin : choisissez la sauvegarde sur l'écran de configuration et importez ce fichier quand il est demandé.\nPour déchiffrer à la main avec l'outil age (https://age-encryption.org) :"
+  },
+  "calendarFeed": {
+    "family": "Famille : {{name}}",
+    "postedBy": "Publié par {{name}}",
+    "rsvpYes": "Vous y allez",
+    "rsvpMaybe": "Vous irez peut-être",
+    "rsvpNo": "Vous avez décliné",
+    "openInFamlin": "Ouvrir dans Famlin : {{url}}"
   }
 }
