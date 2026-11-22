@@ -27,10 +27,11 @@ No unrelated refactor should be included.
 - Opening an existing recipient reuses the existing conversation.
 - Messages contain:
   - text only;
-  - one or more media attachments; or
-  - text plus one or more media attachments.
-- Up to 10 image/video attachments per private DM message. Family chat remains
-  text plus zero or one `attachmentUrl`, exactly as installed clients expect.
+  - one media attachment; or
+  - text plus one media attachment.
+- All conversation kinds use the existing singular `attachmentUrl` field.
+  Multi-attachment messages are deferred; installed and new clients share the
+  same one-attachment contract.
 - Existing upload formats, compression, mobile 120-second video policy, server limits, thumbnail/poster generation, authenticated media serving, and upload authorization are reused.
 - Cursor-paginated message history, newest page first, loaded upward in chronological display order.
 - Per-conversation unread counts plus an unread indicator on the Chat tab.
@@ -122,8 +123,11 @@ Important current behavior:
   - `UploadMedia`
   - `Lightbox`
   - `useModalFocus`
-- `web/src/hooks/useComposerUploads.ts` already supports multi-file selection, progress, removal, preview, and errors.
-- The established maximum is `MAX_COMMENT_ATTACHMENTS = 10`.
+- `web/src/hooks/useComposerUploads.ts` supports the upload-state/progress
+  patterns needed by a single-file DM composer; it must be constrained to one
+  attachment for this release.
+- The comment-specific `MAX_COMMENT_ATTACHMENTS = 10` does not apply to chat;
+  DMs use one `attachmentUrl`.
 - `Lightbox` accepts an array of asset URLs.
 - `GiftListParticipantPicker.tsx` and `MembersPage.tsx` provide member-query/search patterns.
 - `ProfilePage.tsx` is where notification preferences are rendered.
@@ -327,7 +331,6 @@ ChatMessage
 - authorId
 - kind
 - content         nullable, trimmed, max 2000
-- attachmentUrls  String[] default []
 - attachmentUrl? existing singular field retained for installed clients
 - encryption      String @default("none")
 - encryptedPayload Json? containing a versioned structured envelope
@@ -345,11 +348,10 @@ indexes
 
 Validation:
 
-- family chat accepts exactly the existing body shape: optional text plus zero
-  or one `attachmentUrl`; it does not accept `attachmentUrls`;
-- private DM messages accept `attachmentUrls.length <= 10`;
-- at least one of `content` or attachments;
-- deduplicate attachment paths while preserving order;
+- all messages accept exactly the existing body shape: optional text plus zero
+  or one `attachmentUrl`;
+- private DM and family messages each enforce at most one attachment;
+- at least one of `content` or `attachmentUrl`;
 - every path passes `uploadPathSchema`;
 - every new attachment is owned by the sender and bindable;
 - no arbitrary external URL.
@@ -358,11 +360,10 @@ Validation:
   fields remain null;
 - clients treat every unrecognized encryption marker as unsupported, not empty.
 
-No multi-attachment behavior is added to family chat in this release. Old
-installed apps therefore continue to see and send the same single
-`attachmentUrl`. DM-only `attachmentUrls` are not exposed through legacy family
-endpoints. The response-level singular `attachmentUrl` can mirror the first DM
-attachment for new DM responses only; this does not expand the old family API.
+Multi-attachment behavior is not added to any conversation kind in this release.
+Both installed and conversation-aware clients continue to see and send the same
+single `attachmentUrl` field. A later feature can add a new multi-attachment
+shape without changing this first DM release.
 
 ### Encryption forward compatibility
 
@@ -600,7 +601,7 @@ GET      /api/chat/unread-counts
 They are compatibility adapters that resolve `groupId` to the one `FAMILY`
 conversation, apply exactly the same service logic, and preserve the current
 response shape **exactly**. They must not add `conversationId`, `encryption`,
-`encryptedPayload`, `attachmentUrls`, participants, or other new fields to the
+`encryptedPayload`, participants, or other new fields to the
 legacy payload. This release may add `/api/chat/conversations` to clients while
 retaining group-scoped helpers until a later compatibility cleanup. Existing
 `backend/src/__tests__/chat.test.ts` must pass unmodified and remain the
@@ -719,24 +720,22 @@ Body:
 ```ts
 {
   content?: string
-  attachmentUrls?: string[]
+  attachmentUrl?: string
 }
 ```
 
 Response is the created message.
 
-This endpoint is for new conversation-aware clients. For a `FAMILY`
-conversation, it validates the same one-attachment behavior as the legacy family
-route; it does not introduce multi-attachment family chat through a second API.
-For a `PRIVATE` conversation, it accepts up to 10 attachments. The legacy
-`POST /api/chat/groups/:groupId/messages` body remains exactly the existing
-`content`, singular `attachmentUrl`, and `replyToMessageId` contract.
+This endpoint uses the same singular-attachment payload for every conversation
+kind. It does not introduce multi-attachment chat through a second API. The
+legacy `POST /api/chat/groups/:groupId/messages` body remains exactly the
+existing `content`, singular `attachmentUrl`, and `replyToMessageId` contract.
 
 Flow:
 
 1. validate Zod body;
 2. resolve a visible conversation in one kind-aware authorization step;
-3. validate attachments belong to uploader and remain bindable;
+3. validate the optional attachment belongs to the uploader and remains bindable;
 4. create the message with both foreign keys set consistently:
    `FAMILY` writes `groupId` plus `conversationId`, while `PRIVATE` writes
    `conversationId` and `groupId=null`; bind all private attachment upload rows
@@ -899,7 +898,7 @@ That later behavior is outside the initial 1:1 policy.
 Add every private conversation attachment to `privateUploadKeys()` in
 `backend/src/services/mediaMirror.ts`.
 
-- query plaintext `ChatMessage.attachmentUrl`/`attachmentUrls`;
+- query plaintext `ChatMessage.attachmentUrl`;
 - reserve a way to extract attachment references from encrypted payload
   envelopes once an encryption format exists;
 - one private reference keeps an upload excluded from every family mirror even
@@ -994,7 +993,7 @@ apply the same supported-marker decision instead of duplicating string checks.
 
 Retain the existing group-scoped API-client wrappers and `groupId` response
 fields while old clients remain supported. New responses can add
-`conversationId`, `kind`, `participants`, and `attachmentUrls` only on the new
+`conversationId`, `kind`, and `participants` only on the new
 conversation-aware endpoints. Legacy serializers must return the pre-feature
 shape exactly: no new keys are added to family chat list/send/delete responses.
 
@@ -1020,7 +1019,7 @@ Export functions explicitly through `packages/api-client/src/index.ts`.
 Add API-client tests for:
 
 - request paths/methods;
-- optional content plus multi-attachment body for private conversation send;
+- optional content plus singular `attachmentUrl` body for conversation send;
 - singular `attachmentUrl` body and response shape for legacy family send;
 - pagination query parameters;
 - response typing/normalization where relevant.
@@ -1088,7 +1087,8 @@ Avoid duplicating group and DM message mechanics. Extract from `ChatPage.tsx` on
 - message list/date dividers;
 - scroll-to-bottom and older-page viewport restoration;
 - message bubble shell/avatar/time;
-- common media grid/lightbox behavior;
+- common single-attachment media/lightbox behavior;
+- single-attachment media/lightbox behavior;
 - composer container and upload error states.
 
 Keep identity-specific policy separate:
@@ -1111,14 +1111,14 @@ Create a focus-managed modal:
 
 ### DM composer
 
-Use `useComposerUploads(10)`:
+Reuse the existing single-file composer/upload flow:
 
-- supports text optional when attachments exist;
+- supports text optional when an attachment exists;
 - accepts image/video formats supported by the common upload endpoint;
 - displays local preview and per-file progress/error;
-- allows removing an attachment before send;
-- sends all attachment paths in `attachmentUrls`;
-- disables send while required uploads are incomplete;
+- allows removing the selected attachment before send;
+- sends its path as singular `attachmentUrl`;
+- disables send while the required upload is incomplete;
 - clears draft only after success;
 - leaves retryable upload state/error after failure.
 
@@ -1128,20 +1128,19 @@ The upload lifecycle remains:
 2. message create binds uploads to the DM conversation;
 3. failed/cancelled draft uploads are uploader-only; use existing cleanup if available.
 
-The existing family-chat composer remains single-file and continues to call the
-legacy singular-attachment API. Do not switch the family composer to
-`useComposerUploads(10)` merely because DM chat shares the message table.
+The family and DM composers therefore share the same single-file interaction;
+only their route and conversation identity differ. Multi-file picking is not
+enabled for this release.
 
 ### DM media rendering
 
 Use:
 
 - `UploadMedia` / `ShimmerImage` for thumbnails and media behavior;
-- `Lightbox` for the attachments array;
+- `Lightbox` for the selected attachment;
 - authenticated media URL/token behavior;
 - poster/thumbnail variants for video;
-- mixed image/video grids;
-- responsive maximum grid area inside a message;
+- responsive maximum media area inside a message;
 - accessible alt labels and keyboard lightbox controls.
 
 ### Own-message deletion
@@ -1161,8 +1160,8 @@ Add focused Testing Library/Vitest coverage:
 - current user excluded;
 - text-only send;
 - media-only send;
-- mixed text + 10 attachments;
-- 11th attachment blocked;
+- mixed text + one attachment;
+- a second attachment cannot be selected;
 - attachment removal/progress/error;
 - polling updates;
 - mark-read/unread invalidation;
@@ -1219,13 +1218,13 @@ MainTabs:
 
 Reuse `usePickAndUploadMedia` rather than duplicating picker/compression:
 
-- configure up to 10;
-- allow text and/or attachments;
+- configure exactly one attachment;
+- allow text and/or one attachment;
 - preserve current 120-second mobile video restriction;
 - use common image compression behavior;
 - show upload failures and partial success;
-- allow removing picked/uploaded attachments;
-- send all `attachmentUrls`.
+- allow removing the picked/uploaded attachment;
+- send the path as singular `attachmentUrl`.
 
 ### Rendering
 
@@ -1236,10 +1235,10 @@ Reuse:
 - existing video poster/play behavior;
 - authenticated URI construction.
 
-Add a DM message grid that:
+Render a DM attachment with:
 
-- handles 1–10 mixed attachments;
-- opens the requested attachment/media collection;
+- handles zero or one image/video;
+- opens the selected attachment/media viewer;
 - displays a caption and timestamp;
 - does not leak inaccessible files if 401/403/404 occurs.
 
@@ -1273,8 +1272,9 @@ Add Jest tests for:
 - inbox rendering and ordering;
 - recipient picker and deduplication;
 - one existing conversation reuse is delegated to API behavior;
-- direct-message send with multiple uploads;
-- 10/11 attachment boundary;
+- direct-message send with one upload;
+- second attachment selection is blocked/replaces the first according to the
+  established picker UX;
 - partial upload failure and retry;
 - mark read and unread badge;
 - own-message delete behavior;
@@ -1333,8 +1333,7 @@ Document:
 - read marker;
 - unread counts;
 - request/response schemas;
-- 10-attachment limit for private conversations and the unchanged singular
-  family-chat attachment contract;
+- singular attachment contract for both family and private conversations;
 - shared-family authorization;
 - 404 privacy semantics;
 - cursor/page limits;
@@ -1400,8 +1399,8 @@ Update `docs/docs/chat.mdx` (and index/features docs where chat is summarized) t
 - Chat-area placement;
 - shared-family restriction;
 - loss/restoration of access when membership changes;
-- DM text/image/video support and 10-file limit, while family chat remains
-  single-attachment in this release;
+- DM text/image/video support with the same single-attachment field and limit
+  used by family chat;
 - unread and polling behavior;
 - own-message deletion;
 - push preference and privacy-safe notifications;
@@ -1465,17 +1464,13 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 ### Backend message behavior
 
 - family text-only, one-attachment, and legacy reply behavior remains unchanged;
-- family `attachmentUrls` is not accepted through either legacy or generalized
-  family send;
 - private text-only accepted;
 - private media-only accepted;
-- private text + multiple attachments accepted;
-- private ten accepted;
-- private eleven rejected;
+- private text + one attachment accepted;
+- a request containing any multi-attachment field is rejected;
 - empty private message rejected;
-- duplicate private attachment paths removed;
 - external/unowned/unbound paths rejected;
-- attachments bound in the same transaction as the message;
+- the attachment is bound in the same transaction as the message;
 - pagination/cursor correct;
 - read marker and unread count correct;
 - own delete succeeds;
@@ -1553,7 +1548,7 @@ the new predicate were accidentally removed.
 - direct and family sections;
 - sorted inbox and preview;
 - picker search/dedupe;
-- 1/10 attachment media;
+- zero/one attachment rendering;
 - mixed image/video rendering;
 - failed attachment upload;
 - pagination and scroll preservation;
@@ -1564,7 +1559,7 @@ the new predicate were accidentally removed.
 - push navigation;
 - feature unavailable on older server.
 - installed family-chat response snapshots remain byte-for-byte compatible;
-- family chat still accepts only one attachment while DM accepts up to 10.
+- family and private chat both accept at most one attachment.
 
 ## Validation commands
 
@@ -1621,8 +1616,8 @@ The feature is complete when all are true:
 1. A web/mobile user can open Chat and see family chats plus private DM conversations.
 2. A searchable new-message picker contains exactly the currently eligible shared-family members, deduplicated.
 3. A pair always resolves to one canonical conversation.
-4. Private text-only, media-only, and mixed messages support up to 10 files;
-   family chat remains limited to its existing single attachment.
+4. Family and private text-only, media-only, and mixed messages support the same
+   single `attachmentUrl` field.
 5. Only the two participants can read conversation data and media while they share a current family.
 6. Losing the last shared family immediately hides messages and media; restoring membership makes history visible again.
 7. Messages are cursor-paginated, unread state is per conversation, and the shell Chat badge is correct.
