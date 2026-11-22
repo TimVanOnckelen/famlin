@@ -54,29 +54,30 @@ it('counts JS frames only while the list is moving', () => {
   expect(stopScrollRecording()?.jsFrames).toEqual([16, 50])
 })
 
-it('keeps a scroll going through the hand-over from drag to momentum', () => {
+it('resumes counting when momentum takes over from a drag', () => {
   const onScrollingChange = jest.fn()
   startScrollRecording(onScrollingChange)
 
   list.onScrollBeginDrag()
   list.onScrollEndDrag()
   list.onMomentumScrollBegin()
-  jest.advanceTimersByTime(500)
-  expect(onScrollingChange.mock.calls).toEqual([[true]])
+  expect(onScrollingChange.mock.calls).toEqual([[true], [false], [true]])
 
   list.onMomentumScrollEnd()
-  expect(onScrollingChange.mock.calls).toEqual([[true], [false]])
+  expect(onScrollingChange.mock.calls).toEqual([[true], [false], [true], [false]])
 })
 
-it('ends a scroll when a drag is released without momentum', () => {
-  const onScrollingChange = jest.fn()
-  startScrollRecording(onScrollingChange)
+it('stops counting the moment a drag is released without momentum', () => {
+  startScrollRecording(jest.fn())
 
+  frame(0)
   list.onScrollBeginDrag()
+  frame(8)
   list.onScrollEndDrag()
-  jest.advanceTimersByTime(500)
+  frame(25) // the list is already still: not counted
+  frame(42)
 
-  expect(onScrollingChange.mock.calls).toEqual([[true], [false]])
+  expect(stopScrollRecording()?.jsFrames).toEqual([8])
 })
 
 it('collects the posts scrolled past and where their images came from', () => {

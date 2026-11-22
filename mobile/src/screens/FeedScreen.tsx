@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, StatusBar } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, StatusBar, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useQuery } from '@tanstack/react-query'
@@ -291,7 +291,12 @@ export function FeedScreen() {
         // three times per scroll (315 memory-cache loads for 99 items) and
         // UI-thread hitches from rebuilding cards that had just left the
         // window, so keep 5 screens either side instead of 3.
-        removeClippedSubviews
+        // Clipping detaches off-screen cards from the native view tree. On
+        // iOS that re-ran every image's load on reattach (a 120 Hz report
+        // after the window change still showed 156 memory-cache loads for
+        // 104 items in under 6 s, with single-frame UI hitches), and the
+        // compositor already skips off-screen views, so only Android clips.
+        removeClippedSubviews={Platform.OS === 'android'}
         initialNumToRender={5}
         maxToRenderPerBatch={4}
         windowSize={11}

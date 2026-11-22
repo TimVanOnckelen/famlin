@@ -20,6 +20,13 @@ export interface FrameStats {
   hitchMsPerSecond: number
   worstFrameMs: number
   p95FrameMs: number
+  /**
+   * Late frames by how many refreshes each one missed. Many isolated
+   * one-refresh misses with no longer ones look like a 120 Hz display
+   * stepping its rate down; real stalls (mounting a card, decoding a photo)
+   * miss several in a row.
+   */
+  lateFrames: { missedOne: number; missedTwoToThree: number; missedFourPlus: number }
 }
 
 export type ScrollRating = 'good' | 'warning' | 'critical'
@@ -93,10 +100,15 @@ export function summarizeFrames(durations: number[], frameIntervalMs: number): F
   const durationMs = valid.reduce((sum, d) => sum + d, 0)
   let droppedFrames = 0
   let hitchMs = 0
+  const lateFrames = { missedOne: 0, missedTwoToThree: 0, missedFourPlus: 0 }
   for (const d of valid) {
     if (d > frameIntervalMs * HITCH_THRESHOLD) {
-      droppedFrames += Math.round(d / frameIntervalMs) - 1
+      const missed = Math.round(d / frameIntervalMs) - 1
+      droppedFrames += missed
       hitchMs += d - frameIntervalMs
+      if (missed <= 1) lateFrames.missedOne += 1
+      else if (missed <= 3) lateFrames.missedTwoToThree += 1
+      else lateFrames.missedFourPlus += 1
     }
   }
   const sorted = [...valid].sort((a, b) => a - b)
@@ -107,6 +119,7 @@ export function summarizeFrames(durations: number[], frameIntervalMs: number): F
     hitchMsPerSecond: durationMs > 0 ? hitchMs / (durationMs / 1000) : 0,
     worstFrameMs: sorted.length > 0 ? sorted[sorted.length - 1] : 0,
     p95FrameMs: percentile(sorted, 0.95),
+    lateFrames,
   }
 }
 
@@ -137,11 +150,20 @@ export function summarizeContent(posts: { type: string; uploadedAssetUrls: strin
   return stats
 }
 
+function lateFramesSuffix({ lateFrames }: FrameStats): string {
+  // Reports recorded before the breakdown existed (or rebuilt from stored data) lack it.
+  if (!lateFrames) return ''
+  const { missedOne, missedTwoToThree, missedFourPlus } = lateFrames
+  if (missedOne + missedTwoToThree + missedFourPlus === 0) return ''
+  return `; late frames missing 1/2-3/4+ refreshes: ${missedOne}/${missedTwoToThree}/${missedFourPlus}`
+}
+
 function frameLine(label: string, stats: FrameStats): string {
   return (
     `${label}: ${stats.hitchMsPerSecond.toFixed(1)} ms/s hitches (${rateHitches(stats.hitchMsPerSecond)}), ` +
     `${stats.droppedFrames} dropped of ${stats.frames + stats.droppedFrames} frames, ` +
-    `worst ${stats.worstFrameMs.toFixed(0)} ms, p95 ${stats.p95FrameMs.toFixed(1)} ms`
+    `worst ${stats.worstFrameMs.toFixed(0)} ms, p95 ${stats.p95FrameMs.toFixed(1)} ms` +
+    lateFramesSuffix(stats)
   )
 }
 

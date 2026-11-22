@@ -8,9 +8,6 @@ import type { ImageLoadStats } from '@/utils/scrollDiagnostics'
 /** Bounds a forgotten recording: ten minutes of frames at 120 Hz. */
 export const MAX_RECORDED_FRAMES = 72000
 
-/** How long after a finger lifts to wait for momentum before calling the scroll over. */
-const DRAG_END_GRACE_MS = 150
-
 interface Recording {
   jsFrames: number[]
   seenPostIds: Set<string>
@@ -18,7 +15,6 @@ interface Recording {
   scrolling: boolean
   lastFrameAt: number | null
   rafId: number | null
-  dragEndTimer: ReturnType<typeof setTimeout> | null
   onScrollingChange: (scrolling: boolean) => void
 }
 
@@ -34,13 +30,6 @@ function setScrolling(scrolling: boolean) {
   if (!recording || recording.scrolling === scrolling) return
   recording.scrolling = scrolling
   recording.onScrollingChange(scrolling)
-}
-
-function clearDragEndTimer() {
-  if (recording?.dragEndTimer) {
-    clearTimeout(recording.dragEndTimer)
-    recording.dragEndTimer = null
-  }
 }
 
 function onFrame(now: number) {
@@ -68,7 +57,6 @@ export function startScrollRecording(onScrollingChange: (scrolling: boolean) => 
     scrolling: false,
     lastFrameAt: null,
     rafId: null,
-    dragEndTimer: null,
     onScrollingChange,
   }
   recording.rafId = requestAnimationFrame(onFrame)
@@ -77,7 +65,6 @@ export function startScrollRecording(onScrollingChange: (scrolling: boolean) => 
 export function stopScrollRecording(): RecordingResult | null {
   const current = recording
   if (!current) return null
-  clearDragEndTimer()
   if (current.rafId !== null) cancelAnimationFrame(current.rafId)
   recording = null
   current.onScrollingChange(false)
@@ -104,25 +91,15 @@ export function recordImageLoad(event: { cacheType: 'none' | 'disk' | 'memory' }
  * changes — FlatList refuses a new `onViewableItemsChanged` on the fly.
  */
 export const scrollRecorderListProps = {
-  onScrollBeginDrag: () => {
-    clearDragEndTimer()
-    setScrolling(true)
-  },
-  // A lifted finger either hands over to momentum or ends the scroll; only
-  // the absence of a momentum event tells the two apart.
-  onScrollEndDrag: () => {
-    if (!recording) return
-    clearDragEndTimer()
-    recording.dragEndTimer = setTimeout(() => setScrolling(false), DRAG_END_GRACE_MS)
-  },
-  onMomentumScrollBegin: () => {
-    clearDragEndTimer()
-    setScrolling(true)
-  },
-  onMomentumScrollEnd: () => {
-    clearDragEndTimer()
-    setScrolling(false)
-  },
+  onScrollBeginDrag: () => setScrolling(true),
+  // A lifted finger either hands over to momentum or ends the scroll. Pause
+  // right away and let momentum resume the count: waiting to see which it is
+  // counted the frames of a list that had already stopped, and a 120 Hz
+  // iPhone lowers its refresh rate for a still list, so every one of those
+  // read as a dropped frame. The hand-over itself loses a frame or two at most.
+  onScrollEndDrag: () => setScrolling(false),
+  onMomentumScrollBegin: () => setScrolling(true),
+  onMomentumScrollEnd: () => setScrolling(false),
   onViewableItemsChanged: ({ viewableItems }: { viewableItems: { key: string }[] }) => {
     if (!recording) return
     for (const token of viewableItems) {

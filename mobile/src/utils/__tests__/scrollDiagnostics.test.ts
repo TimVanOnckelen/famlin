@@ -85,7 +85,16 @@ describe('summarizeFrames', () => {
       hitchMsPerSecond: 0,
       worstFrameMs: 0,
       p95FrameMs: 0,
+      lateFrames: { missedOne: 0, missedTwoToThree: 0, missedFourPlus: 0 },
     })
+  })
+
+  it('sorts late frames by how many refreshes they missed', () => {
+    const stats = summarizeFrames(
+      [...Array(100).fill(FRAME_120), FRAME_120 * 2, FRAME_120 * 2, FRAME_120 * 3, FRAME_120 * 8],
+      FRAME_120
+    )
+    expect(stats.lateFrames).toEqual({ missedOne: 2, missedTwoToThree: 1, missedFourPlus: 1 })
   })
 })
 
@@ -128,7 +137,8 @@ it('formats a report without anything identifying', () => {
   expect(text).toContain('Device: iPhone 13 · iOS 26.1')
   expect(text).toContain('Scrolled: 1.0 s at 60 Hz')
   expect(text).toContain('UI thread: 33.3 ms/s hitches (critical), 2 dropped of 60 frames')
-  expect(text).toContain('JS thread: 0.0 ms/s hitches (good), 0 dropped of 60 frames')
+  expect(text).toContain('late frames missing 1/2-3/4+ refreshes: 0/1/0')
+  expect(text).toContain('JS thread: 0.0 ms/s hitches (good), 0 dropped of 60 frames, worst 17 ms, p95 16.7 ms\n')
   expect(text).toContain('Posts seen: 1 (UPDATE 1)')
   expect(text).toContain('Media: 2 items in 1 posts, 1 multi-photo posts, 0 videos')
   expect(text).toContain('Images loaded while recording: 2 network, 1 disk, 0 memory')
