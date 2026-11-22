@@ -468,7 +468,8 @@
       "revokeMessage": "Tu enlace dejará de funcionar y los calendarios suscritos dejarán de actualizarse.",
       "openFailedTitle": "No se encontró ninguna aplicación de calendario",
       "openFailedMessage": "Copia el enlace y añádelo como suscripción en tu aplicación de calendario.",
-      "error": "Algo salió mal. Inténtalo de nuevo."
+      "error": "Algo salió mal. Inténtalo de nuevo.",
+      "loadFailed": "No se ha podido cargar tu suscripción de calendario."
     }
   },
   "tabs": {

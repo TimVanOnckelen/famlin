@@ -470,7 +470,8 @@
       "revokeMessage": "Votre lien cessera de fonctionner et les calendriers abonnés ne seront plus mis à jour.",
       "openFailedTitle": "Aucune application de calendrier trouvée",
       "openFailedMessage": "Copiez le lien et ajoutez-le comme abonnement dans votre application de calendrier.",
-      "error": "Une erreur s'est produite. Veuillez réessayer."
+      "error": "Une erreur s'est produite. Veuillez réessayer.",
+      "loadFailed": "Impossible de charger ton abonnement au calendrier."
     }
   },
   "tabs": {

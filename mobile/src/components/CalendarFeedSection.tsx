@@ -32,7 +32,12 @@ export function CalendarFeedSection() {
   // forgets it, as it can't be read back from the server either.
   const [created, setCreated] = useState<CreatedCalendarFeed | null>(null)
 
-  const { data: status, isLoading } = useQuery({
+  const {
+    data: status,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: CALENDAR_FEED_QUERY_KEY,
     queryFn: fetchCalendarFeed,
     enabled: supported,
@@ -101,39 +106,58 @@ export function CalendarFeedSection() {
 
       {isLoading ? (
         <ActivityIndicator size="small" color={colors.primary} style={styles.loading} />
-      ) : created ? (
+      ) : isError || !status ? (
+        // Never fall back to "Create" here: on an existing feed it would
+        // regenerate the link without asking, breaking every subscription.
         <View style={styles.block}>
-          <Text style={styles.onceNotice}>{t('profile.calendarFeed.shownOnce')}</Text>
-          <Text style={styles.url} selectable testID="calendar-feed-url">
-            {created.url}
-          </Text>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => void addToCalendar(created)}
-            accessibilityRole="button"
-          >
-            <Icon name="calendar" size={16} color={colors.white} />
-            <Text style={styles.primaryButtonText}>{t('profile.calendarFeed.addToCalendar')}</Text>
+          <Text style={styles.help}>{t('profile.calendarFeed.loadFailed')}</Text>
+          <TouchableOpacity style={styles.outlineButton} onPress={() => void refetch()} accessibilityRole="button">
+            <Text style={styles.outlineButtonText}>{t('common.tryAgain')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.outlineButton} onPress={() => shareUrl(created)} accessibilityRole="button">
-            <Icon name="copy" size={16} color={colors.primary} />
-            <Text style={styles.outlineButtonText}>{t('profile.calendarFeed.copy')}</Text>
-          </TouchableOpacity>
-          <Text style={styles.help}>{t('profile.calendarFeed.instructions')}</Text>
         </View>
-      ) : status?.enabled ? (
+      ) : status.enabled ? (
         <View style={styles.block}>
-          {status.createdAt && (
-            <Text style={styles.meta}>
-              {t('profile.calendarFeed.createdAt', { date: formatDateTime(status.createdAt) })}
-            </Text>
+          {created ? (
+            // Shown above the management buttons, so a member who just
+            // created the link can still regenerate or turn it off.
+            <>
+              <Text style={styles.onceNotice}>{t('profile.calendarFeed.shownOnce')}</Text>
+              <Text style={styles.url} selectable testID="calendar-feed-url">
+                {created.url}
+              </Text>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => void addToCalendar(created)}
+                accessibilityRole="button"
+              >
+                <Icon name="calendar" size={16} color={colors.white} />
+                <Text style={styles.primaryButtonText}>{t('profile.calendarFeed.addToCalendar')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.outlineButton}
+                onPress={() => shareUrl(created)}
+                accessibilityRole="button"
+              >
+                <Icon name="copy" size={16} color={colors.primary} />
+                <Text style={styles.outlineButtonText}>{t('profile.calendarFeed.copy')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.help}>{t('profile.calendarFeed.instructions')}</Text>
+            </>
+          ) : (
+            <>
+              {status.createdAt && (
+                <Text style={styles.meta}>
+                  {t('profile.calendarFeed.createdAt', { date: formatDateTime(status.createdAt) })}
+                </Text>
+              )}
+              <Text style={styles.meta}>
+                {status.lastUsedAt
+                  ? t('profile.calendarFeed.lastUsedAt', { date: formatDateTime(status.lastUsedAt) })
+                  : t('profile.calendarFeed.neverUsed')}
+              </Text>
+              <Text style={styles.help}>{t('profile.calendarFeed.lostLink')}</Text>
+            </>
           )}
-          <Text style={styles.meta}>
-            {status.lastUsedAt
-              ? t('profile.calendarFeed.lastUsedAt', { date: formatDateTime(status.lastUsedAt) })
-              : t('profile.calendarFeed.neverUsed')}
-          </Text>
-          <Text style={styles.help}>{t('profile.calendarFeed.lostLink')}</Text>
           <TouchableOpacity
             style={[styles.outlineButton, busy && styles.disabled]}
             onPress={confirmRegenerate}

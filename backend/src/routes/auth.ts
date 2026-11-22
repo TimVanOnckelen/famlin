@@ -1001,12 +1001,15 @@ export default async function authRoutes(fastify: FastifyInstance) {
       }
       const userId = request.user!.id
       const { token, tokenHash } = generateCalendarFeedToken()
-      // Delete + create rather than an update, so the new row gets a fresh
-      // createdAt/lastUsedAt and nothing of the old secret survives.
-      const [, created] = await prisma.$transaction([
-        prisma.calendarFeedToken.deleteMany({ where: { userId } }),
-        prisma.calendarFeedToken.create({ data: { userId, tokenHash }, select: { createdAt: true } }),
-      ])
+      // An upsert on the one-per-user row, so two simultaneous requests can't
+      // both try to create it; a regenerate resets createdAt/lastUsedAt and
+      // overwrites the old hash, so nothing of the old secret survives.
+      const created = await prisma.calendarFeedToken.upsert({
+        where: { userId },
+        create: { userId, tokenHash },
+        update: { tokenHash, createdAt: new Date(), lastUsedAt: null },
+        select: { createdAt: true },
+      })
 
       // publicUrl when the admin set one (the address calendar apps should
       // poll from anywhere), else the address this request came in on.

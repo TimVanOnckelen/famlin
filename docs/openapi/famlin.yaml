@@ -513,6 +513,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
     delete:
       operationId: revokeCalendarFeed
       tags: [Calendar]
@@ -574,7 +576,7 @@ paths:
           schema:
             type: string
             pattern: '^famlin_cal_'
-          example: famlin_cal_8f3c2a1d9b7e4f60a5c3d2e1f0a9b8c7
+          example: famlin_cal_q3Vx8mZt0LkR2pYwN7cHs4JdF6bA9eUi1oGv5TnKyQw
       responses:
         '200':
           description: The calendar
@@ -594,7 +596,7 @@ paths:
               example: |
                 BEGIN:VCALENDAR
                 VERSION:2.0
-                PRODID:-//Famlin//Calendar feed//EN
+                PRODID:-//Famlin//Family events//EN
                 BEGIN:VEVENT
                 UID:...@famlin
                 DTSTART:20261224T170000Z
@@ -4933,11 +4935,11 @@ components:
         url:
           type: string
           description: The subscription URL. Returned only once.
-          example: https://famlin.example.com/api/calendar/famlin_cal_8f3c2a1d9b7e4f60a5c3d2e1f0a9b8c7/famlin.ics
+          example: https://famlin.example.com/api/calendar/famlin_cal_q3Vx8mZt0LkR2pYwN7cHs4JdF6bA9eUi1oGv5TnKyQw/famlin.ics
         webcalUrl:
           type: string
           description: The same URL with the `webcal://` scheme, for one-tap subscribing.
-          example: webcal://famlin.example.com/api/calendar/famlin_cal_8f3c2a1d9b7e4f60a5c3d2e1f0a9b8c7/famlin.ics
+          example: webcal://famlin.example.com/api/calendar/famlin_cal_q3Vx8mZt0LkR2pYwN7cHs4JdF6bA9eUi1oGv5TnKyQw/famlin.ics
         createdAt:
           type: string
           format: date-time

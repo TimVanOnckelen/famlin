@@ -14,8 +14,8 @@ const FEED_RATE_LIMIT = { max: 120, timeWindow: '1 hour' }
 
 // The per-token budget replaces the global per-IP limit on this route, and
 // on its own would let one client spray guessed tokens (each its own bucket)
-// without bound — so the app-wide per-IP ceiling (app.ts) is checked here
-// too. It can't be a second `rateLimit()` hook: the plugin runs only one
+// without bound — so an equivalent per-IP ceiling (same numbers as app.ts's
+// global limit, in its own bucket) is checked here too. It can't be a second `rateLimit()` hook: the plugin runs only one
 // limiter per request, so this uses `createRateLimit()` and answers itself.
 const PER_IP_RATE_LIMIT = { max: 300, timeWindow: '1 minute' }
 

@@ -139,3 +139,28 @@ describe('with an existing feed', () => {
     expect(revokeCalendarFeed).toHaveBeenCalledTimes(1)
   })
 })
+
+it('keeps regenerate and turn off reachable right after creating a link', async () => {
+  await renderSection()
+  await fireEvent.press(await screen.findByText('profile.calendarFeed.create'))
+  expect(await screen.findByText(CREATED.url)).toBeTruthy()
+  expect(screen.getByText('profile.calendarFeed.regenerate')).toBeTruthy()
+
+  await fireEvent.press(screen.getByText('profile.calendarFeed.revoke'))
+  confirmAlert(alert, 'profile.calendarFeed.revoke')
+  await waitFor(() => expect(revokeCalendarFeed).toHaveBeenCalled())
+  expect(await screen.findByText('profile.calendarFeed.create')).toBeTruthy()
+  expect(screen.queryByText(CREATED.url)).toBeNull()
+})
+
+it('offers a retry, never a silent create, when the status fails to load', async () => {
+  jest.mocked(fetchCalendarFeed).mockRejectedValueOnce(new Error('offline'))
+  await renderSection()
+  expect(await screen.findByText('profile.calendarFeed.loadFailed')).toBeTruthy()
+  expect(screen.queryByText('profile.calendarFeed.create')).toBeNull()
+
+  jest.mocked(fetchCalendarFeed).mockResolvedValue({ enabled: true, createdAt: CREATED.createdAt, lastUsedAt: null })
+  await fireEvent.press(screen.getByText('common.tryAgain'))
+  expect(await screen.findByText('profile.calendarFeed.regenerate')).toBeTruthy()
+  expect(createCalendarFeed).not.toHaveBeenCalled()
+})

@@ -1,12 +1,17 @@
 // Path segments that are secrets: the personal calendar feed token
 // (/api/calendar/<token>/famlin.ics, issue #499). The URL is the credential
-// there, so it must never reach a log line. Matched on the raw URL, and
-// loosely (any `calendar/` segment, a percent-encoded slash too) so a
-// non-canonical spelling of the path can't slip the secret past it.
+// there, so it must never reach a log line. Matched on the raw URL, loosely
+// (any `calendar/` segment, a percent-encoded slash too) and by the token's
+// own shape, so a non-canonical spelling of the path can't slip it past.
 const SECRET_PATH_SEGMENTS = /(calendar(?:\/|%2f)+)[^/?#]+/gi
+// The router percent-decodes path segments, so `/api/cal%65ndar/<token>`
+// reaches the feed too: also redact the token by its own shape (the
+// prefix's letters may be percent-encoded as well).
+const FEED_TOKEN =
+  /(?:f|%66)(?:a|%61)(?:m|%6d)(?:l|%6c)(?:i|%69)(?:n|%6e)(?:_|%5f)(?:c|%63)(?:a|%61)(?:l|%6c)(?:_|%5f)[A-Za-z0-9_%-]+/gi
 
 export function redactLoggedUrl(url: string | undefined): string | undefined {
-  return url?.replace(SECRET_PATH_SEGMENTS, '$1[redacted]')
+  return url?.replace(SECRET_PATH_SEGMENTS, '$1[redacted]').replace(FEED_TOKEN, '[redacted]')
 }
 
 // Fastify's default `req` log serializer, with the URL redacted. Every

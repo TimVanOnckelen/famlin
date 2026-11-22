@@ -470,7 +470,8 @@
       "revokeMessage": "你的链接将失效，已订阅的日历将不再更新。",
       "openFailedTitle": "未找到日历应用",
       "openFailedMessage": "请复制链接，并在日历应用中将其添加为订阅。",
-      "error": "出了点问题，请重试。"
+      "error": "出了点问题，请重试。",
+      "loadFailed": "无法加载你的日历订阅。"
     }
   },
   "tabs": {

@@ -470,7 +470,8 @@
       "revokeMessage": "Your link stops working and subscribed calendars stop updating.",
       "openFailedTitle": "No calendar app found",
       "openFailedMessage": "Copy the link and add it to your calendar app as a subscription.",
-      "error": "Something went wrong. Please try again."
+      "error": "Something went wrong. Please try again.",
+      "loadFailed": "Couldn't load your calendar subscription."
     }
   },
   "tabs": {

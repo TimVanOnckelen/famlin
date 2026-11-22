@@ -145,7 +145,9 @@ describe('restoring a backup from the backups volume', () => {
     const local = await readLocalMigrations()
     vi.spyOn(restoreDumpDeps, 'readDumpMigrations').mockResolvedValue(local)
     vi.spyOn(restoreDumpDeps, 'replaceDatabase').mockImplementation(async () => {
-      await createUser({ email: 'restored@example.com' })
+      const restored = await createUser({ email: 'restored@example.com' })
+      // A calendar link the member revoked after the dump was taken.
+      await prisma.calendarFeedToken.create({ data: { userId: restored.id, tokenHash: 'revoked-since' } })
     })
     vi.spyOn(restoreDumpDeps, 'migrateDeploy').mockResolvedValue()
     const name = dumpFileName(new Date('2026-11-09T03:00:00Z'))
@@ -156,6 +158,8 @@ describe('restoring a backup from the backups volume', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ restored: true, media: { restored: expect.any(Number) } })
     expect(restoreDumpDeps.replaceDatabase).toHaveBeenCalledWith(path.join(BACKUP_DB_DIR, name))
+    // Calendar links ignore tokenVersion, so a restore must not revive them.
+    expect(await prisma.calendarFeedToken.count()).toBe(0)
   })
 
   it.each([

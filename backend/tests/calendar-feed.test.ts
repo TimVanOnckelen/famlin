@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import type { FastifyInstance } from 'fastify'
+import { createHash } from 'crypto'
 import { prisma } from '../src/db.js'
 import { updateSettings } from '../src/services/settings.js'
 import { generateApiToken, hashToken } from '../src/services/apiTokens.js'
@@ -76,6 +77,9 @@ describe('iCal helpers', () => {
     expect(redactLoggedUrl(`/api/calendar/${token}/famlin.ics`)).toBe('/api/calendar/[redacted]/famlin.ics')
     expect(redactLoggedUrl(`//api//calendar//${token}/famlin.ics?x=1`)).not.toContain(token)
     expect(redactLoggedUrl(`/api/calendar%2F${token}`)).not.toContain(token)
+    // The router decodes path segments, so this spelling reaches the feed too.
+    expect(redactLoggedUrl(`/api/cal%65ndar/${token}/famlin.ics`)).not.toContain(token)
+    expect(redactLoggedUrl(`/api/cal%65ndar/%66amlin_cal_${token.slice(11)}/famlin.ics`)).not.toContain(token.slice(11))
     expect(redactLoggedUrl('/api/auth/me/calendar-feed')).toBe('/api/auth/me/calendar-feed')
     const logged = requestLogSerializer({
       method: 'GET',
@@ -87,6 +91,10 @@ describe('iCal helpers', () => {
     expect(JSON.stringify(logged)).not.toContain(token)
   })
 })
+
+// The UID is an opaque hash of the post id (or crossPostId), so it can't be
+// compared with the post id in URL to learn an event was cross-posted.
+const uidOf = (id: string) => createHash('sha256').update(id).digest('hex').slice(0, 32)
 
 describe('calendar feed', () => {
   let app: FastifyInstance
@@ -165,6 +173,21 @@ describe('calendar feed', () => {
   }
 
   describe('management', () => {
+    it('survives two simultaneous creates (one link left, no 500)', async () => {
+      const user = await createUser()
+      // Its own client address: creates share a per-IP budget across the file.
+      const post = () =>
+        app.inject({
+          method: 'POST',
+          url: '/api/auth/me/calendar-feed',
+          headers: authHeader(user),
+          remoteAddress: '198.51.100.9',
+        })
+      const results = await Promise.all([post(), post()])
+      expect(results.map((r) => r.statusCode)).toEqual([201, 201])
+      expect(await prisma.calendarFeedToken.count({ where: { userId: user.id } })).toBe(1)
+    })
+
     it('reports status, creates, regenerates and revokes the feed', async () => {
       const user = await createUser()
 
@@ -293,7 +316,7 @@ describe('calendar feed', () => {
       const { ics, events } = await feedEvents(viewer)
       expect(events).toHaveLength(1)
       const [vevent] = events
-      expect(vevent.UID).toBe(`${event.id}@localhost`)
+      expect(vevent.UID).toBe(`${uidOf(event.id)}@localhost`)
       expect(vevent.SUMMARY).toBe('Lunch\\; with\\, everyone')
       expect(vevent.LOCATION).toBe('Grandma’s house\\, Main St')
       expect(vevent.DTSTART).toBe(formatIcalDate(startsAt))
@@ -318,7 +341,7 @@ describe('calendar feed', () => {
       const event = await createEvent(user, { groupId: group.id }, 'Picnic', { startsAt, endsAt })
 
       const { events } = await feedEvents(user)
-      expect(events[0].UID).toBe(`${event.id}@family.example.com`)
+      expect(events[0].UID).toBe(`${uidOf(event.id)}@family.example.com`)
       expect(events[0].URL).toBe(`https://family.example.com/posts/${event.id}`)
       expect(events[0].DESCRIPTION).toContain(`https://family.example.com/posts/${event.id}`)
       expect(events[0].DTEND).toBe(formatIcalDate(new Date(endsAt)))
@@ -378,7 +401,7 @@ describe('calendar feed', () => {
       expect(await summaries(memberFeed.path)).toEqual([])
     })
 
-    it('lists a cross-posted event once, with a crossPostId UID that survives edits', async () => {
+    it('lists a cross-posted event once, with one stable UID that survives edits', async () => {
       const author = await createUser()
       const groupA = await createGroupWithMember(author, { name: 'Alpha family' })
       const groupB = await createGroupWithMember(author, { name: 'Beta family' })
@@ -389,7 +412,7 @@ describe('calendar feed', () => {
       const { path } = await enableFeed(author)
       let events = parseEvents((await fetchFeed(path)).body)
       expect(events).toHaveLength(1)
-      expect(events[0].UID).toBe(`${crossPostId}@localhost`)
+      expect(events[0].UID).toBe(`${uidOf(crossPostId)}@localhost`)
       expect(events[0].DESCRIPTION).toContain('Alpha family\\, Beta family')
 
       const edit = await app.inject({
@@ -402,7 +425,7 @@ describe('calendar feed', () => {
 
       events = parseEvents((await fetchFeed(path)).body)
       expect(events).toHaveLength(1)
-      expect(events[0].UID).toBe(`${crossPostId}@localhost`)
+      expect(events[0].UID).toBe(`${uidOf(crossPostId)}@localhost`)
       expect(events[0].SUMMARY).toBe('Big reunion')
     })
 
@@ -448,7 +471,7 @@ describe('calendar feed', () => {
       expect(bySummary.get('Unanswered event')!.STATUS).toBeUndefined()
       expect(bySummary.get('Unanswered event')!.DESCRIPTION).not.toMatch(/You (declined|might|'re going)/)
       expect(bySummary.get('Sibling event')!.STATUS).toBe('CONFIRMED')
-      expect(bySummary.get('Sibling event')!.UID).toBe(`${crossPostId}@localhost`)
+      expect(bySummary.get('Sibling event')!.UID).toBe(`${uidOf(crossPostId)}@localhost`)
 
       // Someone else's RSVP never shows up as the subscriber's.
       const { events: authorEvents } = await feedEvents(author)

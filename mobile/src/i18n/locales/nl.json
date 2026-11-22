@@ -470,7 +470,8 @@
       "revokeMessage": "Je link werkt dan niet meer en geabonneerde agenda's worden niet meer bijgewerkt.",
       "openFailedTitle": "Geen agenda-app gevonden",
       "openFailedMessage": "Kopieer de link en voeg hem als abonnement toe aan je agenda-app.",
-      "error": "Er ging iets mis. Probeer het opnieuw."
+      "error": "Er ging iets mis. Probeer het opnieuw.",
+      "loadFailed": "Je agenda-abonnement kon niet worden geladen."
     }
   },
   "tabs": {

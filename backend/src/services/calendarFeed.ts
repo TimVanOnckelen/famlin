@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 import { prisma } from '../db.js'
 import i18n from '../i18n/index.js'
 import { getAllSettings } from './settings.js'
@@ -235,6 +235,7 @@ export async function buildCalendarFeed(userId: string, context: CalendarFeedCon
     if (key && typeof rsvp.value === 'string') rsvpByEvent.set(key, rsvp.value)
   }
 
+  const generatedAt = formatIcalDate(new Date())
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -274,9 +275,13 @@ export async function buildCalendarFeed(userId: string, context: CalendarFeedCon
 
     lines.push(
       'BEGIN:VEVENT',
-      // Stable across edits and identical for every cross-post copy.
-      `UID:${eventKey}@${uidHost}`,
-      `DTSTAMP:${formatIcalDate(modified)}`,
+      // Stable across edits and identical for every cross-post copy, but a
+      // hash: the raw crossPostId would let a non-author compare it with the
+      // post id in URL and learn the event was cross-posted, which only the
+      // author may know.
+      `UID:${createHash('sha256').update(eventKey).digest('hex').slice(0, 32)}@${uidHost}`,
+      // With METHOD:PUBLISH, DTSTAMP is when this object was generated.
+      `DTSTAMP:${generatedAt}`,
       `CREATED:${formatIcalDate(post.createdAt)}`,
       `LAST-MODIFIED:${formatIcalDate(modified)}`,
       `DTSTART:${formatIcalDate(start)}`,

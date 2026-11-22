@@ -41,6 +41,8 @@ export function CalendarFeedSection({ serverInfo }: { serverInfo: ServerInfo | n
     onSuccess: (feed) => {
       setCreated(feed)
       resetCopied()
+      // A later success clears the other action's stale error.
+      revokeMutation.reset()
       queryClient.invalidateQueries({ queryKey: CALENDAR_FEED_QUERY_KEY })
     },
   })
@@ -50,6 +52,7 @@ export function CalendarFeedSection({ serverInfo }: { serverInfo: ServerInfo | n
     onSuccess: () => {
       setCreated(null)
       resetCopied()
+      createMutation.reset()
       queryClient.invalidateQueries({ queryKey: CALENDAR_FEED_QUERY_KEY })
     },
   })

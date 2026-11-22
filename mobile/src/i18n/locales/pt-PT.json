@@ -470,7 +470,8 @@
       "revokeMessage": "A sua ligação deixa de funcionar e os calendários subscritos deixam de ser atualizados.",
       "openFailedTitle": "Nenhuma aplicação de calendário encontrada",
       "openFailedMessage": "Copie a ligação e adicione-a como subscrição na sua aplicação de calendário.",
-      "error": "Algo correu mal. Tente novamente."
+      "error": "Algo correu mal. Tente novamente.",
+      "loadFailed": "Não foi possível carregar a tua subscrição de calendário."
     }
   },
   "tabs": {
