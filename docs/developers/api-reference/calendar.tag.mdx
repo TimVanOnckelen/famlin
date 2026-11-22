@@ -1,0 +1,25 @@
+---
+id: calendar
+title: "Calendar"
+description: "Calendar"
+custom_edit_url: null
+---
+
+
+
+A personal iCalendar subscription URL with the events (`EVENT` posts)
+of every family you belong to, for Google Calendar, Apple Calendar,
+Outlook and other calendar apps. The URL carries its own secret
+(`famlin_cal_...`), stored only as a SHA-256 hash; managing it requires
+an interactive login session. Server feature `calendarFeed`.
+
+
+
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+
+<DocCardList items={useCurrentSidebarCategory().items}/>
+```
+      

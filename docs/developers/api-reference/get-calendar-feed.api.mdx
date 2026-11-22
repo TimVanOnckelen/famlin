@@ -1,0 +1,65 @@
+---
+id: get-calendar-feed
+title: "Get the status of your calendar subscription"
+description: "Whether you currently have a calendar subscription URL. The URL itself"
+sidebar_label: "Get the status of your calendar subscription"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV9tu20YQ/ZXBvtQ2KMlN0j6oRQEldS5FWge+IAgsIRySQ3Hj5S6zO5SsCgL6Ef3CfkkxS8qSYwdF0TwVeTK9l5kzM2fOjtbKNeSRtbOvCjVWc+JnaMgW6J8TFSpRjPOgxldqu6xmiSoo5F43ckuN1duKuCIPK9dC3npPls0KKlwQIOT9NQhtdnsJLs9eD+GiIvkAzYFMObU6gKUFefDErbdUQEWe4K8//gSuCAJ52QzsPAVw1qwA4fzlZPDou++hwlCBK8XW1AbKPXECwYFmyNF+w5AReMICMsyvh/DME7LAs7QEZwnYwZwYMALCOWo7nNqpPacQtLMDbLkiyzpHpgI8fWwpcA9C8CE05IOzaADznEIAdtdkxWYAnNr0yfHjdDi1KlGeQuNsoKDGa/Xo+Fj+3M3nswdTFhi5DSpRubNMluUeNo0RTNrZ0Ycgl9cq5BXVKF+8akiNlcs+UM7R88dWeyqkmmQxM7G+eUxFMZETBgNfhvjPLFGNF26w7qBub+wMZ84ZQonpi/BBbfbB7NwE9trOVaJK52tkNVYFMg1Y16QSZVtjBJgas2/pASg2kqfHEcu7xAC9ox8gFQMpLDVXrmXhQgSyl4kvg+TMtfPKrGApiPbSgE0D4gxK4ryiIqItiQo44Mo7ZkPFHpPB4BwQjJaNw1v4uuxaZ6g2m0SxZoGh9jv5vKPPZiMHnhx/e592v+oQtJ0noO0CjS4SoJtG+JKAk55cuGsqJHGFdAKa/0LFT6jlvfMP5fkuwJdtjXYgXSxpToA92mBiRy40xsSlkzynhgev0c5bnFMKFWFBHg5SsukotSY97IjmCvpnj6fxAw3UmFfa0q1ziJBBrAwhPTuZ/Pz+9LfX71Ko0V8HQIgND6XzgLD0mgky43JJYEY5toH2Jc23NoC2UaAGoimjgmoHtSsIDgIRpLJzas0qBWchHWGjRyJJo87AQNvSSWCJohusm1j8W1CREnd6P6Z7tuPJSVzYUuPxfWpM7sif9MpnFU/bwKKzrhSaurm2EDoR/cqX/x9fNomqiSvXjw5SKeRKjdXOZU2jrdgNym6k6FDIVLFWrTdqrCrmJoxHoxJro+2wRzXMXX0vx+9c68EtLTyPZ6GgxrhVLbTazMR23nrNq2g8I/Tkhb1qfDXb3z4XqnVs2j90W2ABJEjjMXnr4qF7YCaf6YKDtIvkfYP8fjgcpsn2xZG6SSmXlIn2H4LzU4vbHoFf3l5A6V0N6ZvT8wvYpTG2UjqEp06azwsXLHekwJpgiavx1KYShfP699hXY3gaUcOPEdRPcQCRkkn5Y6x9PftMTt68UomSynTB9W/mvaBPFuRX2/T3lKSbxgUKwJUOcHZyfiHWoLXSS5F/6W6OE7yyyxVNrStLnWtpGZdpQ4C22OYmQBtoCG87ubl6MNOzg1FBCzIiD0H8HE5tnDvQQtZqU8gU0vFFW6Z5N+qGbsQL3O2WWGuz+ib0wcTJb2IM9HIFOkDIXSPNuIKjo7l3bQM11Rn5UOnm6GgMW59xIoyDZgxEOnlqb+1YiHcDHESXmsJhvJmRcXYO7JJ4jePcK+Owk8ICetfGZeSpbch3oQ/hnAiuLuXRjomdvHl1Px2dpuz0WzubREQLWXA2dC6XzovY9I0XIlMS1bjANUZtthj74AX1pIvjhKh8zOCDU92nxFnv9P/rb4Z/9ZuhFyWmGx41BnUsTlTOdS+4VwobrRIlTpWIsry2d2R3lqjKBZaj63WGgS692Wxk+WNLXvRylqgFet3NsFezTaK6xzBK6TWtRO/icykqgaYVSPeecRHZ2yfhxcmF2mz+BtWWD4U=
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get the status of your calendar subscription"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/auth/me/calendar-feed"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Whether you currently have a calendar subscription URL. The URL itself
+is never returned here — the server stores only a SHA-256 hash of its
+secret, so it can't be read back. Create a new one to get a URL again.
+
+Session-authenticated requests only — a personal access token gets a
+`403`.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./get-calendar-feed.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./get-calendar-feed.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

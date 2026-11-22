@@ -74,6 +74,20 @@ Personal API tokens for scripts and integrations are deliberately **not** revoke
 
 Treat every token like a password. See [Using the API](/developers/api).
 
+### Calendar subscription links
+
+A member's [calendar subscription](./calendar-subscription.md) link is a secret URL: calendar apps can't sign in, so the link itself is the credential, and anyone who has it can read the titles, times and places of that member's family events and their own replies — never comments or photos. Subscribing stores the link with a third party: Google, Apple or Microsoft fetch the feed from their own servers. Calendar links:
+
+- Are stored only as a SHA-256 hash; the link is shown once, when created
+- Work only for the calendar feed, never for the rest of the API, and only show what the member can see at that moment — leaving a family or circle removes its events on the next refresh
+- Can be regenerated (the old link stops working immediately) or turned off from the member's profile, are deleted with the account, and stay valid after a password change, like API tokens
+- Can only be created or managed from a signed-in session, never with an API token
+- Are answered with `X-Robots-Tag: noindex` and `Cache-Control: private`, so search engines and shared caches don't keep the feed, and the secret is redacted from Famlin's request logs
+- Are rate-limited per link, and an unknown or revoked link gets a `404`
+- Aren't included in backups or exports, so a leaked backup can't revive them
+
+A post link inside the feed is added only when the admin has set the [public address](./admin-configuration.md), and still requires signing in.
+
 ### Secrets in server settings
 
 The OIDC client secret, the SMTP password and the Immich API keys (the read key and the optional upload key) are write-only. The admin UI and the admin API report only whether each one is set, so an admin session or admin token that leaks cannot be used to read them. Changing the server a secret is sent to (issuer URL, SMTP host, Immich URL) without entering the secret again removes it, which stops a stolen session from redirecting a saved secret to another host. They are stored unencrypted in the database, so keep database backups as private as the database itself. See [Saved secrets](./admin-configuration.md#saved-secrets).
