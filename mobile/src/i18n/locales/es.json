@@ -209,7 +209,9 @@
       "postFailed": "No se pudo publicar el mensaje",
       "permissionRequiredTitle": "Permiso necesario",
       "permissionRequiredMessage": "Necesitamos acceso a tu biblioteca de fotos y vídeos.",
-      "uploadFailed": "Error al subir"
+      "uploadFailed": "Error al subir",
+      "videoTooLarge_one": "{{count}} vídeo supera los {{max}} MB y no se ha añadido.",
+      "videoTooLarge_other": "{{count}} vídeos superan los {{max}} MB y no se han añadido."
     },
     "milestoneTags": {
       "birthday": "Cumpleaños",
