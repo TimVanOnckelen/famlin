@@ -16,6 +16,14 @@ No unrelated refactor should be included.
 
 ## Product specification
 
+### Global constraints
+
+- Messages use the existing `attachmentUrl` field.
+- Existing family-chat request/response shapes and installed-client behavior are
+  unchanged; `backend/src/__tests__/chat.test.ts` remains unmodified.
+- `groupId` remains on `ChatMessage` and `ChatRead` in this release; family rows
+  fill it and DM rows leave it null.
+
 ### Included
 
 - Private, one-to-one direct-message conversations.
@@ -25,13 +33,7 @@ No unrelated refactor should be included.
 - A user can start a conversation only with someone with whom they currently share at least one family.
 - The recipient picker is searchable, deduplicates members shared through multiple families, and excludes the current user.
 - Opening an existing recipient reuses the existing conversation.
-- Messages contain:
-  - text only;
-  - one media attachment; or
-  - text plus one media attachment.
-- All conversation kinds use the existing singular `attachmentUrl` field.
-  Multi-attachment messages are deferred; installed and new clients share the
-  same one-attachment contract.
+- A message may contain text, an attachment, or both.
 - Existing upload formats, compression, mobile 120-second video policy, server limits, thumbnail/poster generation, authenticated media serving, and upload authorization are reused.
 - Cursor-paginated message history, newest page first, loaded upward in chronological display order.
 - Per-conversation unread counts plus an unread indicator on the Chat tab.
@@ -101,13 +103,13 @@ Important current behavior:
 
 - Group chat is selected by `groupId`, not by participant.
 - Group listing/sending requires current `GroupMember` membership and `Group.chitchatEnabled`.
-- Group chat supports text, one `attachmentUrl`, and replies.
+- Group chat supports text, `attachmentUrl`, and replies.
 - Messages are cursor-paginated by ID, default 30, maximum 100.
 - `ChatRead` stores one `lastReadAt` per `(groupId, userId)`.
 - Group unread counts are computed for memberships and polled by shell/navigation.
 - Group chat is push-only and uses `User.pushOnChitchat`.
-- Existing group-chat semantics and installed-client API behavior must remain intact.
-- This feature should generalize the chat storage/runtime model around conversations while preserving `/api/chat/groups/:groupId/*` as compatibility adapters.
+- This feature generalizes storage around conversations; the legacy family
+  routes remain compatibility adapters.
 
 ### Web patterns
 
@@ -123,11 +125,8 @@ Important current behavior:
   - `UploadMedia`
   - `Lightbox`
   - `useModalFocus`
-- `web/src/hooks/useComposerUploads.ts` supports the upload-state/progress
-  patterns needed by a single-file DM composer; it must be constrained to one
-  attachment for this release.
-- The comment-specific `MAX_COMMENT_ATTACHMENTS = 10` does not apply to chat;
-  DMs use one `attachmentUrl`.
+- `web/src/hooks/useComposerUploads.ts` has reusable upload-state/progress
+  patterns.
 - `Lightbox` accepts an array of asset URLs.
 - `GiftListParticipantPicker.tsx` and `MembersPage.tsx` provide member-query/search patterns.
 - `ProfilePage.tsx` is where notification preferences are rendered.
@@ -139,7 +138,8 @@ Important current behavior:
 - `mobile/src/screens/ChatScreen.tsx` is group-scoped and polls every 6 seconds.
 - `mobile/src/navigation/MainTabs.tsx` polls unread counts every 30 seconds and displays the Chat badge.
 - `mobile/src/screens/ChatGroupPickerScreen.tsx` selects an enabled family chat.
-- `mobile/src/hooks/usePickAndUploadMedia.ts` already handles multi-upload, per-file progress, compression, partial failure, and the 120-second video restriction.
+- `mobile/src/hooks/usePickAndUploadMedia.ts` handles per-file progress,
+  compression, partial failure, and the 120-second video restriction.
 - `MediaThumbnail` and `ImageViewerScreen` provide existing media rendering/navigation.
 - `ProfileScreen.tsx` renders notification preferences.
 - `usePushNotifications.ts` currently deep-links only post/story notifications; DM navigation must be added for warm and cold starts.
@@ -301,7 +301,7 @@ Migrate the existing table to:
 ```text
 ChatRead
 - id
-- groupId?         retained; family rows keep the group id, DM rows are null
+- groupId?         family rows only; null for DMs
 - conversationId
 - userId
 - lastReadAt
@@ -313,11 +313,9 @@ indexes
 - [groupId, userId] for legacy family queries
 ```
 
-This is one read model for both family and private conversations. `groupId`
-remains in the schema for at least this release and is always filled for family
-read rows. DM rows set it to null. Family membership remains live-derived;
-private readers must be conversation participants. Do not duplicate private read
-state in the participant table and do not keep a second DM-specific read table.
+This is one read model for both conversation kinds. Family membership remains
+live-derived; private readers must be conversation participants. Do not
+duplicate private read state in the participant table.
 
 ### Evolved `ChatMessage`
 
@@ -326,12 +324,12 @@ Migrate the existing table rather than creating `DirectMessage`:
 ```text
 ChatMessage
 - id
-- groupId?        retained; family rows keep the group id, DM rows are null
+- groupId?        family rows only; null for DMs
 - conversationId all new and migrated messages
 - authorId
 - kind
 - content         nullable, trimmed, max 2000
-- attachmentUrl? existing singular field retained for installed clients
+- attachmentUrl?
 - encryption      String @default("none")
 - encryptedPayload Json? containing a versioned structured envelope
 - refPostId?
@@ -348,9 +346,7 @@ indexes
 
 Validation:
 
-- all messages accept exactly the existing body shape: optional text plus zero
-  or one `attachmentUrl`;
-- private DM and family messages each enforce at most one attachment;
+- `content` and `attachmentUrl` are the only message payload fields;
 - at least one of `content` or `attachmentUrl`;
 - every path passes `uploadPathSchema`;
 - every new attachment is owned by the sender and bindable;
@@ -359,11 +355,6 @@ Validation:
 - future encrypted generations may use `encryptedPayload` while plaintext
   fields remain null;
 - clients treat every unrecognized encryption marker as unsupported, not empty.
-
-Multi-attachment behavior is not added to any conversation kind in this release.
-Both installed and conversation-aware clients continue to see and send the same
-single `attachmentUrl` field. A later feature can add a new multi-attachment
-shape without changing this first DM release.
 
 ### Encryption forward compatibility
 
@@ -420,10 +411,6 @@ The first migration is additive:
 6. add `ChatConversationParticipant`;
 7. preserve existing IDs, timestamps, reply relationships, references, and
    `attachmentUrl` values for compatibility.
-
-Removing `groupId` is explicitly a separate later migration after the
-conversation model has run in production. Do not combine that removal with this
-release.
 
 ### `Upload` conversation scope
 
@@ -510,7 +497,7 @@ Generate Prisma Client after the schema change.
 Migration validation must use real-shaped fixtures rather than empty tables:
 
 - multiple groups with existing family chat messages, read rows, replies,
-  system milestone references, and singular attachments;
+  system milestone references, and attachments;
 - users with overlapping and non-overlapping memberships;
 - 1:1 private conversations after the migration, verifying their null `groupId`;
 - restored users/posts/relations using production-like IDs and timestamps;
@@ -526,7 +513,7 @@ Exercise both backup-era paths:
    reconstructed and every legacy chat row keeps its original content,
    `groupId`, author, timestamps, replies, and references while receiving the
    correct `conversationId`;
-4. run the current `chat.test.ts` unchanged against the restored databases.
+4. validate the restored databases with the legacy chat regression suite.
 
 The `.dump` test is intentionally a real schema/data migration test, not merely
 a mock that feeds `import.ts`, because legacy dumps bypass zip import and become
@@ -598,14 +585,7 @@ POST     /api/chat/groups/:groupId/read
 GET      /api/chat/unread-counts
 ```
 
-They are compatibility adapters that resolve `groupId` to the one `FAMILY`
-conversation, apply exactly the same service logic, and preserve the current
-response shape **exactly**. They must not add `conversationId`, `encryption`,
-`encryptedPayload`, participants, or other new fields to the
-legacy payload. This release may add `/api/chat/conversations` to clients while
-retaining group-scoped helpers until a later compatibility cleanup. Existing
-`backend/src/__tests__/chat.test.ts` must pass unmodified and remain the
-regression guard for legacy list/send/delete/read/unread behavior.
+They resolve `groupId` to its `FAMILY` conversation through shared services.
 
 #### `GET /api/chat/people`
 
@@ -660,7 +640,7 @@ Returns inbox items for currently eligible conversations:
       id: string
       authorId: string
       content: string | null
-      attachmentCount: number
+      hasAttachment: boolean
       createdAt: string
     } | null
     unreadCount: number
@@ -726,10 +706,7 @@ Body:
 
 Response is the created message.
 
-This endpoint uses the same singular-attachment payload for every conversation
-kind. It does not introduce multi-attachment chat through a second API. The
-legacy `POST /api/chat/groups/:groupId/messages` body remains exactly the
-existing `content`, singular `attachmentUrl`, and `replyToMessageId` contract.
+The legacy group route retains its existing `replyToMessageId` contract.
 
 Flow:
 
@@ -738,8 +715,8 @@ Flow:
 3. validate the optional attachment belongs to the uploader and remains bindable;
 4. create the message with both foreign keys set consistently:
    `FAMILY` writes `groupId` plus `conversationId`, while `PRIVATE` writes
-   `conversationId` and `groupId=null`; bind all private attachment upload rows
-   to the conversation in one database transaction;
+   `conversationId` and `groupId=null`; bind a private attachment to the
+   conversation in the same transaction;
 5. update `conversation.updatedAt`;
 6. commit;
 7. emit the generalized `chat.created` event with `conversationId`, `kind`, and audience data;
@@ -991,11 +968,8 @@ The shared `ChatMessage` type includes `encryption` and
 `encryptedPayload`. Add a central client predicate/helper so web and mobile
 apply the same supported-marker decision instead of duplicating string checks.
 
-Retain the existing group-scoped API-client wrappers and `groupId` response
-fields while old clients remain supported. New responses can add
-`conversationId`, `kind`, and `participants` only on the new
-conversation-aware endpoints. Legacy serializers must return the pre-feature
-shape exactly: no new keys are added to family chat list/send/delete responses.
+Retain the existing group-scoped API-client wrappers. New conversation fields
+appear only on conversation-aware endpoints.
 
 Recommended query keys, kept consistent between web/mobile:
 
@@ -1019,8 +993,7 @@ Export functions explicitly through `packages/api-client/src/index.ts`.
 Add API-client tests for:
 
 - request paths/methods;
-- optional content plus singular `attachmentUrl` body for conversation send;
-- singular `attachmentUrl` body and response shape for legacy family send;
+- unchanged message body for conversation and legacy family send;
 - pagination query parameters;
 - response typing/normalization where relevant.
 - legacy group wrappers and the generalized conversation helpers resolve to compatible payloads.
@@ -1087,8 +1060,7 @@ Avoid duplicating group and DM message mechanics. Extract from `ChatPage.tsx` on
 - message list/date dividers;
 - scroll-to-bottom and older-page viewport restoration;
 - message bubble shell/avatar/time;
-- common single-attachment media/lightbox behavior;
-- single-attachment media/lightbox behavior;
+- common media/lightbox behavior;
 - composer container and upload error states.
 
 Keep identity-specific policy separate:
@@ -1111,13 +1083,12 @@ Create a focus-managed modal:
 
 ### DM composer
 
-Reuse the existing single-file composer/upload flow:
+Reuse the existing composer/upload flow:
 
 - supports text optional when an attachment exists;
 - accepts image/video formats supported by the common upload endpoint;
 - displays local preview and per-file progress/error;
-- allows removing the selected attachment before send;
-- sends its path as singular `attachmentUrl`;
+- allows removing the attachment before send;
 - disables send while the required upload is incomplete;
 - clears draft only after success;
 - leaves retryable upload state/error after failure.
@@ -1128,9 +1099,8 @@ The upload lifecycle remains:
 2. message create binds uploads to the DM conversation;
 3. failed/cancelled draft uploads are uploader-only; use existing cleanup if available.
 
-The family and DM composers therefore share the same single-file interaction;
-only their route and conversation identity differ. Multi-file picking is not
-enabled for this release.
+The family and DM composers share the same upload interaction; only their route
+and conversation identity differ.
 
 ### DM media rendering
 
@@ -1160,8 +1130,7 @@ Add focused Testing Library/Vitest coverage:
 - current user excluded;
 - text-only send;
 - media-only send;
-- mixed text + one attachment;
-- a second attachment cannot be selected;
+- text plus media send;
 - attachment removal/progress/error;
 - polling updates;
 - mark-read/unread invalidation;
@@ -1214,17 +1183,15 @@ MainTabs:
 - combine totals;
 - do not show a DM badge while the feature is unavailable on an older server.
 
-### Composer and attachments
+### Composer and attachment
 
 Reuse `usePickAndUploadMedia` rather than duplicating picker/compression:
 
-- configure exactly one attachment;
-- allow text and/or one attachment;
+- allow text and/or an attachment;
 - preserve current 120-second mobile video restriction;
 - use common image compression behavior;
 - show upload failures and partial success;
 - allow removing the picked/uploaded attachment;
-- send the path as singular `attachmentUrl`.
 
 ### Rendering
 
@@ -1273,8 +1240,7 @@ Add Jest tests for:
 - recipient picker and deduplication;
 - one existing conversation reuse is delegated to API behavior;
 - direct-message send with one upload;
-- second attachment selection is blocked/replaces the first according to the
-  established picker UX;
+- picker selection follows the established upload UX;
 - partial upload failure and retry;
 - mark read and unread badge;
 - own-message delete behavior;
@@ -1333,7 +1299,6 @@ Document:
 - read marker;
 - unread counts;
 - request/response schemas;
-- singular attachment contract for both family and private conversations;
 - shared-family authorization;
 - 404 privacy semantics;
 - cursor/page limits;
@@ -1345,9 +1310,8 @@ Document:
   nullable structured `encryptedPayload`;
 - unsupported-version placeholder behavior in member clients.
 
-Mark the old family request/response schemas as unchanged. Do not replace the
-existing family message schema with a generalized one if that adds fields for
-installed clients.
+Mark legacy family schemas as unchanged rather than replacing them with the
+generalized message schema.
 
 Treat API additions as non-breaking. If an existing response is changed, run the breaking-change gate and mark the PR/commit appropriately.
 
@@ -1399,8 +1363,7 @@ Update `docs/docs/chat.mdx` (and index/features docs where chat is summarized) t
 - Chat-area placement;
 - shared-family restriction;
 - loss/restoration of access when membership changes;
-- DM text/image/video support with the same single-attachment field and limit
-  used by family chat;
+- DM text/image/video support;
 - unread and polling behavior;
 - own-message deletion;
 - push preference and privacy-safe notifications;
@@ -1463,11 +1426,10 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 
 ### Backend message behavior
 
-- family text-only, one-attachment, and legacy reply behavior remains unchanged;
+- family payload and legacy reply behavior remains unchanged;
 - private text-only accepted;
 - private media-only accepted;
-- private text + one attachment accepted;
-- a request containing any multi-attachment field is rejected;
+- private text + media accepted;
 - empty private message rejected;
 - external/unowned/unbound paths rejected;
 - the attachment is bound in the same transaction as the message;
@@ -1548,7 +1510,7 @@ the new predicate were accidentally removed.
 - direct and family sections;
 - sorted inbox and preview;
 - picker search/dedupe;
-- zero/one attachment rendering;
+- attachment rendering;
 - mixed image/video rendering;
 - failed attachment upload;
 - pagination and scroll preservation;
@@ -1558,8 +1520,6 @@ the new predicate were accidentally removed.
 - inaccessible conversation;
 - push navigation;
 - feature unavailable on older server.
-- installed family-chat response snapshots remain byte-for-byte compatible;
-- family and private chat both accept at most one attachment.
 
 ## Validation commands
 
@@ -1616,23 +1576,18 @@ The feature is complete when all are true:
 1. A web/mobile user can open Chat and see family chats plus private DM conversations.
 2. A searchable new-message picker contains exactly the currently eligible shared-family members, deduplicated.
 3. A pair always resolves to one canonical conversation.
-4. Family and private text-only, media-only, and mixed messages support the same
-   single `attachmentUrl` field.
-5. Only the two participants can read conversation data and media while they share a current family.
-6. Losing the last shared family immediately hides messages and media; restoring membership makes history visible again.
-7. Messages are cursor-paginated, unread state is per conversation, and the shell Chat badge is correct.
-8. Only the sender can delete a message; deletion is hard, affects both views, and cleans orphaned files.
-9. Push is opt-out via a dedicated preference, not email, and reveals no message/attachment preview.
-10. Admin moderation screens do not expose DMs; normal admin privileges do not bypass participant authorization.
-11. Participant export and full backup/restore include the correct family/private chat data and files without exposing hidden conversations.
-12. Older servers hide the feature cleanly; existing group chat remains unchanged.
-13. All locales are complete and no new hardcoded UI text exists.
-14. OpenAPI/generated docs, user docs, and developer architecture docs are updated.
-15. Backend, shared client, web, mobile, upload/privacy, notifications, export, restore, and compatibility validations pass.
-16. The private conversation creation restriction is 1:1, but storage already supports an explicit participant collection so 3+ conversations do not require a second data model later.
-17. Existing family-chat messages, reads, replies, routes, and response fields survive the conversation migration unchanged.
-18. Legacy family endpoints return exactly the current response shape and the
-    existing `backend/src/__tests__/chat.test.ts` suite passes unmodified.
+4. Only the two participants can read conversation data and media while they share a current family.
+5. Losing the last shared family immediately hides messages and media; restoring membership makes history visible again.
+6. Messages are cursor-paginated, unread state is per conversation, and the shell Chat badge is correct.
+7. Only the sender can delete a message; deletion is hard, affects both views, and cleans orphaned files.
+8. Push is opt-out via a dedicated preference, not email, and reveals no message/attachment preview.
+9. Admin moderation screens do not expose DMs; normal admin privileges do not bypass participant authorization.
+10. Participant export and full backup/restore include the correct family/private chat data and files without exposing hidden conversations.
+11. Older servers hide the feature cleanly.
+12. All locales are complete and no new hardcoded UI text exists.
+13. OpenAPI/generated docs, user docs, and developer architecture docs are updated.
+14. Backend, shared client, web, mobile, upload/privacy, notifications, export, restore, and compatibility validations pass.
+15. The private conversation creation restriction is 1:1, but storage already supports an explicit participant collection so 3+ conversations do not require a second data model later.
 
 ## Key implementation guardrails
 
@@ -1641,7 +1596,6 @@ The feature is complete when all are true:
 - Do not allow admin status to bypass DM participant privacy.
 - Do not put DM notification body text on lock screens.
 - Do not use synthetic `Group` rows for private conversations.
-- Do not let installed group-chat clients lose reply, read-receipt, milestone-link, or singular attachment fields during migration.
 - Do not duplicate family membership into private participant rows for `FAMILY` conversations.
 - Do not use `export *` in the shared API-client barrel.
 - Do not hard-delete physical media without checking for remaining references.
