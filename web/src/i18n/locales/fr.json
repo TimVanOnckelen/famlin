@@ -709,5 +709,30 @@
     "saveFailed": "Impossible d'enregistrer la page.",
     "save": "Enregistrer",
     "saving": "Enregistrement…"
+  },
+  "calendarFeed": {
+    "title": "Abonnement au calendrier",
+    "description": "Abonnez-vous aux événements de votre famille dans Google Agenda, Calendrier d'Apple ou Outlook. Le flux contient les événements de toutes vos familles (les 3 derniers mois et tout ce qui est à venir) et indique si vous y participez.",
+    "create": "Créer un lien d'abonnement",
+    "urlLabel": "Votre lien d'abonnement",
+    "copy": "Copier",
+    "copied": "Copié",
+    "shownOnce": "Ce lien n'est affiché qu'une seule fois : copiez-le maintenant. Gardez-le privé : toute personne qui le possède peut voir les événements de votre famille.",
+    "openInApp": "Ouvrir dans l'app de calendrier",
+    "createdAt": "Créé le {{date}}",
+    "lastUsed": "Dernière utilisation le {{date}}",
+    "neverUsed": "Pas encore utilisé par une app de calendrier",
+    "regenerate": "Générer un nouveau lien",
+    "regenerateConfirm": "Créer un nouveau lien ? L'ancien lien cessera de fonctionner et les calendriers abonnés ne seront plus mis à jour.",
+    "revoke": "Désactiver",
+    "revokeConfirm": "Désactiver l'abonnement au calendrier ? Le lien cessera de fonctionner et les calendriers abonnés ne seront plus mis à jour.",
+    "createFailed": "Le lien d'abonnement n'a pas pu être créé. Veuillez réessayer.",
+    "revokeFailed": "L'abonnement n'a pas pu être désactivé. Veuillez réessayer.",
+    "loadFailed": "Votre abonnement au calendrier n'a pas pu être chargé.",
+    "howTo": "Comment s'abonner",
+    "howToGoogle": "Google Agenda : Autres agendas → + → À partir de l'URL, puis collez le lien.",
+    "howToApple": "Calendrier d'Apple : Fichier → Nouvel abonnement à un calendrier, puis collez le lien.",
+    "howToOutlook": "Outlook : Ajouter un calendrier → S'abonner à partir du web, puis collez le lien.",
+    "howToNote": "Les apps de calendrier actualisent les abonnements à leur propre rythme ; les modifications peuvent donc mettre quelques heures à apparaître."
   }
 }

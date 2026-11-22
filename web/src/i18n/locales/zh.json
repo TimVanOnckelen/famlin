@@ -709,5 +709,30 @@
     "saveFailed": "无法保存页面。",
     "save": "保存",
     "saving": "正在保存…"
+  },
+  "calendarFeed": {
+    "title": "日历订阅",
+    "description": "在 Google 日历、Apple 日历或 Outlook 中订阅你的家庭活动。订阅内容包含你所有家庭的活动（过去 3 个月及所有即将到来的活动），并显示你是否参加。",
+    "create": "创建订阅链接",
+    "urlLabel": "你的订阅链接",
+    "copy": "复制",
+    "copied": "已复制",
+    "shownOnce": "此链接只显示一次，请立即复制。请妥善保管：任何拥有该链接的人都能看到你的家庭活动。",
+    "openInApp": "在日历应用中打开",
+    "createdAt": "创建于 {{date}}",
+    "lastUsed": "上次使用于 {{date}}",
+    "neverUsed": "尚未被日历应用使用",
+    "regenerate": "重新生成链接",
+    "regenerateConfirm": "要创建新链接吗？旧链接将失效，已订阅它的日历将停止更新。",
+    "revoke": "关闭",
+    "revokeConfirm": "要关闭日历订阅吗？链接将失效，已订阅的日历将停止更新。",
+    "createFailed": "无法创建订阅链接，请重试。",
+    "revokeFailed": "无法关闭订阅，请重试。",
+    "loadFailed": "无法加载你的日历订阅。",
+    "howTo": "如何订阅",
+    "howToGoogle": "Google 日历：其他日历 → + → 通过网址添加，然后粘贴链接。",
+    "howToApple": "Apple 日历：文件 → 新建日历订阅，然后粘贴链接。",
+    "howToOutlook": "Outlook：添加日历 → 从 Web 订阅，然后粘贴链接。",
+    "howToNote": "日历应用会按自己的频率刷新订阅，因此更改可能需要几个小时才会显示。"
   }
 }

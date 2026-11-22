@@ -22,6 +22,7 @@ import { AppShell } from '@/components/AppShell'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { ApiTokensModal } from '@/components/ApiTokensModal'
 import { ConnectAppQr } from '@/components/ConnectAppQr'
+import { CalendarFeedSection } from '@/components/CalendarFeedSection'
 import { formatDayMonth } from '@/utils/time'
 import { useAuthStore } from '@/stores/authStore'
 import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n'
@@ -403,6 +404,8 @@ export function ProfilePage({
           <h2 className="profile-section-title">{t('connectApp.title')}</h2>
           <ConnectAppQr appStoreUrl={serverInfo?.appStoreUrl} playStoreUrl={serverInfo?.playStoreUrl} />
         </section>
+
+        <CalendarFeedSection serverInfo={serverInfo} />
 
         <section className="profile-section">
           <h2 className="profile-section-title">{t('profile.yourData')}</h2>

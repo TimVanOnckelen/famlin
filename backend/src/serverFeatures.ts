@@ -37,6 +37,7 @@ export const SERVER_FEATURES = [
   'giftListGuests', // unreleased after 0.8.7 — gift-list wishlists for people without an account
   'paginatedComments', // unreleased after 0.8.7 — GET /api/posts/:postId/comments?take=&cursor= (issue #130)
   'configurableLimits', // unreleased after 0.8.7 — server-info `limits` (issue #436)
+  'calendarFeed', // unreleased after 0.8.7 — /api/calendar iCal feed + /api/auth/me/calendar-feed (issue #499)
 ] as const
 
 export type ServerFeature = (typeof SERVER_FEATURES)[number]

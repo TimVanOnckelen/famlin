@@ -240,5 +240,13 @@
     "created": "创建时间",
     "publicKey": "公钥",
     "body": "请将此文件保存在 Famlin 服务器以外的地方：密码管理器、打印件或另一台电脑。\n它可以打开此服务器用该密钥加密的所有备份。没有它，这些备份无法在其他服务器上恢复，丢失的密钥也无人能找回。\n\n在新的 Famlin 服务器上恢复：在设置界面选择备份，并在提示时上传此文件。\n使用 age 工具（https://age-encryption.org）手动解密："
+  },
+  "calendarFeed": {
+    "family": "家庭：{{name}}",
+    "postedBy": "发布者：{{name}}",
+    "rsvpYes": "你会参加",
+    "rsvpMaybe": "你可能参加",
+    "rsvpNo": "你已拒绝",
+    "openInFamlin": "在 Famlin 中打开：{{url}}"
   }
 }

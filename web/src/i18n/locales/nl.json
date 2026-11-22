@@ -709,5 +709,30 @@
     "saveFailed": "De pagina kon niet worden opgeslagen.",
     "save": "Opslaan",
     "saving": "Opslaan…"
+  },
+  "calendarFeed": {
+    "title": "Agenda-abonnement",
+    "description": "Abonneer je op de gebeurtenissen van je familie in Google Agenda, Apple Agenda of Outlook. De feed bevat de gebeurtenissen van al je families (de afgelopen 3 maanden en alles wat nog komt) en toont of je erbij bent.",
+    "create": "Abonnementslink maken",
+    "urlLabel": "Je abonnementslink",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd",
+    "shownOnce": "Deze link wordt maar één keer getoond, dus kopieer hem nu. Houd hem privé: iedereen die hem heeft, kan de gebeurtenissen van je familie zien.",
+    "openInApp": "Openen in agenda-app",
+    "createdAt": "Gemaakt op {{date}}",
+    "lastUsed": "Laatst gebruikt op {{date}}",
+    "neverUsed": "Nog niet gebruikt door een agenda-app",
+    "regenerate": "Nieuwe link maken",
+    "regenerateConfirm": "Een nieuwe link maken? De oude link werkt dan niet meer, dus agenda's die erop geabonneerd zijn, worden niet meer bijgewerkt.",
+    "revoke": "Uitschakelen",
+    "revokeConfirm": "Het agenda-abonnement uitschakelen? De link werkt dan niet meer en geabonneerde agenda's worden niet meer bijgewerkt.",
+    "createFailed": "De abonnementslink kon niet worden gemaakt. Probeer het opnieuw.",
+    "revokeFailed": "Het abonnement kon niet worden uitgeschakeld. Probeer het opnieuw.",
+    "loadFailed": "Je agenda-abonnement kon niet worden geladen.",
+    "howTo": "Zo abonneer je je",
+    "howToGoogle": "Google Agenda: Andere agenda's → + → Via URL, en plak de link.",
+    "howToApple": "Apple Agenda: Archief → Nieuw agenda-abonnement, en plak de link.",
+    "howToOutlook": "Outlook: Agenda toevoegen → Abonneren vanaf internet, en plak de link.",
+    "howToNote": "Agenda-apps vernieuwen abonnementen volgens hun eigen schema, dus het kan een paar uur duren voordat wijzigingen verschijnen."
   }
 }

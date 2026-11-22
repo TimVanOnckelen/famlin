@@ -240,5 +240,13 @@
     "created": "Criado em",
     "publicKey": "Chave pública",
     "body": "Guarde este ficheiro num local diferente do seu servidor Famlin: um gestor de palavras-passe, uma cópia impressa, outro computador.\nAbre todas as cópias de segurança que este servidor encriptou com esta chave. Sem ele, essas cópias não podem ser restauradas noutro servidor, e ninguém consegue recuperar uma chave perdida.\n\nPara restaurar num novo servidor Famlin: escolha a cópia de segurança no ecrã de configuração e carregue este ficheiro quando for pedido.\nPara desencriptar manualmente com a ferramenta age (https://age-encryption.org):"
+  },
+  "calendarFeed": {
+    "family": "Família: {{name}}",
+    "postedBy": "Publicado por {{name}}",
+    "rsvpYes": "Vais",
+    "rsvpMaybe": "Talvez vás",
+    "rsvpNo": "Recusaste",
+    "openInFamlin": "Abrir no Famlin: {{url}}"
   }
 }

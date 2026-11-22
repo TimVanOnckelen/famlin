@@ -449,6 +449,29 @@
         "denied": "Denied",
         "undetermined": "Not decided"
       }
+    },
+    "calendarFeed": {
+      "title": "Calendar subscription",
+      "description": "Subscribe to a private link and the events from all your families show up in your own calendar app, with your RSVP. It updates automatically.",
+      "create": "Create subscription link",
+      "shownOnce": "Your private link is shown only this once. Anyone with it can see your family events, so don't share it.",
+      "addToCalendar": "Add to calendar",
+      "copy": "Copy or share link",
+      "instructions": "Apple Calendar and Outlook: tap \"Add to calendar\", or add the link as a calendar subscription. Google Calendar: the app can't add links, so open calendar.google.com on a computer and use Other calendars → From URL. Calendar apps refresh every few hours.",
+      "createdAt": "Created {{date}}",
+      "lastUsedAt": "Last fetched by a calendar app {{date}}",
+      "neverUsed": "Not fetched by a calendar app yet",
+      "lostLink": "Lost the link? Regenerate it to get a new one.",
+      "regenerate": "Regenerate link",
+      "regenerateTitle": "Regenerate link?",
+      "regenerateMessage": "Your current link stops working. Calendars subscribed to it need the new link.",
+      "revoke": "Turn off",
+      "revokeTitle": "Turn off calendar subscription?",
+      "revokeMessage": "Your link stops working and subscribed calendars stop updating.",
+      "openFailedTitle": "No calendar app found",
+      "openFailedMessage": "Copy the link and add it to your calendar app as a subscription.",
+      "error": "Something went wrong. Please try again.",
+      "loadFailed": "Couldn't load your calendar subscription."
     }
   },
   "tabs": {

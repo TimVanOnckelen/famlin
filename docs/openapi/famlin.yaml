@@ -38,6 +38,13 @@ tags:
       only as a SHA-256 hash. Creating a token requires an interactive login
       session — a request authenticated with another API token gets a `403`,
       so a leaked token can't mint replacements for itself.
+  - name: Calendar
+    description: |
+      A personal iCalendar subscription URL with the events (`EVENT` posts)
+      of every family you belong to, for Google Calendar, Apple Calendar,
+      Outlook and other calendar apps. The URL carries its own secret
+      (`famlin_cal_...`), stored only as a SHA-256 hash; managing it requires
+      an interactive login session. Server feature `calendarFeed`.
   - name: Groups
     description: |
       Read-only access to the groups (families) you belong to. Group management
@@ -444,6 +451,168 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+  /api/auth/me/calendar-feed:
+    get:
+      operationId: getCalendarFeed
+      tags: [Calendar]
+      summary: Get the status of your calendar subscription
+      description: |
+        Whether you currently have a calendar subscription URL. The URL itself
+        is never returned here — the server stores only a SHA-256 hash of its
+        secret, so it can't be read back. Create a new one to get a URL again.
+
+        Session-authenticated requests only — a personal access token gets a
+        `403`.
+      responses:
+        '200':
+          description: Calendar subscription status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarFeedStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Authenticated with a personal access token instead of a login session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createCalendarFeed
+      tags: [Calendar]
+      summary: Create or regenerate your calendar subscription URL
+      description: |
+        Creates your personal calendar subscription URL, or replaces the one
+        you already have: each member has at most one, and the previous URL
+        stops working immediately. The URL is returned **exactly once** — the
+        server stores only a SHA-256 hash of its secret.
+
+        The URL's origin is the server's **Public address** setting when the
+        admin set one, otherwise the origin this request reached the server
+        at. `webcalUrl` is the same URL with the `webcal://` scheme, which
+        most operating systems hand to the default calendar app as a
+        subscription.
+
+        The URL is independent of your password: changing or resetting it
+        leaves the subscription working (like personal access tokens).
+        Session-authenticated requests only — a personal access token gets a
+        `403`, so a leaked token can't mint calendar URLs.
+      responses:
+        '201':
+          description: The new subscription URL (shown only here)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedCalendarFeed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Authenticated with a personal access token instead of a login session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    delete:
+      operationId: revokeCalendarFeed
+      tags: [Calendar]
+      summary: Turn off your calendar subscription
+      description: |
+        Revokes your subscription URL with immediate effect: calendar apps
+        get a `404` on their next refresh.
+        Session-authenticated requests only — a personal access token gets a
+        `403`.
+      responses:
+        '200':
+          description: Turned off
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Authenticated with a personal access token instead of a login session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/calendar/{token}/famlin.ics:
+    get:
+      operationId: getCalendarFeedIcs
+      tags: [Calendar]
+      summary: Download your events as an iCalendar feed
+      description: |
+        The URL calendar apps subscribe to. Public: there is no
+        `Authorization` header — the secret token in the path is the
+        credential, so treat the whole URL like a password.
+
+        Returns an iCalendar (RFC 5545) document with the token owner's
+        `EVENT` posts across every family they belong to: events that started
+        within the past 3 months plus every future event. It is recomputed on
+        every request from what the owner can see at that moment, so leaving a
+        family or circle removes its events on the next refresh. A
+        cross-posted event appears once, and each entry has a stable `UID`,
+        so an edited event updates the existing calendar entry.
+
+        The owner's own RSVP is reflected: `yes` → `STATUS:CONFIRMED`,
+        `maybe` → `STATUS:TENTATIVE`, `no` → still listed with "You declined"
+        in the description, no answer → a plain entry. The description holds
+        the family name, the author and the RSVP, plus a link to the post
+        only when the server's **Public address** setting is set. Comments
+        and photos are never included.
+
+        Responses carry `X-Robots-Tag: noindex` and `Cache-Control: private`.
+        Rate-limited per token. Server feature `calendarFeed`.
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: The secret from your subscription URL.
+          schema:
+            type: string
+            pattern: '^famlin_cal_'
+          example: famlin_cal_q3Vx8mZt0LkR2pYwN7cHs4JdF6bA9eUi1oGv5TnKyQw
+      responses:
+        '200':
+          description: The calendar
+          headers:
+            X-Robots-Tag:
+              schema:
+                type: string
+              description: '`noindex`'
+            Cache-Control:
+              schema:
+                type: string
+              description: '`private`'
+          content:
+            text/calendar:
+              schema:
+                type: string
+              example: |
+                BEGIN:VCALENDAR
+                VERSION:2.0
+                PRODID:-//Famlin//Family events//EN
+                BEGIN:VEVENT
+                UID:...@famlin
+                DTSTART:20261224T170000Z
+                SUMMARY:Christmas dinner
+                STATUS:CONFIRMED
+                END:VEVENT
+                END:VCALENDAR
+        '404':
+          description: Unknown or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /api/auth/change-password:
     post:
       operationId: changePassword
@@ -570,8 +739,9 @@ paths:
                       (`/api/wiki`), `diagnosticReports` (`POST
                       /api/diagnostics/reports`), `giftListGuests` (guest
                       wishlists on gift lists), `paginatedComments`,
-                      `configurableLimits` (`limits` below).
-                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports, giftListGuests, paginatedComments, configurableLimits]
+                      `configurableLimits` (`limits` below),
+                      `calendarFeed` (`/api/auth/me/calendar-feed`).
+                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports, giftListGuests, paginatedComments, configurableLimits, calendarFeed]
                   limits:
                     type: object
                     description: >-
@@ -4739,6 +4909,40 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    CalendarFeedStatus:
+      type: object
+      required: [enabled, createdAt, lastUsedAt]
+      properties:
+        enabled:
+          type: boolean
+          description: Whether you currently have a calendar subscription URL.
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the current URL was created; `null` without one.
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            Roughly when a calendar app last fetched the feed (throttled, so
+            it can lag a little); `null` if never.
+    CreatedCalendarFeed:
+      type: object
+      required: [url, webcalUrl, createdAt]
+      properties:
+        url:
+          type: string
+          description: The subscription URL. Returned only once.
+          example: https://famlin.example.com/api/calendar/famlin_cal_q3Vx8mZt0LkR2pYwN7cHs4JdF6bA9eUi1oGv5TnKyQw/famlin.ics
+        webcalUrl:
+          type: string
+          description: The same URL with the `webcal://` scheme, for one-tap subscribing.
+          example: webcal://famlin.example.com/api/calendar/famlin_cal_q3Vx8mZt0LkR2pYwN7cHs4JdF6bA9eUi1oGv5TnKyQw/famlin.ics
+        createdAt:
+          type: string
+          format: date-time
     DiagnosticFrameStats:
       type: object
       required: [frames, durationMs, droppedFrames, hitchMsPerSecond, worstFrameMs, p95FrameMs]

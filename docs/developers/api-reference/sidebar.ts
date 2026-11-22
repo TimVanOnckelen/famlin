@@ -106,6 +106,40 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Calendar",
+      link: {
+        type: "doc",
+        id: "api-reference/calendar",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/get-calendar-feed",
+          label: "Get the status of your calendar subscription",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/create-calendar-feed",
+          label: "Create or regenerate your calendar subscription URL",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/revoke-calendar-feed",
+          label: "Turn off your calendar subscription",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-calendar-feed-ics",
+          label: "Download your events as an iCalendar feed",
+          className: "api-method get",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Groups",
       link: {
         type: "doc",
@@ -912,6 +946,18 @@ const sidebar: SidebarsConfig = {
       type: "category",
       label: "Schemas",
       items: [
+        {
+          type: "doc",
+          id: "api-reference/schemas/calendarfeedstatus",
+          label: "CalendarFeedStatus",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/createdcalendarfeed",
+          label: "CreatedCalendarFeed",
+          className: "schema",
+        },
         {
           type: "doc",
           id: "api-reference/schemas/diagnosticframestats",

@@ -19,6 +19,7 @@ const sidebars: SidebarsConfig = {
         'trips',
         'gift-lists',
         'family-wiki',
+        'calendar-subscription',
       ],
     },
     {

@@ -23,6 +23,7 @@ import authPlugin, { authenticateMediaRequest } from './plugins/auth.js'
 import readOnlyPlugin from './plugins/readOnly.js'
 import restoreMaintenancePlugin from './plugins/restoreMaintenance.js'
 import { requestPathname } from './utils/requestPath.js'
+import { requestLogSerializer } from './utils/logRedaction.js'
 import { config, uploadsDir } from './config.js'
 import { prisma } from './db.js'
 import { getT } from './i18n/index.js'
@@ -44,6 +45,7 @@ import pushTokenRoutes from './routes/push-tokens.js'
 import deviceRoutes from './routes/devices.js'
 import diagnosticsRoutes from './routes/diagnostics.js'
 import apiTokenRoutes from './routes/api-tokens.js'
+import calendarRoutes from './routes/calendar.js'
 import notificationRoutes from './routes/notifications.js'
 import uploadRoutes from './routes/uploads.js'
 import immichRoutes from './routes/immich.js'
@@ -66,6 +68,9 @@ export async function buildApp() {
     trustProxy: config.TRUST_PROXY,
     logger: {
       level: config.NODE_ENV === 'test' ? 'silent' : config.NODE_ENV === 'development' ? 'debug' : 'info',
+      // Fastify's default request serializer, but with secret path segments
+      // (the calendar feed token) redacted from the logged URL.
+      serializers: { req: requestLogSerializer },
     },
   })
 
@@ -402,6 +407,7 @@ export async function buildApp() {
   await fastify.register(deviceRoutes, { prefix: '/api/devices' })
   await fastify.register(diagnosticsRoutes, { prefix: '/api/diagnostics' })
   await fastify.register(apiTokenRoutes, { prefix: '/api/api-tokens' })
+  await fastify.register(calendarRoutes, { prefix: '/api/calendar' })
   await fastify.register(notificationRoutes, { prefix: '/api/notifications' })
   await fastify.register(uploadRoutes, { prefix: '/api/uploads' })
   await fastify.register(immichRoutes, { prefix: '/api/immich' })

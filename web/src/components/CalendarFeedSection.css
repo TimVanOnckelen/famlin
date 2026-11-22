@@ -1,0 +1,91 @@
+/* Calendar subscription section on the profile page (issue #499). The
+   one-time URL box mirrors ApiTokensModal's freshly-created-token box. */
+
+.calendar-feed-created {
+  margin-top: 12px;
+  border: 1.5px solid var(--fam-primary);
+  background: var(--fam-primary-tint);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calendar-feed-url-label {
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.calendar-feed-url-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.calendar-feed-url {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+
+.calendar-feed-warning {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-accent);
+}
+
+.calendar-feed-open {
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.calendar-feed-action {
+  margin-top: 12px;
+}
+
+.calendar-feed-meta {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+}
+
+.calendar-feed-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.calendar-feed-help {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--fam-text-title);
+}
+
+.calendar-feed-help summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--fam-primary);
+}
+
+.calendar-feed-help ul {
+  margin: 8px 0 4px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (max-width: 480px) {
+  .calendar-feed-url-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -47,7 +47,8 @@
     "serverError": "Algo ha salido mal",
     "notFound": "No encontrado",
     "unsupportedFileType": "Tipo de archivo no admitido: {{ext}}",
-    "fileTooLarge": "El archivo es demasiado grande",
+    "fileTooLarge": "El archivo es demasiado grande (máx. {{max}} MB)",
+    "tooManyAttachments": "Demasiadas fotos o vídeos (máx. {{max}})",
     "cannotRemoveLastAdmin": "No se puede quitar al último administrador",
     "cannotDeleteLastAdminAccount": "Eres el único administrador de este servidor. Haz administrador a otra persona primero y luego elimina tu cuenta.",
     "parentCommentNotFound": "Comentario principal no encontrado",
@@ -239,5 +240,13 @@
     "created": "Creado",
     "publicKey": "Clave pública",
     "body": "Guarda este archivo en un lugar distinto de tu servidor de Famlin: un gestor de contraseñas, una copia impresa, otro ordenador.\nAbre todas las copias de seguridad que este servidor cifró con esta clave. Sin él, esas copias no se pueden restaurar en otro servidor, y nadie puede recuperar una clave perdida.\n\nPara restaurar en un servidor de Famlin nuevo: elige la copia de seguridad en la pantalla de configuración y sube este archivo cuando se te pida.\nPara descifrar a mano con la herramienta age (https://age-encryption.org):"
+  },
+  "calendarFeed": {
+    "family": "Familia: {{name}}",
+    "postedBy": "Publicado por {{name}}",
+    "rsvpYes": "Vas a ir",
+    "rsvpMaybe": "Quizás vayas",
+    "rsvpNo": "Has declinado",
+    "openInFamlin": "Abrir en Famlin: {{url}}"
   }
 }

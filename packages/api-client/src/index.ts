@@ -250,6 +250,9 @@ export { sendDiagnosticReport } from './diagnostics'
 export type { ApiToken, CreatedApiToken } from './apiTokens'
 export { fetchApiTokens, createApiToken, revokeApiToken } from './apiTokens'
 
+export type { CalendarFeedStatus, CreatedCalendarFeed } from './calendarFeed'
+export { fetchCalendarFeed, createCalendarFeed, revokeCalendarFeed } from './calendarFeed'
+
 export type {
   Story,
   StoryAuthor,

@@ -1,0 +1,1 @@
+{"parameters":[{"name":"token","in":"path","required":true,"description":"The secret from your subscription URL.","schema":{"type":"string","pattern":"^famlin_cal_"},"example":"famlin_cal_q3Vx8mZt0LkR2pYwN7cHs4JdF6bA9eUi1oGv5TnKyQw"}]}

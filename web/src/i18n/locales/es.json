@@ -13,7 +13,12 @@
     "playLivePhoto": "Reproducir foto en vivo",
     "playVideo": "Reproducir vídeo",
     "processing": "Procesando el contenido…",
-    "processingFailed": "No se pudo procesar el contenido"
+    "processingFailed": "No se pudo procesar el contenido",
+    "limits": {
+      "tooMany": "Puedes añadir hasta {{max}} fotos o vídeos; el resto se ha omitido.",
+      "fileTooLarge": "Se ha omitido «{{name}}»: los archivos pueden ocupar como máximo {{max}} MB.",
+      "videoTooLong": "Se ha omitido «{{name}}»: los vídeos pueden durar como máximo {{max}}."
+    }
   },
   "common": {
     "appName": "Famlin",
@@ -704,5 +709,30 @@
     "saveFailed": "No se pudo guardar la página.",
     "save": "Guardar",
     "saving": "Guardando…"
+  },
+  "calendarFeed": {
+    "title": "Suscripción de calendario",
+    "description": "Suscríbete a los eventos de tu familia en Google Calendar, Calendario de Apple u Outlook. El feed contiene los eventos de todas tus familias (los últimos 3 meses y todo lo que está por venir) y muestra si vas a asistir.",
+    "create": "Crear enlace de suscripción",
+    "urlLabel": "Tu enlace de suscripción",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "shownOnce": "Este enlace solo se muestra una vez, así que cópialo ahora. Mantenlo en privado: cualquiera que lo tenga puede ver los eventos de tu familia.",
+    "openInApp": "Abrir en la app de calendario",
+    "createdAt": "Creado el {{date}}",
+    "lastUsed": "Último uso el {{date}}",
+    "neverUsed": "Todavía no lo ha usado ninguna app de calendario",
+    "regenerate": "Generar nuevo enlace",
+    "regenerateConfirm": "¿Crear un enlace nuevo? El enlace anterior dejará de funcionar y los calendarios suscritos dejarán de actualizarse.",
+    "revoke": "Desactivar",
+    "revokeConfirm": "¿Desactivar la suscripción de calendario? El enlace dejará de funcionar y los calendarios suscritos dejarán de actualizarse.",
+    "createFailed": "No se pudo crear el enlace de suscripción. Inténtalo de nuevo.",
+    "revokeFailed": "No se pudo desactivar la suscripción. Inténtalo de nuevo.",
+    "loadFailed": "No se pudo cargar tu suscripción de calendario.",
+    "howTo": "Cómo suscribirse",
+    "howToGoogle": "Google Calendar: Otros calendarios → + → Desde URL y pega el enlace.",
+    "howToApple": "Calendario de Apple: Archivo → Nueva suscripción a calendario y pega el enlace.",
+    "howToOutlook": "Outlook: Agregar calendario → Suscribirse desde la web y pega el enlace.",
+    "howToNote": "Las apps de calendario actualizan las suscripciones a su propio ritmo, así que los cambios pueden tardar unas horas en aparecer."
   }
 }

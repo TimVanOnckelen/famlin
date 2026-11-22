@@ -233,6 +233,11 @@ export async function restoreDump(
     } catch (err) {
       throw new RestoreDumpError('migrateFailed', (err as Error).message)
     }
+    // Calendar feed links ignore tokenVersion, so one the member revoked
+    // after the dump was taken would come back to life: drop them all, as a
+    // zip restore does (members create a new link). After the migration, so
+    // the table exists even when the dump predates it.
+    await prisma.$executeRawUnsafe(`DELETE FROM ${quotedSchema()}."CalendarFeedToken"`)
   } finally {
     if (touched) invalidateSettingsCache()
     await release()
