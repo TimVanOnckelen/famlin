@@ -288,6 +288,16 @@ export async function seedDemoContent(prisma: PrismaClient, u: DemoUsers, g: Dem
 
   // The family chat is part of the demo.
   await prisma.group.update({ where: { id: g.family.id }, data: { chitchatEnabled: true } })
+  const familyConversation = await prisma.chatConversation.upsert({
+    where: { groupId: g.family.id },
+    update: {},
+    create: { kind: 'FAMILY', groupId: g.family.id },
+  })
+  await prisma.chatConversation.upsert({
+    where: { groupId: g.weekend.id },
+    update: {},
+    create: { kind: 'FAMILY', groupId: g.weekend.id },
+  })
 
   // ── Upload rows: who may read each generated photo ──────────────────────
   const familyPhotos: (keyof typeof PHOTO)[] = [
@@ -668,6 +678,7 @@ export async function seedDemoContent(prisma: PrismaClient, u: DemoUsers, g: Dem
       update: {},
       create: {
         id: message.id,
+        conversationId: familyConversation.id,
         groupId: g.family.id,
         authorId: message.authorId,
         kind: message.kind ?? 'USER',
@@ -684,9 +695,14 @@ export async function seedDemoContent(prisma: PrismaClient, u: DemoUsers, g: Dem
   for (const user of [u.opa, u.oma, u.mama, u.papa, u.sophie, u.emma, u.testUser, u.admin]) {
     const unread = user === u.testUser || user === u.admin
     await prisma.chatRead.upsert({
-      where: { groupId_userId: { groupId: g.family.id, userId: user.id } },
+      where: { conversationId_userId: { conversationId: familyConversation.id, userId: user.id } },
       update: {},
-      create: { groupId: g.family.id, userId: user.id, lastReadAt: unread ? ago(29 * HOUR) : ago(0) },
+      create: {
+        conversationId: familyConversation.id,
+        groupId: g.family.id,
+        userId: user.id,
+        lastReadAt: unread ? ago(29 * HOUR) : ago(0),
+      },
     })
   }
 
