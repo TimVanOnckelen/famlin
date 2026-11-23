@@ -43,9 +43,11 @@ const PHOTO = {
   storyBeach: 'd3e0a000-0000-4000-8000-00000000000d',
   storyFlowers: 'd3e0a000-0000-4000-8000-00000000000e',
   storyLake: 'd3e0a000-0000-4000-8000-00000000000f',
+  privateBirthday: 'd3e0a000-0000-4000-8000-000000000010',
 } as const
 
-export const photoUrl = (name: keyof typeof PHOTO) => `/uploads/${PHOTO[name]}.jpg`
+const photoKey = (name: keyof typeof PHOTO) => PHOTO[name]
+export const photoUrl = (name: keyof typeof PHOTO) => `/uploads/${photoKey(name)}.jpg`
 
 const portrait = { width: 900, height: 1600 }
 
@@ -278,6 +280,9 @@ export const DEMO_SCENES: Record<string, Scene> = {
   },
 }
 
+// Reuse the birthday visual for a distinct, conversation-scoped upload.
+DEMO_SCENES[PHOTO.privateBirthday] = DEMO_SCENES[PHOTO.birthday]
+
 const HOUR = 60 * 60 * 1000
 const DAY = 24 * HOUR
 
@@ -297,6 +302,20 @@ export async function seedDemoContent(prisma: PrismaClient, u: DemoUsers, g: Dem
     where: { groupId: g.weekend.id },
     update: {},
     create: { kind: 'FAMILY', groupId: g.weekend.id },
+  })
+  const directParticipantKey = [u.admin.id, u.mama.id].sort().join(':')
+  const adminMomConversation = await prisma.chatConversation.upsert({
+    where: { participantKey: directParticipantKey },
+    update: { updatedAt: ago(45 * 60_000) },
+    create: {
+      id: 'seed-chat-private-admin-mama',
+      kind: 'PRIVATE',
+      participantKey: directParticipantKey,
+      createdById: u.admin.id,
+      createdAt: ago(3 * HOUR),
+      updatedAt: ago(45 * 60_000),
+      participants: { create: [{ userId: u.admin.id }, { userId: u.mama.id }] },
+    },
   })
 
   // ── Upload rows: who may read each generated photo ──────────────────────
@@ -705,6 +724,96 @@ export async function seedDemoContent(prisma: PrismaClient, u: DemoUsers, g: Dem
       },
     })
   }
+
+  const directMessages = [
+    {
+      id: 'seed-chat-private-1',
+      authorId: u.admin.id,
+      content: 'Can you bring the birthday candles on Sunday?',
+      at: ago(3 * HOUR),
+    },
+    {
+      id: 'seed-chat-private-2',
+      authorId: u.mama.id,
+      content: 'Already packed them. I also found the number-five candle.',
+      at: ago(2 * HOUR),
+    },
+    {
+      id: 'seed-chat-private-3',
+      authorId: u.mama.id,
+      content: 'I sent Dad the shopping list too.',
+      at: ago(45 * 60_000),
+    },
+  ]
+  for (const message of directMessages) {
+    await prisma.chatMessage.upsert({
+      where: { id: message.id },
+      update: {},
+      create: {
+        id: message.id,
+        conversationId: adminMomConversation.id,
+        authorId: message.authorId,
+        kind: 'USER',
+        content: message.content,
+        createdAt: message.at,
+      },
+    })
+  }
+  const privateBirthdayUrl = photoUrl('privateBirthday')
+  await prisma.upload.upsert({
+    where: { assetKey: photoKey('privateBirthday') },
+    update: {
+      uploaderId: u.mama.id,
+      bound: true,
+      chatConversationId: adminMomConversation.id,
+      participantUserIds: [u.admin.id, u.mama.id].sort(),
+      groupIds: [],
+      circleId: null,
+      serverWide: false,
+    },
+    create: {
+      assetKey: photoKey('privateBirthday'),
+      uploaderId: u.mama.id,
+      bound: true,
+      chatConversationId: adminMomConversation.id,
+      participantUserIds: [u.admin.id, u.mama.id].sort(),
+    },
+  })
+  await prisma.chatMessage.upsert({
+    where: { id: 'seed-chat-private-photo' },
+    update: {},
+    create: {
+      id: 'seed-chat-private-photo',
+      conversationId: adminMomConversation.id,
+      authorId: u.mama.id,
+      kind: 'USER',
+      attachmentUrl: privateBirthdayUrl,
+      content: 'The candles are packed with Emma’s birthday box.',
+      createdAt: ago(40 * 60_000),
+    },
+  })
+  await prisma.chatConversation.update({
+    where: { id: adminMomConversation.id },
+    data: { updatedAt: ago(40 * 60_000) },
+  })
+  await prisma.chatRead.upsert({
+    where: { conversationId_userId: { conversationId: adminMomConversation.id, userId: u.mama.id } },
+    update: { lastReadAt: ago(40 * 60_000) },
+    create: {
+      conversationId: adminMomConversation.id,
+      userId: u.mama.id,
+      lastReadAt: ago(40 * 60_000),
+    },
+  })
+  await prisma.chatRead.upsert({
+    where: { conversationId_userId: { conversationId: adminMomConversation.id, userId: u.admin.id } },
+    update: { lastReadAt: ago(2 * HOUR) },
+    create: {
+      conversationId: adminMomConversation.id,
+      userId: u.admin.id,
+      lastReadAt: ago(2 * HOUR),
+    },
+  })
 
   // ── Family Wiki ───────────────────────────────────────────────────────────
   const wiki: {
