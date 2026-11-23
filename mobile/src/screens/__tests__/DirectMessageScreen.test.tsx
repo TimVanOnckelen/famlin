@@ -1,17 +1,21 @@
 import React from 'react'
 import { Alert } from 'react-native'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   deleteChatMessage,
   fetchChatConversationMessages,
   fetchChatConversations,
+  sendChatConversationMessage,
   setApiBaseUrl,
   setMediaToken,
 } from '@famlin/api-client'
 
 const mockNavigate = jest.fn()
 const mockMediaThumbnail = jest.fn((_props: unknown) => null)
+let mockPanUpdate: ((event: { translationX: number }) => void) | undefined
+let mockPanEnd: (() => void) | undefined
+let mockComposerSend: ((body: { content?: string; attachmentUrl?: string }) => Promise<unknown>) | undefined
 let mockConversationId = 'private-1'
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
@@ -29,7 +33,43 @@ jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) =>
 jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 jest.mock('@/components/Avatar', () => ({ Avatar: () => null }))
 jest.mock('@/components/MediaThumbnail', () => ({ MediaThumbnail: (props: unknown) => mockMediaThumbnail(props) }))
-jest.mock('@/components/ChatComposer', () => ({ ChatComposer: () => null }))
+jest.mock('@/components/ChatComposer', () => ({
+  ChatComposer: ({ send }: { send: (body: { content?: string; attachmentUrl?: string }) => Promise<unknown> }) => {
+    mockComposerSend = send
+    return null
+  },
+}))
+jest.mock('react-native-gesture-handler', () => ({
+  Gesture: {
+    Pan: () => {
+      const gesture = {
+        activeOffsetX: () => gesture,
+        failOffsetY: () => gesture,
+        onUpdate: (callback: (event: { translationX: number }) => void) => {
+          mockPanUpdate = callback
+          return gesture
+        },
+        onEnd: (callback: () => void) => {
+          mockPanEnd = callback
+          return gesture
+        },
+      }
+      return gesture
+    },
+  },
+  GestureDetector: ({ children }: { children: React.ReactNode }) => children,
+}))
+jest.mock('react-native-reanimated', () => {
+  const React = require('react')
+  return {
+    __esModule: true,
+    default: { View: ({ children }: { children: React.ReactNode }) => children },
+    useAnimatedStyle: (factory: () => object) => factory(),
+    useSharedValue: (value: number) => ({ value }),
+    withSpring: (value: number) => value,
+    runOnJS: (fn: unknown) => fn,
+  }
+})
 jest.mock('@/stores/authStore', () => ({
   useAuthStore: (selector: any) => selector({ user: { id: 'me' } }),
 }))
@@ -65,10 +105,12 @@ function message(id: string, authorId: string, encryption = 'none', attachmentUr
     groupId: null,
     authorId,
     author: { id: authorId, name: authorId === 'me' ? 'Gabriel' : 'Ana', avatarUrl: null },
-    kind: 'USER',
+    kind: 'USER' as const,
     content: `message-${id}`,
     attachmentUrl,
     refPostId: null,
+    replyToMessageId: null,
+    replyTo: null,
     createdAt: '2026-11-23T18:00:00.000Z',
     editedAt: null,
     encryption,
@@ -90,6 +132,9 @@ function renderScreen() {
 beforeEach(() => {
   jest.clearAllMocks()
   mockConversationId = 'private-1'
+  mockPanUpdate = undefined
+  mockPanEnd = undefined
+  mockComposerSend = undefined
   setApiBaseUrl('https://famlin.test')
   setMediaToken('media-token')
   jest.spyOn(Alert, 'alert').mockImplementation(() => {})
@@ -129,6 +174,43 @@ it('does not expose a delete control for someone elses message', async () => {
 
   expect(await screen.findByText('message-theirs')).toBeTruthy()
   expect(screen.queryByLabelText('chat.deleteMessage')).toBeNull()
+})
+
+it('swipes to quote a private message and sends the reply id', async () => {
+  const original = {
+    ...message('original', 'ana'),
+    replyTo: {
+      id: 'older',
+      authorId: 'me',
+      authorName: 'Gabriel',
+      kind: 'USER' as const,
+      content: 'Original text',
+      attachmentUrl: null,
+    },
+  }
+  jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
+  jest.mocked(fetchChatConversationMessages).mockResolvedValue({
+    items: [original],
+    nextCursor: null,
+  })
+  jest.mocked(sendChatConversationMessage).mockResolvedValue({ ...original, id: 'reply' } as never)
+  await renderScreen()
+
+  expect(await screen.findByText('Original text')).toBeTruthy()
+  await act(async () => {
+    mockPanUpdate?.({ translationX: 40 })
+    mockPanEnd?.()
+  })
+  expect(screen.getByText('chat.replyingTo')).toBeTruthy()
+
+  await act(async () => {
+    await mockComposerSend?.({ content: 'A private reply' })
+  })
+  expect(sendChatConversationMessage).toHaveBeenCalledWith('private-1', {
+    content: 'A private reply',
+    replyToMessageId: 'original',
+  })
+  expect(screen.queryByText('chat.replyingTo')).toBeNull()
 })
 
 it('deletes an own message only after destructive confirmation and repairs the cache', async () => {
