@@ -2,7 +2,7 @@
 
 ## Status and delivery target
 
-This document is the implementation handoff for a **single, end-to-end release**. The feature is not to be split into backend-only, schema-only, or client-only work. Development can proceed in dependency order, but the resulting PR/release must contain:
+This document is the implementation handoff for a **single, end-to-end release**. The resulting PR/release must contain:
 
 - backend schema, services, authorization, routes, notifications, exports, and restore support;
 - shared API client contracts;
