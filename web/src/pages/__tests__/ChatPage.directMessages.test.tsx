@@ -218,7 +218,6 @@ it('opens a selected conversation with browser history and marks only it read', 
   await waitFor(() => expect(screen.queryByLabelText('2 unread messages')).not.toBeInTheDocument())
   expect(screen.getByRole('button', { name: 'Back to inbox' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Delete message' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /Reply to/ })).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Back to inbox' }))
   expect(screen.getByTestId('location')).toHaveTextContent('/chat')
   expect(screen.getByTestId('location')).not.toHaveTextContent('conversation=')
@@ -269,6 +268,63 @@ it('sends text through the active conversation and clears the composer', async (
   )
   expect(input).toHaveValue('')
   expect(screen.getByText('Hello Sophie')).toBeInTheDocument()
+})
+
+it('replies to a private message through the conversation endpoint and quotes it locally', async () => {
+  vi.mocked(sendChatConversationMessage).mockImplementation(async (conversationId, body) => ({
+    id: 'private-reply',
+    conversationId,
+    groupId: null,
+    authorId: 'user-1',
+    author: { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
+    kind: 'USER',
+    content: body.content ?? null,
+    attachmentUrl: body.attachmentUrl ?? null,
+    refPostId: null,
+    createdAt: '2026-11-23T12:00:00Z',
+    editedAt: null,
+    encryption: 'none',
+    encryptedPayload: null,
+  }))
+  vi.mocked(fetchChatConversationMessages).mockResolvedValue({
+    items: [
+      {
+        id: 'private-message',
+        conversationId: 'private-1',
+        groupId: null,
+        authorId: 'user-2',
+        author: { id: 'user-2', name: 'Sophie', avatarUrl: null },
+        kind: 'USER',
+        content: 'Original private message',
+        attachmentUrl: null,
+        refPostId: null,
+        createdAt: '2026-11-23T10:00:00Z',
+        editedAt: null,
+        encryption: 'none',
+        encryptedPayload: null,
+      },
+    ],
+    nextCursor: null,
+  })
+  renderPage()
+  await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Reply to Sophie' }))
+
+  expect(screen.getByText('Replying to Sophie')).toBeInTheDocument()
+  await userEvent.type(screen.getByRole('textbox', { name: 'Message' }), 'Private reply')
+  await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+  await waitFor(() =>
+    expect(sendChatConversationMessage).toHaveBeenCalledWith('private-1', {
+      content: 'Private reply',
+      attachmentUrl: undefined,
+      replyToMessageId: 'private-message',
+    })
+  )
+  expect(sendChatMessage).not.toHaveBeenCalled()
+  expect(screen.queryByText('Replying to Sophie')).not.toBeInTheDocument()
+  expect(screen.getAllByText('Original private message')).toHaveLength(2)
+  expect(screen.getByText('Private reply')).toBeInTheDocument()
 })
 
 it.each([
@@ -516,7 +572,7 @@ it('opens a supported conversation attachment in the shared lightbox', async () 
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 })
 
-it('preserves family milestones and replies while private chats have no reply control', async () => {
+it('preserves family milestones and replies through the legacy family endpoint', async () => {
   vi.mocked(fetchChatConversationMessages).mockResolvedValue({
     items: [
       {
@@ -566,6 +622,7 @@ it('preserves family milestones and replies while private chats have no reply co
   expect(screen.getByText('Sophie added a milestone')).toBeInTheDocument()
   expect(screen.getByText('Earlier')).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Reply to Sophie' }))
+  expect(screen.getByText('Replying to Sophie')).toBeInTheDocument()
   await userEvent.type(screen.getByRole('textbox', { name: 'Message' }), 'Replying here')
   await userEvent.click(screen.getByRole('button', { name: 'Send' }))
 

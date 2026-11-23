@@ -44,17 +44,6 @@ type ChatPageProps = {
   onLogout: () => void
 }
 
-type FamilyAwareConversationMessage = ChatConversationMessage & {
-  replyTo?: {
-    id: string
-    authorId: string
-    authorName: string
-    kind: string
-    content: string | null
-    attachmentUrl: string | null
-  } | null
-}
-
 export function DirectMessagesChatPage(props: ChatPageProps) {
   const { t, i18n } = useTranslation()
   const client = useQueryClient()
@@ -375,32 +364,47 @@ function ConversationShell({
   const client = useQueryClient()
   const [draft, setDraft] = useState('')
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
-  const [replyTo, setReplyTo] = useState<FamilyAwareConversationMessage | null>(null)
+  const [replyTo, setReplyTo] = useState<ChatConversationMessage | null>(null)
   const uploads = useComposerUploads()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesRef = useRef<HTMLDivElement>(null)
   const conversationId = conversation?.id
   const send = useMutation({
-    mutationFn: ({ content, attachmentUrl }: { content: string; attachmentUrl?: string }) =>
-      replyTo && conversation?.kind === 'FAMILY'
-        ? sendChatMessage(conversation.group!.id, {
-            content: content || undefined,
-            attachmentUrl,
-            replyToMessageId: replyTo.id,
-          }).then(
-            (created): ChatConversationMessage =>
-              ({
-                ...created,
-                conversationId: conversationId!,
-                encryption: 'none',
-                encryptedPayload: null,
-                replyTo: created.replyTo,
-              }) as FamilyAwareConversationMessage
-          )
-        : sendChatConversationMessage(conversationId!, {
-            content: content || undefined,
-            attachmentUrl,
-          }),
+    mutationFn: async ({ content, attachmentUrl }: { content: string; attachmentUrl?: string }) => {
+      const replyTarget = replyTo
+      const created =
+        replyTarget && conversation?.kind === 'FAMILY'
+          ? {
+              ...(await sendChatMessage(conversation.group!.id, {
+                content: content || undefined,
+                attachmentUrl,
+                replyToMessageId: replyTarget.id,
+              })),
+              conversationId: conversationId!,
+              encryption: 'none',
+              encryptedPayload: null,
+            }
+          : await sendChatConversationMessage(conversationId!, {
+              content: content || undefined,
+              attachmentUrl,
+              ...(replyTarget ? { replyToMessageId: replyTarget.id } : {}),
+            })
+
+      if (!replyTarget) return created
+
+      return {
+        ...created,
+        replyToMessageId: created.replyToMessageId ?? replyTarget.id,
+        replyTo: created.replyTo ?? {
+          id: replyTarget.id,
+          authorId: replyTarget.authorId,
+          authorName: replyTarget.author.name,
+          kind: replyTarget.kind,
+          content: replyTarget.content,
+          attachmentUrl: replyTarget.attachmentUrl,
+        },
+      }
+    },
     onSuccess: (created) => {
       setDraft('')
       setReplyTo(null)
@@ -494,7 +498,6 @@ function ConversationShell({
         ) : (
           messages.map((message) => {
             const encrypted = !isChatEncryptionSupported(message.encryption)
-            const familyMessage = message as FamilyAwareConversationMessage
             if (message.kind === 'SYSTEM_MILESTONE') {
               return (
                 <div key={message.id} className="chat-system-message">
@@ -512,10 +515,10 @@ function ConversationShell({
                 )}
                 <div className="chat-message-main">
                   {message.authorId !== user.id && <div className="chat-message-author">{message.author.name}</div>}
-                  {familyMessage.replyTo && (
+                  {!encrypted && message.replyTo && (
                     <blockquote className="chat-reply-quote">
-                      <strong>{familyMessage.replyTo.authorName}</strong>
-                      <span>{familyMessage.replyTo.content ?? t('chat.attachmentPreview')}</span>
+                      <strong>{message.replyTo.authorName}</strong>
+                      <span>{message.replyTo.content ?? t('chat.attachmentPreview')}</span>
                     </blockquote>
                   )}
                   {encrypted ? (
@@ -548,12 +551,12 @@ function ConversationShell({
                   <time className="chat-message-time" dateTime={message.createdAt}>
                     {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                   </time>
-                  {conversation?.kind === 'FAMILY' && (
+                  {!encrypted && (
                     <button
                       type="button"
                       className="chat-message-reply"
                       aria-label={t('chat.replyTo', { name: message.author.name })}
-                      onClick={() => setReplyTo(familyMessage)}
+                      onClick={() => setReplyTo(message)}
                     >
                       <Icon name="message-square" size={14} />
                     </button>
@@ -568,14 +571,6 @@ function ConversationShell({
                         if (window.confirm(t('chat.deleteConfirm'))) removeMessage.mutate(message.id)
                       }}
                     >
-                      {replyTo && (
-                        <div className="chat-replying">
-                          <span>{t('chat.replyingTo', { name: replyTo.author.name })}</span>
-                          <button type="button" onClick={() => setReplyTo(null)} aria-label={t('chat.cancelReply')}>
-                            <Icon name="x" size={14} />
-                          </button>
-                        </div>
-                      )}
                       <Icon name="trash" size={14} />
                     </button>
                   )}
@@ -597,6 +592,14 @@ function ConversationShell({
             }
           }}
         >
+          {replyTo && (
+            <div className="chat-replying">
+              <span>{t('chat.replyingTo', { name: replyTo.author.name })}</span>
+              <button type="button" onClick={() => setReplyTo(null)} aria-label={t('chat.cancelReply')}>
+                <Icon name="x" size={14} />
+              </button>
+            </div>
+          )}
           {uploads.items[0] && (
             <div className="chat-attachment-preview">
               <ComposerUploadPreview
