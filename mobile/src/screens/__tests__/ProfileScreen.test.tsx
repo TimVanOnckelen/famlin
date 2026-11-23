@@ -9,6 +9,7 @@ import {
   fetchMyGiftLists,
   fetchServerInfo,
   getMyExportRequest,
+  updateMe,
 } from '@famlin/api-client'
 
 import { ProfileScreen } from '@/screens/ProfileScreen'
@@ -45,6 +46,7 @@ jest.mock('@famlin/api-client', () => ({
   fetchMyGiftLists: jest.fn(),
   fetchMyDevices: jest.fn(),
   getMyExportRequest: jest.fn(),
+  updateMe: jest.fn(),
   deleteAccount: jest.fn(),
   fetchNotificationConfig: jest.fn().mockResolvedValue({ pushEnabled: true, emailEnabled: true }),
 }))
@@ -86,6 +88,29 @@ it('shows the export, delete, devices and gift list sections on a server that su
   expect(await screen.findByText('profile.myGiftLists')).toBeTruthy()
   expect(fetchMyGiftLists).toHaveBeenCalled()
   expect(fetchMyDevices).toHaveBeenCalled()
+})
+
+it('updates the capable-server direct-message push preference', async () => {
+  jest.mocked(updateMe).mockResolvedValue({
+    id: 'u1',
+    pushOnDirectMessage: true,
+  } as never)
+  useAuthStore.setState({
+    user: {
+      id: 'u1',
+      name: 'Ann',
+      email: 'ann@example.com',
+      isAdmin: false,
+      hasPassword: false,
+      pushOnDirectMessage: false,
+    } as never,
+    serverUrl: 'https://family.example',
+  })
+
+  await renderProfile({ version: '0.11.0', features: [...ALL, 'directMessages'] })
+  await fireEvent(screen.getByLabelText('profile.notifyDirectMessage'), 'valueChange', true)
+
+  await waitFor(() => expect(updateMe).toHaveBeenCalledWith({ pushOnDirectMessage: true }))
 })
 
 it('hides them, and never queries gift lists or devices, on a server that says it lacks them', async () => {
