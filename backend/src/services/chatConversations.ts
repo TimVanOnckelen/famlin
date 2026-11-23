@@ -39,6 +39,26 @@ export async function isVisiblePrivateParticipantSet(
   return !!other && (await usersShareFamily(userId, other, db))
 }
 
+export async function visiblePrivateConversationCandidates<T extends { participants: Array<{ userId: string }> }>(
+  candidates: T[],
+  userId: string,
+  db: DbClient = prisma
+): Promise<T[]> {
+  const visible: T[] = []
+  for (const candidate of candidates) {
+    if (
+      await isVisiblePrivateParticipantSet(
+        candidate.participants.map((participant) => participant.userId),
+        userId,
+        db
+      )
+    ) {
+      visible.push(candidate)
+    }
+  }
+  return visible
+}
+
 export async function findAccessibleConversation(conversationId: string, userId: string, db: DbClient = prisma) {
   const conversation = await db.chatConversation.findUnique({
     where: { id: conversationId },
@@ -83,16 +103,5 @@ export async function visiblePrivateConversationIds(userId: string): Promise<str
     },
     select: { id: true, participants: { select: { userId: true } } },
   })
-  const visible: string[] = []
-  for (const conversation of conversations) {
-    if (
-      await isVisiblePrivateParticipantSet(
-        conversation.participants.map((participant) => participant.userId),
-        userId
-      )
-    ) {
-      visible.push(conversation.id)
-    }
-  }
-  return visible
+  return (await visiblePrivateConversationCandidates(conversations, userId)).map((conversation) => conversation.id)
 }

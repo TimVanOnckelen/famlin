@@ -20,10 +20,10 @@ import {
 import {
   ensureFamilyConversation,
   findAccessibleConversation,
-  isVisiblePrivateParticipantSet,
   privateParticipantKey,
   PRIVATE_CHAT_KIND,
   usersShareFamily,
+  visiblePrivateConversationCandidates,
 } from '../services/chatConversations.js'
 import { isUniqueConstraintViolation } from '../utils/prismaErrors.js'
 
@@ -84,17 +84,9 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
     }),
   ])
 
-  const visiblePrivateIds = new Set<string>()
-  for (const conversation of privateCandidates) {
-    if (
-      await isVisiblePrivateParticipantSet(
-        conversation.participants.map((participant) => participant.userId),
-        userId
-      )
-    ) {
-      visiblePrivateIds.add(conversation.id)
-    }
-  }
+  const visiblePrivateIds = new Set(
+    (await visiblePrivateConversationCandidates(privateCandidates, userId)).map((conversation) => conversation.id)
+  )
 
   const familyConversations = await Promise.all(
     familyGroups.map(async (group) => {

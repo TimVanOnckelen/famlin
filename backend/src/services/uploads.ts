@@ -272,17 +272,18 @@ export async function claimConversationAttachment(
   }
 ): Promise<boolean> {
   const assetKey = uploadAssetKey(assetPath)
+  const conversationScope = {
+    bound: true,
+    uploadSessionId: null,
+    serverWide: false,
+    circleId: null,
+    groupIds: [],
+    chatConversationId: conversationId,
+    participantUserIds: [...new Set(participantUserIds)].sort(),
+  }
   const { count } = await tx.upload.updateMany({
     where: { assetKey, uploaderId, bound: false, chatConversationId: null },
-    data: {
-      bound: true,
-      uploadSessionId: null,
-      serverWide: false,
-      circleId: null,
-      groupIds: [],
-      chatConversationId: conversationId,
-      participantUserIds: [...new Set(participantUserIds)].sort(),
-    },
+    data: conversationScope,
   })
   if (count !== 1) return false
 
@@ -293,15 +294,7 @@ export async function claimConversationAttachment(
   if (photo?.motionAssetKey) {
     await tx.upload.updateMany({
       where: { assetKey: photo.motionAssetKey, uploaderId, bound: false, chatConversationId: null },
-      data: {
-        bound: true,
-        uploadSessionId: null,
-        serverWide: false,
-        circleId: null,
-        groupIds: [],
-        chatConversationId: conversationId,
-        participantUserIds: [...new Set(participantUserIds)].sort(),
-      },
+      data: conversationScope,
     })
     invalidateUploadCache([photo.motionAssetKey])
   }

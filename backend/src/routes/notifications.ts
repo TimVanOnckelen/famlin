@@ -11,7 +11,10 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
     const notifications = await prisma.notification.findMany({
       where: {
         userId,
-        OR: [{ relatedChatConversationId: null }, { relatedChatConversationId: { in: visibleConversationIds } }],
+        OR: [
+          { type: { not: 'new_direct_message' } },
+          { type: 'new_direct_message', relatedChatConversationId: { in: visibleConversationIds } },
+        ],
       },
       include: {
         post: {
@@ -41,7 +44,10 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
       where: {
         userId,
         readAt: null,
-        OR: [{ relatedChatConversationId: null }, { relatedChatConversationId: { in: visibleConversationIds } }],
+        OR: [
+          { type: { not: 'new_direct_message' } },
+          { type: 'new_direct_message', relatedChatConversationId: { in: visibleConversationIds } },
+        ],
       },
     })
 
@@ -58,8 +64,9 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: getT(request)('errors.notificationNotFound') })
     }
     if (
-      notification.relatedChatConversationId &&
-      !(await findAccessibleConversation(notification.relatedChatConversationId, request.user!.id))
+      notification.type === 'new_direct_message' &&
+      (!notification.relatedChatConversationId ||
+        !(await findAccessibleConversation(notification.relatedChatConversationId, request.user!.id)))
     ) {
       return reply.status(404).send({ error: getT(request)('errors.notificationNotFound') })
     }

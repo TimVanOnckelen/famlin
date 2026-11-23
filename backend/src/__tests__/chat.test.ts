@@ -452,7 +452,7 @@ describe('private conversations', () => {
       headers: { authorization: `Bearer ${tokenA}` },
       payload: { attachmentUrl },
     })
-    expect(rebound.statusCode).toBe(200)
+    expect(rebound.statusCode).toBe(400)
     expect(await canReadUpload(attachmentUrl, memberC.id)).toBe(false)
 
     await prisma.groupMember.delete({ where: { groupId_userId: { groupId: chitchatGroupId, userId: memberC.id } } })
@@ -478,6 +478,14 @@ describe('private conversations', () => {
     await prisma.chatConversation.delete({ where: { id: conversationId } })
     expect(await canReadUpload(attachmentUrl, memberA.id)).toBe(false)
     expect(await canReadUpload(attachmentUrl, memberB.id)).toBe(false)
+    const notifications = await app.inject({
+      method: 'GET',
+      url: '/api/notifications',
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(notifications.json()).not.toContainEqual(
+      expect.objectContaining({ type: 'new_direct_message', relatedChatConversationId: null })
+    )
   })
 
   it('rejects empty and unowned attachments without creating a message', async () => {
