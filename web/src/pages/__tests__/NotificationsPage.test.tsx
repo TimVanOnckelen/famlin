@@ -79,6 +79,30 @@ it('does not mark a read notification again', async () => {
   expect(markNotificationRead).not.toHaveBeenCalled()
 })
 
+it('opens a direct-message notification in its conversation', async () => {
+  vi.mocked(fetchNotifications).mockResolvedValue([
+    { ...item, type: 'new_direct_message', relatedPostId: null, relatedChatConversationId: 'conversation-9' },
+  ])
+  const onOpenPost = vi.fn()
+  const onOpenChat = vi.fn()
+  renderWithQueryClient(
+    <NotificationsPage
+      user={makeUser()}
+      onOpenFeed={vi.fn()}
+      onOpenPhotos={vi.fn()}
+      onOpenChat={onOpenChat}
+      onOpenFavorites={vi.fn()}
+      onOpenProfile={vi.fn()}
+      onOpenPost={onOpenPost}
+      onLogout={vi.fn()}
+    />
+  )
+  await userEvent.click(await screen.findByText(item.message))
+
+  expect(onOpenChat).toHaveBeenCalledWith('conversation-9')
+  expect(onOpenPost).not.toHaveBeenCalled()
+})
+
 it('opens a related story', async () => {
   vi.mocked(fetchNotifications).mockResolvedValue([{ ...item, relatedPostId: null, relatedStoryId: 'story-1' }])
   vi.mocked(fetchStory).mockResolvedValue({ id: 'story-1' } as Awaited<ReturnType<typeof fetchStory>>)

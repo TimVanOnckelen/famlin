@@ -1,6 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
-import { fetchChatUnreadCounts } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
 import './BottomNav.css'
 
@@ -18,6 +16,7 @@ export function BottomNav({
   onChat,
   onProfile,
   onNewPost,
+  chatUnread = false,
 }: {
   active: BottomNavTab
   onFeed: () => void
@@ -25,18 +24,9 @@ export function BottomNav({
   onChat?: () => void
   onProfile: () => void
   onNewPost?: () => void
+  chatUnread?: boolean
 }) {
   const { t } = useTranslation()
-
-  // Same ['chat-unread'] cache entry AppShell's sidebar polls — sharing the
-  // key means this doesn't add a second network poll on top of its own.
-  const unreadQuery = useQuery({
-    queryKey: ['chat-unread'],
-    queryFn: fetchChatUnreadCounts,
-    refetchInterval: 30000,
-    enabled: !!onChat,
-  })
-  const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0)
 
   return (
     <nav className="bottom-nav" aria-label={t('common.appName')}>
@@ -68,7 +58,7 @@ export function BottomNav({
         >
           <span className="bottom-nav-icon-wrap">
             <Icon name="message-square" size={22} />
-            {hasUnreadChat && <span className="bottom-nav-badge" aria-hidden />}
+            {chatUnread && <span className="bottom-nav-badge" aria-hidden />}
           </span>
           <span>{t('tabs.chat')}</span>
         </button>
