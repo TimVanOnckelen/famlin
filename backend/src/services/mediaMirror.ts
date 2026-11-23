@@ -42,7 +42,7 @@ const UPLOAD_KEY_RE = /\/uploads\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 // Every /uploads/<uuid> referenced anywhere in a value — a URL, a string
 // array, or a JSON column (typeData, comment metadata, wiki Markdown).
-function uploadKeysIn(value: unknown): string[] {
+export function uploadKeysIn(value: unknown): string[] {
   if (value == null) return []
   const text = typeof value === 'string' ? value : JSON.stringify(value)
   return [...text.matchAll(UPLOAD_KEY_RE)].map((m) => m[1].toLowerCase())

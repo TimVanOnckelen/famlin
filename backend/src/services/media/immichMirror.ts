@@ -10,7 +10,8 @@ import { MediaProviderError } from './types.js'
 // Immich answered this request with an error, `album_not_found`.
 
 // Every scope the mirror needs: uploading, reading an album's assets back,
-// creating the album, and adding and removing album assets.
+// creating the album, adding and removing album assets, and reading the
+// people Immich recognized on them (face tags on uploads, mirrorPeople.ts).
 export const IMMICH_MIRROR_SCOPES = [
   'asset.upload',
   'asset.read',
@@ -18,6 +19,7 @@ export const IMMICH_MIRROR_SCOPES = [
   'album.read',
   'albumAsset.create',
   'albumAsset.delete',
+  'person.read',
 ] as const
 
 const mirrorCreds = () => requireImmichSettings('mirror')

@@ -1,9 +1,10 @@
 import { prisma } from '../../db.js'
 import { getMediaProvider } from './registry.js'
 import { resolvePersonFilterForAlbum } from './personFilter.js'
+import { mirroredUploadKeysWithPerson } from './mirrorPeople.js'
 import type { MediaAssetSummary } from './types.js'
 import { visiblePostsWhereFor } from '../circles.js'
-import { mirroredAssetIds } from '../mediaMirror.js'
+import { mirroredAssetIds, uploadKeysIn } from '../mediaMirror.js'
 
 // The merged, capture-date-ordered photo feed backing
 // GET /api/media/groups/:groupId/photos — see routes/media.ts.
@@ -252,34 +253,42 @@ export async function getGroupPhotoTimeline(
     })
   )
 
-  // Post-upload side — excluded entirely when person-filtering, since a
-  // direct upload carries no face-tag data to filter on.
-  if (!options.personId) {
-    for (const post of posts) {
-      post.uploadedAssetUrls.forEach((url, index) => {
-        // Only bare /uploads/... paths. A media-proxy URL
-        // (/api/media/assets/... or the legacy /api/immich/assets/...)
-        // stored in a post's uploadedAssetUrls is an album asset the client
-        // picked from the linked-album picker — it's already covered by the
-        // album side above, so including it again here would duplicate it
-        // in the merged feed.
-        if (!url.startsWith('/uploads/')) return
-        items.push({
-          id: `post:${post.id}:${index}`,
-          source: 'post',
-          type: uploadAssetType(url),
-          takenAt: post.createdAt.toISOString(),
-          width: null,
-          height: null,
-          // Uploads have no separate renditions — clients already render
-          // post photos straight off this one URL.
-          thumbnailUrl: url,
-          previewUrl: url,
-          originalUrl: url,
-          postId: post.id,
-        })
+  // Post-upload side. When person-filtering, a direct upload only matches
+  // through the face data Immich has for its mirrored copy (issue #420's
+  // upload mirror, see mirrorPeople.ts) — without the mirror, none match.
+  let personUploadKeys: Set<string> | null = null
+  if (options.personId) {
+    const keys = posts.flatMap((post) => uploadKeysIn(post.uploadedAssetUrls.filter((u) => u.startsWith('/uploads/'))))
+    personUploadKeys = await mirroredUploadKeysWithPerson(keys, options.personId).catch((err) => {
+      console.warn('photoTimeline: person filter failed for mirrored uploads:', err)
+      return new Set<string>()
+    })
+  }
+  for (const post of posts) {
+    post.uploadedAssetUrls.forEach((url, index) => {
+      // Only bare /uploads/... paths. A media-proxy URL
+      // (/api/media/assets/... or the legacy /api/immich/assets/...)
+      // stored in a post's uploadedAssetUrls is an album asset the client
+      // picked from the linked-album picker — it's already covered by the
+      // album side above, so including it again here would duplicate it
+      // in the merged feed.
+      if (!url.startsWith('/uploads/')) return
+      if (personUploadKeys && !uploadKeysIn(url).some((key) => personUploadKeys.has(key))) return
+      items.push({
+        id: `post:${post.id}:${index}`,
+        source: 'post',
+        type: uploadAssetType(url),
+        takenAt: post.createdAt.toISOString(),
+        width: null,
+        height: null,
+        // Uploads have no separate renditions — clients already render
+        // post photos straight off this one URL.
+        thumbnailUrl: url,
+        previewUrl: url,
+        originalUrl: url,
+        postId: post.id,
       })
-    }
+    })
   }
 
   // Newest capture first; tiebreak descending by id for a stable order
