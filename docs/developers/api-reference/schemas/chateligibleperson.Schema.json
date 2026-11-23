@@ -1,0 +1,1 @@
+{"schema":{"type":"object","description":"A member with whom the caller currently shares at least one family.","properties":{"id":{"type":"string"},"name":{"type":"string"},"avatarUrl":{"type":"string","nullable":true}},"title":"ChatEligiblePerson"},"schemaType":"response"}
