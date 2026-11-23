@@ -16,6 +16,8 @@ import { paginationArgs, paginate } from '../services/pagination.js'
 import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js'
 import { testImmichConnection } from '../services/media/immich.js'
 import { getMediaProvider, mediaErrorKey, mediaErrorStatus, MediaProviderError } from '../services/media/registry.js'
+import { mirrorAlbumPeopleCatalog } from '../services/media/mirrorPeople.js'
+import { MIRROR_PROVIDER } from '../services/mediaMirror.js'
 import {
   createGroupBodySchema,
   groupMemberBodySchema,
@@ -1470,6 +1472,16 @@ export default async function adminRoutes(fastify: FastifyInstance) {
             // move on to the next linked album.
             console.warn(`admin media people: failed to discover album people for ${providerId}/${albumId}:`, err)
           }
+        }
+      }
+
+      // People Immich recognized in the families' upload-mirror albums
+      // (mirrorPeople.ts) — read with the mirror key, so they show up even
+      // when the mirror account isn't the read key's account.
+      if (providerId === MIRROR_PROVIDER) {
+        const remaining = ADMIN_PEOPLE_CATALOG_CAP - byId.size
+        for (const person of await mirrorAlbumPeopleCatalog(new Set(byId.keys()), remaining)) {
+          byId.set(person.id, person)
         }
       }
 
