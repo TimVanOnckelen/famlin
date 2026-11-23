@@ -83,9 +83,9 @@ Member-facing list endpoints use cursor pagination. Posts, comments, and users a
 
 ## Core design rules
 
-- **Family membership is the main authorization boundary.** Every member-facing content query is scoped to the caller's families.
+- **Family membership is the main authorization boundary.** Every member-facing content query is scoped to the caller's families. Private conversations are the intentional exception: their two explicit participants are still allowed only while they currently share at least one family, checked live on every route and upload read.
 - **Circles only narrow access.** They cannot grant access to someone outside the family. Member-facing queries must use the shared visibility helpers so private content is not exposed accidentally.
-- **Uploads are authorized per request.** An unguessable media URL is not treated as permission to read it.
+- **Uploads are authorized per request.** An unguessable media URL is not treated as permission to read it. Participant-only chat uploads are authorized through the conversation's current shared-family boundary, not through a saved participant snapshot.
 - **Configuration is split by lifetime.** Startup environment variables configure the process and storage; most runtime settings live in the database and are managed in `/admin`.
 - **Upload limits are runtime settings.** `maxAttachments` (default 10, 10–50), `maxVideoDurationSeconds` (120, 10–1800) and `maxUploadSizeMb` (200, 10–2048) live in the `Setting` table and reach clients as `limits` on `GET /api/auth/server-info`, advertised by the `configurableLimits` feature. Clients read them through api-client's `resolveServerLimits()`, which falls back to 10/120/200 on older servers. The server enforces the attachment count (posts, comments, album photos, trip check-ins) and the per-file size; video length is checked only by the clients before upload. The attachment minimum is 10 because installed app versions that predate the setting hardcode 10.
 - **Public origins come from the request.** Behind a reverse proxy, forwarded headers are trusted only when `TRUST_PROXY=true`.
@@ -97,12 +97,14 @@ The user-facing implications are covered in [Security](/security).
 
 The main model groups are:
 
-- **Identity and audiences:** `User`, `Group`, `GroupMember`, `Circle`, and `CircleMember`
-- **Family content:** `Post`, `Comment`, `Like`, `Favorite`, `Story`, `ChatMessage`, `WikiPage`, and gift-list models
+- **Identity and audiences:** `User`, `Group`, `GroupMember`, `Circle`, `CircleMember`, `ChatConversation`, and `ChatConversationParticipant`
+- **Family and conversation content:** `Post`, `Comment`, `Like`, `Favorite`, `Story`, `ChatMessage`, `WikiPage`, and gift-list models
 - **Media:** `Upload`, `MediaAlbumLink`, and `MediaPersonLink`
 - **Runtime state:** `Setting`, `Notification`, `PushToken`, `ApiToken`, `Device`, `DiagnosticReport` (scroll performance reports members chose to send to their admins, pruned after 30 days — see [Mobile scroll diagnostics](./mobile-performance.md)), and backup/job status models
 
 A post belongs to one family and can optionally belong to one circle. Its open `type` plus handler-owned `typeData` supports updates, milestones, polls, events, trips, albums, and gift lists. Cross-posting creates linked sibling posts in multiple families while preserving each family's access boundary.
+
+Chat has one conversation model: `FAMILY` conversations preserve the existing group-chat API, while `PRIVATE` conversations are canonical one-to-one pairs. A private conversation remains accessible only while the participants still share a family; losing and later regaining that relationship changes visibility without rewriting or transferring the stored messages. Direct-message uploads are conversation-scoped, and `new_direct_message` notifications carry generic push copy plus a conversation id, never message text.
 
 See [`backend/prisma/schema.prisma`](https://github.com/TimVanOnckelen/famlin/blob/main/backend/prisma/schema.prisma) for fields and relations, and [Backend reference](./backend-reference.md#data-model) for the design rationale.
 
