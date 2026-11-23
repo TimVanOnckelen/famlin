@@ -29,6 +29,16 @@ export async function usersShareFamily(userA: string, userB: string, db: DbClien
   return !!shared
 }
 
+export async function isVisiblePrivateParticipantSet(
+  participantIds: string[],
+  userId: string,
+  db: DbClient = prisma
+): Promise<boolean> {
+  if (participantIds.length !== 2 || !participantIds.includes(userId)) return false
+  const other = participantIds.find((participantId) => participantId !== userId)
+  return !!other && (await usersShareFamily(userId, other, db))
+}
+
 export async function findAccessibleConversation(conversationId: string, userId: string, db: DbClient = prisma) {
   const conversation = await db.chatConversation.findUnique({
     where: { id: conversationId },
@@ -52,16 +62,13 @@ export async function findAccessibleConversation(conversationId: string, userId:
   }
 
   if (conversation.kind !== PRIVATE_CHAT_KIND) return null
-  if (
-    conversation.participants.length !== 2 ||
-    !conversation.participants.some((participant) => participant.userId === userId)
-  ) {
-    return null
-  }
-
-  const other = conversation.participants.find((participant) => participant.userId !== userId)
-  if (!other || !(await usersShareFamily(userId, other.userId, db))) return null
-  return conversation
+  return (await isVisiblePrivateParticipantSet(
+    conversation.participants.map((participant) => participant.userId),
+    userId,
+    db
+  ))
+    ? conversation
+    : null
 }
 
 export async function canReadChatConversationUpload(conversationId: string, userId: string): Promise<boolean> {
@@ -78,9 +85,14 @@ export async function visiblePrivateConversationIds(userId: string): Promise<str
   })
   const visible: string[] = []
   for (const conversation of conversations) {
-    if (conversation.participants.length !== 2) continue
-    const other = conversation.participants.find((participant) => participant.userId !== userId)
-    if (other && (await usersShareFamily(userId, other.userId))) visible.push(conversation.id)
+    if (
+      await isVisiblePrivateParticipantSet(
+        conversation.participants.map((participant) => participant.userId),
+        userId
+      )
+    ) {
+      visible.push(conversation.id)
+    }
   }
   return visible
 }

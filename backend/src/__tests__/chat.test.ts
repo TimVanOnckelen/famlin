@@ -526,6 +526,14 @@ describe('private conversations', () => {
       payload: { attachmentUrl },
     })
     expect(unownedFamilyAttachment.statusCode).toBe(400)
+
+    const legacyFamilyAttachment = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { attachmentUrl },
+    })
+    expect(legacyFamilyAttachment.statusCode).toBe(400)
   })
 })
 
@@ -632,6 +640,7 @@ describe('replying to a message', () => {
 
   it('yields replyTo.content === null (not "") when replying to an attachment-only message', async () => {
     const attachmentUrl = `/uploads/${randomUUID()}.jpg`
+    await recordUpload(attachmentUrl, memberA.id)
     const original = await app.inject({
       method: 'POST',
       url: `/api/chat/groups/${chitchatGroupId}/messages`,

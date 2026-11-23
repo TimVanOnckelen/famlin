@@ -327,7 +327,7 @@ export async function canBindOwnedUploadToFamily(
   })
   if (!row || row.uploaderId !== uploaderId) return false
   if (!row.bound) return true
-  return !row.circleId && !row.chatConversationId && !row.serverWide && row.groupIds.length > 0
+  return !row.circleId && !row.chatConversationId
 }
 
 // Gives a file the server wrote itself (a cross-posted linked-album asset

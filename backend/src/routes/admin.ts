@@ -1098,14 +1098,15 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     // A log row joins its post's `content`, which makes this a third content
     // READING surface alongside /content/posts and /content/comments — so it
-    // takes the same circle narrowing they do. Rows with no post (a chat or
-    // on-this-day send) carry nothing circle-scoped and stay visible, so the
-    // operational view an admin needs is unaffected.
+    // takes the same circle narrowing they do. DM delivery rows are excluded
+    // entirely; other rows with no post (family chat or on-this-day) carry no
+    // private conversation content.
     const adminCircleIds = await getUserCircleIds(request.user!.id)
 
     const logs = await prisma.pushDeliveryLog.findMany({
       where: {
         ...(postId ? { postId } : {}),
+        notifyType: { not: 'new_direct_message' },
         OR: [{ postId: null }, { post: { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] } }],
       },
       orderBy: { createdAt: 'desc' },

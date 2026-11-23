@@ -13,14 +13,16 @@ export async function deleteUserWithPrivateConversations(userId: string): Promis
         where: { attachmentUrl: { not: null } },
         select: { attachmentUrl: true },
       },
+      uploads: { select: { assetKey: true, mediaUrl: true } },
     },
   })
   const conversationIds = conversations.map((conversation) => conversation.id)
   const attachmentUrls = [
     ...new Set(
-      conversations.flatMap((conversation) =>
-        conversation.messages.flatMap((message) => (message.attachmentUrl ? [message.attachmentUrl] : []))
-      )
+      conversations.flatMap((conversation) => [
+        ...conversation.messages.flatMap((message) => (message.attachmentUrl ? [message.attachmentUrl] : [])),
+        ...conversation.uploads.map((upload) => upload.mediaUrl ?? `/uploads/${upload.assetKey}.jpg`),
+      ])
     ),
   ]
 

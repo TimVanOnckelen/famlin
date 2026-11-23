@@ -20,6 +20,7 @@ import {
 import {
   ensureFamilyConversation,
   findAccessibleConversation,
+  isVisiblePrivateParticipantSet,
   privateParticipantKey,
   PRIVATE_CHAT_KIND,
   usersShareFamily,
@@ -85,9 +86,14 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
 
   const visiblePrivateIds = new Set<string>()
   for (const conversation of privateCandidates) {
-    if (conversation.participants.length !== 2) continue
-    const other = conversation.participants.find((participant) => participant.userId !== userId)
-    if (other && (await usersShareFamily(userId, other.userId))) visiblePrivateIds.add(conversation.id)
+    if (
+      await isVisiblePrivateParticipantSet(
+        conversation.participants.map((participant) => participant.userId),
+        userId
+      )
+    ) {
+      visiblePrivateIds.add(conversation.id)
+    }
   }
 
   const familyConversations = await Promise.all(
@@ -447,25 +453,39 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     }
 
     const conversation = await ensureFamilyConversation(groupId)
-    const message = await prisma.$transaction(async (tx) => {
-      const created = await tx.chatMessage.create({
-        data: {
-          conversationId: conversation.id,
-          groupId,
-          authorId: request.user!.id,
-          kind: 'USER',
-          content: body.content?.trim(),
-          attachmentUrl: body.attachmentUrl,
-          replyToMessageId: body.replyToMessageId,
-        },
-        include: chatMessageInclude,
+    let message
+    try {
+      message = await prisma.$transaction(async (tx) => {
+        if (body.attachmentUrl) {
+          if (!(await canBindOwnedUploadToFamily(body.attachmentUrl, request.user!.id, tx))) {
+            throw new InvalidConversationAttachmentError()
+          }
+          await bindAssetsToScope([body.attachmentUrl], { groupIds: [groupId] }, request.user!.id, tx)
+        }
+        const created = await tx.chatMessage.create({
+          data: {
+            conversationId: conversation.id,
+            groupId,
+            authorId: request.user!.id,
+            kind: 'USER',
+            content: body.content?.trim(),
+            attachmentUrl: body.attachmentUrl,
+            replyToMessageId: body.replyToMessageId,
+          },
+          include: chatMessageInclude,
+        })
+        await tx.chatConversation.update({
+          where: { id: conversation.id },
+          data: { updatedAt: created.createdAt },
+        })
+        return created
       })
-      if (body.attachmentUrl) {
-        await bindAssetsToScope([body.attachmentUrl], { groupIds: [groupId] }, request.user!.id, tx)
+    } catch (error) {
+      if (error instanceof InvalidConversationAttachmentError) {
+        return reply.status(400).send({ error: t('errors.invalidChatAttachment') })
       }
-      await tx.chatConversation.update({ where: { id: conversation.id }, data: { updatedAt: created.createdAt } })
-      return created
-    })
+      throw error
+    }
 
     emitDomainEvent('chat.created', {
       conversationId: conversation.id,
