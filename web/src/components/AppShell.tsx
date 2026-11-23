@@ -1,7 +1,15 @@
 import { ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { User, fetchChatUnreadCounts, fetchGroups, fetchUnreadNotificationCount } from '@famlin/api-client'
+import {
+  User,
+  fetchChatConversationUnreadCounts,
+  fetchChatUnreadCounts,
+  fetchGroups,
+  fetchServerInfo,
+  fetchUnreadNotificationCount,
+  serverFeatureSupport,
+} from '@famlin/api-client'
 import { BrandIcon } from '@/components/Logo'
 import { useBranding } from '@/hooks/useBranding'
 import { Icon, IconName } from '@/components/Icon'
@@ -73,13 +81,24 @@ export function AppShell({
   // Same ['chat-unread'] cache key + `enabled: !!onChat` convention the old
   // top header/BottomNav used — skipped on ChatPage itself, which doesn't
   // pass onChat since it IS chat.
-  const unreadQuery = useQuery({
+  const serverInfo = useQuery({ queryKey: ['server-info'], queryFn: fetchServerInfo })
+  const directMessagesSupported = serverFeatureSupport(serverInfo.data, 'directMessages') === 'supported'
+  const capabilityResolved = serverInfo.isSuccess || serverInfo.isError
+  const legacyUnreadQuery = useQuery({
     queryKey: ['chat-unread'],
     queryFn: fetchChatUnreadCounts,
     refetchInterval: 30000,
-    enabled: !!onChat,
+    enabled: !!onChat && capabilityResolved && !directMessagesSupported,
   })
-  const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0)
+  const conversationUnreadQuery = useQuery({
+    queryKey: ['chat-unread-conversations'],
+    queryFn: fetchChatConversationUnreadCounts,
+    refetchInterval: 30000,
+    enabled: !!onChat && directMessagesSupported,
+  })
+  const hasUnreadChat = directMessagesSupported
+    ? (conversationUnreadQuery.data?.total ?? 0) > 0
+    : Object.values(legacyUnreadQuery.data ?? {}).some((count) => count > 0)
 
   // Photos, Chat, Favorites, Notifications and Search share the family visibility
   // rules: a user in no families has no entry points to these pages.
@@ -310,6 +329,7 @@ export function AppShell({
         onChat={chatNav}
         onProfile={onProfile}
         onNewPost={onNewPost}
+        chatUnread={hasUnreadChat}
       />
 
       {apiTokensOpen && <ApiTokensModal isAdmin={user.isAdmin} onClose={() => setApiTokensOpen(false)} />}

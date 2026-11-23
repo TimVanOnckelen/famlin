@@ -30,7 +30,7 @@ export function NotificationsPage({
   user: User
   onOpenFeed: () => void
   onOpenPhotos: () => void
-  onOpenChat: () => void
+  onOpenChat: (conversationId?: string) => void
   onOpenFavorites: () => void
   onOpenWiki?: () => void
   onOpenSearch?: (groupId?: string) => void
@@ -62,7 +62,8 @@ export function NotificationsPage({
 
   function open(item: Notification) {
     if (!item.readAt) markRead.mutate(item.id)
-    if (item.relatedPostId) onOpenPost(item.relatedPostId)
+    if (item.relatedChatConversationId) onOpenChat(item.relatedChatConversationId)
+    else if (item.relatedPostId) onOpenPost(item.relatedPostId)
     else if (item.relatedStoryId) setStoryId(item.relatedStoryId)
   }
 

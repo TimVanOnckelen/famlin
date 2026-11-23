@@ -6,6 +6,8 @@ import {
   fetchGroups,
   fetchGroupMembers,
   fetchChatMessages,
+  fetchServerInfo,
+  serverFeatureSupport,
   sendChatMessage,
   markChatRead,
   fetchChatUnreadCounts,
@@ -23,6 +25,7 @@ import { ShimmerImage } from '@/components/ShimmerImage'
 import { Lightbox } from '@/components/Lightbox'
 import { formatRelativeDate } from '@/utils/time'
 import { isVideoUrl } from '@/utils/media'
+import { DirectMessagesChatPage } from './DirectMessagesChatPage'
 import './ChatPage.css'
 
 // Same endpoint as every other composer, same "first url of the batch"
@@ -41,7 +44,40 @@ function dateKey(iso: string): string {
 // to the message panel, since the web app has no group-scoped URL routing.
 // Chat has no composer of its own, so AppShell gets no onNewPost — mirrors
 // mobile's FAB_TABS, which likewise hides the FAB on the Chat tab.
-export function ChatPage({
+export function ChatPage(props: Parameters<typeof LegacyChatPage>[0]) {
+  const { t } = useTranslation()
+  const serverQuery = useQuery({
+    queryKey: ['server-info'],
+    queryFn: fetchServerInfo,
+  })
+  const support = serverFeatureSupport(serverQuery.data, 'directMessages')
+
+  if (support === 'supported') return <DirectMessagesChatPage {...props} />
+  if (support === 'unsupported' || serverQuery.isError) return <LegacyChatPage {...props} />
+
+  return (
+    <AppShell
+      user={props.user}
+      active="chat"
+      onFeed={props.onBack}
+      onPhotos={props.onOpenPhotos}
+      onFavorites={props.onOpenFavorites}
+      onWiki={props.onOpenWiki}
+      onNotifications={props.onOpenNotifications}
+      onMembers={props.onOpenMembers}
+      onSearch={props.onOpenSearch}
+      onProfile={props.onOpenProfile ?? (() => {})}
+      onLogout={props.onLogout}
+    >
+      <div className="chat-column">
+        <ScreenHeader title={t('chat.title')} />
+        <div className="chat-hint">{t('common.loading')}</div>
+      </div>
+    </AppShell>
+  )
+}
+
+function LegacyChatPage({
   user,
   onBack,
   onOpenPhotos,

@@ -12,6 +12,7 @@ import {
   fetchServerInfo,
   updateMe,
   NotificationPrefs,
+  serverFeatureSupport,
   User,
 } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
@@ -197,6 +198,9 @@ export function ProfilePage({
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
     { labelKey: 'profile.notifyGiftList', pushKey: 'pushOnGiftList' },
+    ...(serverFeatureSupport(serverInfo, 'directMessages') === 'supported'
+      ? [{ labelKey: 'profile.notifyDirectMessage', pushKey: 'pushOnDirectMessage' as const }]
+      : []),
   ]
 
   function handleLanguageChange(lang: SupportedLanguage) {
