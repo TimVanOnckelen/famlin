@@ -214,13 +214,16 @@ export function normalizeCommentAttachments(body: { attachmentUrl?: string; atta
 // POST /api/chat/groups/:groupId/messages — mirrors createCommentBodySchema's
 // "at least one of content/attachmentUrl" shape (a chat message can be
 // photo/video-only too).
+const chatMessageContentShape = {
+  content: z.string().max(2000).optional(),
+  attachmentUrl: uploadPathSchema.optional(),
+}
+const requireChatMessageContent = (data: z.infer<z.ZodObject<typeof chatMessageContentShape>>) =>
+  !!data.content?.trim() || !!data.attachmentUrl
+
 export const createChatMessageBodySchema = z
-  .object({
-    content: z.string().max(2000).optional(),
-    attachmentUrl: uploadPathSchema.optional(),
-    replyToMessageId: z.string().optional(),
-  })
-  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
+  .object({ ...chatMessageContentShape, replyToMessageId: z.string().optional() })
+  .refine(requireChatMessageContent, {
     message: 'content or attachmentUrl is required',
     path: ['content'],
   })
@@ -230,15 +233,10 @@ export const createConversationBodySchema = z.object({
   participantIds: z.array(z.string()).length(1),
 })
 
-export const createConversationMessageBodySchema = z
-  .object({
-    content: z.string().max(2000).optional(),
-    attachmentUrl: uploadPathSchema.optional(),
-  })
-  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
-    message: 'content or attachmentUrl is required',
-    path: ['content'],
-  })
+export const createConversationMessageBodySchema = z.object(chatMessageContentShape).refine(requireChatMessageContent, {
+  message: 'content or attachmentUrl is required',
+  path: ['content'],
+})
 
 export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'])
 

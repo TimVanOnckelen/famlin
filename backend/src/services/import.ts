@@ -700,6 +700,7 @@ async function insertAll(
   const groupMembers = data.groups.flatMap((g) => g.members)
   const circleMembers = data.circles.flatMap((c) => c.members)
   const chatConversations = [...data.chatConversations]
+  const archivedConversationIds = new Set(chatConversations.map((conversation) => conversation.id))
   const familyConversationByGroupId = new Map(
     chatConversations
       .filter((conversation) => conversation.groupId)
@@ -732,6 +733,21 @@ async function insertAll(
   if (chatMessages.some((message) => !message.conversationId) || chatReads.some((read) => !read.conversationId)) {
     throw new RestoreError('invalidArchive', 'chat row has no conversation')
   }
+  const latestMessageAt = new Map<string, Date>()
+  for (const message of chatMessages) {
+    const previous = message.conversationId ? latestMessageAt.get(message.conversationId) : undefined
+    if (message.conversationId && (!previous || message.createdAt > previous)) {
+      latestMessageAt.set(message.conversationId, message.createdAt)
+    }
+  }
+  const restoredChatConversations = chatConversations.map((conversation) => {
+    if (archivedConversationIds.has(conversation.id)) return conversation
+    const latest = latestMessageAt.get(conversation.id)
+    return {
+      ...conversation,
+      updatedAt: latest && latest > conversation.updatedAt ? latest : conversation.updatedAt,
+    }
+  })
   const chatMessagesForInsert = chatMessages.map((message) => ({
     ...message,
     conversationId: message.conversationId!,
@@ -772,7 +788,7 @@ async function insertAll(
 
   await tx.group.createMany({ data: data.groups.map(({ members: _members, ...g }) => g) })
   await tx.groupMember.createMany({ data: groupMembers })
-  await tx.chatConversation.createMany({ data: chatConversations })
+  await tx.chatConversation.createMany({ data: restoredChatConversations })
   await tx.chatConversationParticipant.createMany({ data: data.chatConversationParticipants })
   await tx.circle.createMany({ data: data.circles.map(({ members: _members, ...c }) => c) })
   await tx.circleMember.createMany({ data: circleMembers })

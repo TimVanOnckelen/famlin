@@ -11,7 +11,12 @@ import { requireGroupMember } from '../plugins/auth.js'
 import { paginationArgs, paginate } from '../services/pagination.js'
 import { shapeChatMessagesWithReadBy, shapeConversationChatMessage } from '../services/chat.js'
 import { getT } from '../i18n/index.js'
-import { bindAssetsToScope, claimConversationAttachment, deleteUploadFiles } from '../services/uploads.js'
+import {
+  bindAssetsToScope,
+  canBindOwnedUploadToFamily,
+  claimConversationAttachment,
+  deleteUploadFiles,
+} from '../services/uploads.js'
 import {
   ensureFamilyConversation,
   findAccessibleConversation,
@@ -320,6 +325,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
             )
             if (!claimed) throw new InvalidConversationAttachmentError()
           } else if (body.attachmentUrl && conversation.groupId) {
+            if (!(await canBindOwnedUploadToFamily(body.attachmentUrl, request.user!.id, tx))) {
+              throw new InvalidConversationAttachmentError()
+            }
             await bindAssetsToScope([body.attachmentUrl], { groupIds: [conversation.groupId] }, request.user!.id, tx)
           }
 

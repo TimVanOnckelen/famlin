@@ -39,6 +39,7 @@ type UploadRow = {
   groupIds: string[]
   serverWide: boolean
   chatConversationId: string | null
+  participantUserIds: string[]
   livePhoto?: { assetKey: string } | null
 }
 
@@ -85,6 +86,7 @@ async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
       groupIds: true,
       serverWide: true,
       chatConversationId: true,
+      participantUserIds: true,
       livePhoto: { select: { assetKey: true } },
     },
   })
@@ -127,7 +129,7 @@ export async function canReadUpload(pathOrFilename: string, userId: string): Pro
 
 export type UploadScopeRow = Pick<
   UploadRow,
-  'uploaderId' | 'circleId' | 'bound' | 'groupIds' | 'serverWide' | 'chatConversationId'
+  'uploaderId' | 'circleId' | 'bound' | 'groupIds' | 'serverWide' | 'chatConversationId' | 'participantUserIds'
 >
 
 // THE readability rule for one Upload row (see canReadUpload above), with
@@ -146,6 +148,7 @@ export async function isUploadRowReadable(
   if (row.chatConversationId) {
     return (await viewer.inChatConversation?.(row.chatConversationId)) ?? false
   }
+  if (row.participantUserIds.length > 0) return false
   if (row.circleId) return viewer.inCircle(row.circleId)
   if (!row.bound) return row.uploaderId === userId
   if (row.serverWide) return true
@@ -304,6 +307,27 @@ export async function claimConversationAttachment(
   }
   invalidateUploadCache([assetKey])
   return true
+}
+
+export async function canBindOwnedUploadToFamily(
+  assetPath: string,
+  uploaderId: string,
+  tx: { upload: { findUnique: typeof prisma.upload.findUnique } }
+): Promise<boolean> {
+  const row = await tx.upload.findUnique({
+    where: { assetKey: uploadAssetKey(assetPath) },
+    select: {
+      uploaderId: true,
+      bound: true,
+      circleId: true,
+      groupIds: true,
+      serverWide: true,
+      chatConversationId: true,
+    },
+  })
+  if (!row || row.uploaderId !== uploaderId) return false
+  if (!row.bound) return true
+  return !row.circleId && !row.chatConversationId && !row.serverWide && row.groupIds.length > 0
 }
 
 // Gives a file the server wrote itself (a cross-posted linked-album asset

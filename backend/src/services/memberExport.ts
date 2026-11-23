@@ -231,6 +231,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
     groupIds: true,
     serverWide: true,
     chatConversationId: true,
+    participantUserIds: true,
   } as const
   const uploadRows = await prisma.upload.findMany({
     where: { assetKey: { in: [...referencedKeys] } },

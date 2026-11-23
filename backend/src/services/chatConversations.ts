@@ -67,3 +67,20 @@ export async function findAccessibleConversation(conversationId: string, userId:
 export async function canReadChatConversationUpload(conversationId: string, userId: string): Promise<boolean> {
   return !!(await findAccessibleConversation(conversationId, userId))
 }
+
+export async function visiblePrivateConversationIds(userId: string): Promise<string[]> {
+  const conversations = await prisma.chatConversation.findMany({
+    where: {
+      kind: PRIVATE_CHAT_KIND,
+      participants: { some: { userId } },
+    },
+    select: { id: true, participants: { select: { userId: true } } },
+  })
+  const visible: string[] = []
+  for (const conversation of conversations) {
+    if (conversation.participants.length !== 2) continue
+    const other = conversation.participants.find((participant) => participant.userId !== userId)
+    if (other && (await usersShareFamily(userId, other.userId))) visible.push(conversation.id)
+  }
+  return visible
+}
