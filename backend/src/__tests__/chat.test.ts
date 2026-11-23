@@ -86,7 +86,7 @@ afterAll(async () => {
     where: { id: { in: [chitchatGroupId, disabledGroupId, unreadGroupId, missingConversationGroupId] } },
   })
   await prisma.chatConversation.deleteMany({
-    where: { participantKey: [memberA.id, memberB.id].sort().join(':') },
+    where: { participants: { some: { userId: memberA.id } }, kind: 'PRIVATE' },
   })
   await prisma.user.deleteMany({ where: { id: { in: [memberA.id, memberB.id, memberC.id, admin.id] } } })
   await app.close()
@@ -293,8 +293,9 @@ describe('private conversations', () => {
       content: 'private hello',
       encryption: 'none',
       encryptedPayload: null,
+      replyToMessageId: null,
+      replyTo: null,
     })
-    expect(sent.json()).not.toHaveProperty('replyTo')
 
     const outsider = await app.inject({
       method: 'GET',
@@ -355,6 +356,103 @@ describe('private conversations', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     })
     expect(deleted.statusCode).toBe(200)
+  })
+
+  it('supports replies in a private conversation and returns the reply preview in history', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+    })
+    const conversationId = create.json().id
+    const original = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'private original' },
+    })
+    const reply = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { content: 'private reply', replyToMessageId: original.json().id },
+    })
+
+    expect(reply.statusCode).toBe(200)
+    expect(reply.json()).toMatchObject({
+      conversationId,
+      replyToMessageId: original.json().id,
+      replyTo: {
+        id: original.json().id,
+        authorId: memberA.id,
+        authorName: memberA.name,
+        kind: 'USER',
+        content: 'private original',
+        attachmentUrl: null,
+      },
+    })
+
+    const history = await app.inject({
+      method: 'GET',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    })
+    expect(history.json().items[0]).toMatchObject({
+      id: reply.json().id,
+      replyToMessageId: original.json().id,
+      replyTo: { id: original.json().id, content: 'private original' },
+    })
+  })
+
+  it('rejects unknown and cross-conversation private reply targets without leaking access', async () => {
+    await prisma.groupMember.create({ data: { groupId: chitchatGroupId, userId: memberC.id } })
+    try {
+      const first = await app.inject({
+        method: 'POST',
+        url: '/api/chat/conversations',
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+      })
+      const second = await app.inject({
+        method: 'POST',
+        url: '/api/chat/conversations',
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { kind: 'PRIVATE', participantIds: [memberC.id] },
+      })
+      const privateTarget = await app.inject({
+        method: 'POST',
+        url: `/api/chat/conversations/${second.json().id}/messages`,
+        headers: { authorization: `Bearer ${tokenA}` },
+        payload: { content: 'only A and C can read this' },
+      })
+
+      const unknown = await app.inject({
+        method: 'POST',
+        url: `/api/chat/conversations/${first.json().id}/messages`,
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { content: 'unknown target', replyToMessageId: `missing-${runId}` },
+      })
+      const crossConversation = await app.inject({
+        method: 'POST',
+        url: `/api/chat/conversations/${first.json().id}/messages`,
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: { content: 'cross-conversation target', replyToMessageId: privateTarget.json().id },
+      })
+
+      expect(unknown.statusCode).toBe(404)
+      expect(crossConversation.statusCode).toBe(404)
+      expect(unknown.json()).toEqual(crossConversation.json())
+      expect(
+        await prisma.chatMessage.count({
+          where: { conversationId: first.json().id, replyToMessageId: privateTarget.json().id },
+        })
+      ).toBe(0)
+    } finally {
+      await prisma.groupMember.delete({
+        where: { groupId_userId: { groupId: chitchatGroupId, userId: memberC.id } },
+      })
+    }
   })
 
   it('hides and rejects updates to direct-message notifications after access is lost', async () => {
@@ -553,6 +651,14 @@ describe('private conversations', () => {
       payload: { content: '   ' },
     })
     expect(empty.statusCode).toBe(400)
+
+    const emptyReplyTarget = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'empty reply target', replyToMessageId: '' },
+    })
+    expect(emptyReplyTarget.statusCode).toBe(400)
 
     const attachmentUrl = `/uploads/${randomUUID()}.jpg`
     const unowned = await app.inject({

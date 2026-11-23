@@ -2079,6 +2079,7 @@ paths:
                   description: An `/uploads/...` path from the upload endpoint.
                 replyToMessageId:
                   type: string
+                  minLength: 1
                   description: |
                     The id of an existing message in this group to reply to.
                     Must belong to the same group; unknown or cross-group ids
@@ -2243,8 +2244,9 @@ paths:
       description: |
         Text, an upload path, or both are required. Private attachments must
         be fresh uploads owned by the sender and become conversation-scoped
-        atomically with the message. Private conversations do not support
-        replies.
+        atomically with the message. `replyToMessageId` may reference only an
+        existing message in this same conversation. Unknown or cross-conversation
+        ids are rejected with the same 404 response.
       parameters:
         - name: conversationId
           in: path
@@ -2259,6 +2261,10 @@ paths:
               properties:
                 content: { type: string, maxLength: 2000 }
                 attachmentUrl: { type: string }
+                replyToMessageId:
+                  type: string
+                  minLength: 1
+                  description: The id of an existing message in this conversation.
       responses:
         '200':
           description: The created conversation-aware message
@@ -2271,7 +2277,13 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: |
+            The conversation is not accessible, or `replyToMessageId` does not
+            reference a message in this conversation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/chat/conversations/{conversationId}/read:
     post:
@@ -6091,6 +6103,22 @@ components:
         content: { type: string, nullable: true }
         attachmentUrl: { type: string, nullable: true }
         refPostId: { type: string, nullable: true }
+        replyToMessageId:
+          type: string
+          nullable: true
+          description: The id of the message this one replies to, if any.
+        replyTo:
+          nullable: true
+          description: A lightweight preview of the same-conversation message being replied to.
+          allOf:
+            - type: object
+              properties:
+                id: { type: string }
+                authorId: { type: string }
+                authorName: { type: string }
+                kind: { type: string }
+                content: { type: string, nullable: true }
+                attachmentUrl: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         editedAt: { type: string, format: date-time, nullable: true }
         encryption: { type: string }

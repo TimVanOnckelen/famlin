@@ -34,6 +34,7 @@ const chatMessageInclude = {
   replyToMessage: {
     select: {
       id: true,
+      conversationId: true,
       authorId: true,
       author: { select: { id: true, name: true } },
       kind: true,
@@ -320,6 +321,15 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       if (!conversation) {
         return reply.status(404).send({ error: t('errors.chatConversationNotFound') })
       }
+      if (body.replyToMessageId) {
+        const replyToMessage = await prisma.chatMessage.findFirst({
+          where: { id: body.replyToMessageId, conversationId },
+          select: { id: true },
+        })
+        if (!replyToMessage) {
+          return reply.status(404).send({ error: t('errors.replyToMessageNotFound') })
+        }
+      }
 
       let message
       try {
@@ -348,6 +358,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
               kind: 'USER',
               content: body.content?.trim(),
               attachmentUrl: body.attachmentUrl,
+              replyToMessageId: body.replyToMessageId,
             },
             include: chatMessageInclude,
           })

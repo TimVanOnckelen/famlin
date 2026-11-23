@@ -222,7 +222,7 @@ const requireChatMessageContent = (data: z.infer<z.ZodObject<typeof chatMessageC
   !!data.content?.trim() || !!data.attachmentUrl
 
 export const createChatMessageBodySchema = z
-  .object({ ...chatMessageContentShape, replyToMessageId: z.string().optional() })
+  .object({ ...chatMessageContentShape, replyToMessageId: z.string().min(1).optional() })
   .refine(requireChatMessageContent, {
     message: 'content or attachmentUrl is required',
     path: ['content'],
@@ -233,10 +233,12 @@ export const createConversationBodySchema = z.object({
   participantIds: z.array(z.string()).length(1),
 })
 
-export const createConversationMessageBodySchema = z.object(chatMessageContentShape).refine(requireChatMessageContent, {
-  message: 'content or attachmentUrl is required',
-  path: ['content'],
-})
+export const createConversationMessageBodySchema = z
+  .object({ ...chatMessageContentShape, replyToMessageId: z.string().min(1).optional() })
+  .refine(requireChatMessageContent, {
+    message: 'content or attachmentUrl is required',
+    path: ['content'],
+  })
 
 export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'])
 
