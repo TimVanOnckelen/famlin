@@ -17,6 +17,7 @@ const runId = `${Date.now()}`
 const chitchatGroupId = `test-chat-group-${runId}`
 const disabledGroupId = `test-chat-disabled-group-${runId}`
 const unreadGroupId = `test-chat-unread-group-${runId}`
+const missingConversationGroupId = `test-chat-missing-conversation-${runId}`
 
 let app: FastifyInstance
 
@@ -41,6 +42,14 @@ beforeAll(async () => {
       { id: chitchatGroupId, name: 'Test Chitchat Group', chitchatEnabled: true },
       { id: disabledGroupId, name: 'Test Chitchat-Disabled Group', chitchatEnabled: false },
       { id: unreadGroupId, name: 'Test Unread-Counts Group', chitchatEnabled: true },
+      { id: missingConversationGroupId, name: 'Test Missing Conversation Group', chitchatEnabled: true },
+    ],
+  })
+  await prisma.chatConversation.createMany({
+    data: [
+      { kind: 'FAMILY', groupId: chitchatGroupId },
+      { kind: 'FAMILY', groupId: disabledGroupId },
+      { kind: 'FAMILY', groupId: unreadGroupId },
     ],
   })
 
@@ -60,6 +69,7 @@ beforeAll(async () => {
       { groupId: disabledGroupId, userId: memberA.id },
       { groupId: unreadGroupId, userId: memberA.id },
       { groupId: unreadGroupId, userId: memberB.id },
+      { groupId: missingConversationGroupId, userId: memberA.id },
     ],
   })
 
@@ -72,7 +82,9 @@ beforeAll(async () => {
 afterAll(async () => {
   // Deleting the groups cascades their memberships and ChatMessage/ChatRead
   // rows; deleting the users cascades anything left.
-  await prisma.group.deleteMany({ where: { id: { in: [chitchatGroupId, disabledGroupId, unreadGroupId] } } })
+  await prisma.group.deleteMany({
+    where: { id: { in: [chitchatGroupId, disabledGroupId, unreadGroupId, missingConversationGroupId] } },
+  })
   await prisma.chatConversation.deleteMany({
     where: { participantKey: [memberA.id, memberB.id].sort().join(':') },
   })
@@ -141,6 +153,27 @@ describe('group membership + chitchatEnabled gate', () => {
 })
 
 describe('private conversations', () => {
+  it('does not create a missing family conversation while listing or counting unread messages', async () => {
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+    })
+    expect(list.statusCode).toBe(200)
+    expect(list.json().items).not.toContainEqual(
+      expect.objectContaining({ group: expect.objectContaining({ id: missingConversationGroupId }) })
+    )
+
+    const unread = await app.inject({
+      method: 'GET',
+      url: '/api/chat/unread-counts',
+      headers: { authorization: `Bearer ${tokenA}` },
+    })
+    expect(unread.statusCode).toBe(200)
+    expect(unread.json()[missingConversationGroupId]).toBe(0)
+    expect(await prisma.chatConversation.count({ where: { groupId: missingConversationGroupId } })).toBe(0)
+  })
+
   it('returns the same one-to-one conversation for either participant', async () => {
     const fromA = await app.inject({
       method: 'POST',
@@ -276,6 +309,13 @@ describe('private conversations', () => {
       headers: { authorization: `Bearer ${tokenB}` },
     })
     expect(unread.json().byConversation[conversationId]).toBeGreaterThan(0)
+
+    const ownUnread = await app.inject({
+      method: 'GET',
+      url: '/api/chat/conversations/unread',
+      headers: { authorization: `Bearer ${tokenA}` },
+    })
+    expect(ownUnread.json().byConversation[conversationId]).toBe(0)
 
     const markRead = await app.inject({
       method: 'POST',
@@ -486,6 +526,15 @@ describe('private conversations', () => {
     expect(notifications.json()).not.toContainEqual(
       expect.objectContaining({ type: 'new_direct_message', relatedChatConversationId: null })
     )
+
+    const rebound = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { attachmentUrl },
+    })
+    expect(rebound.statusCode).toBe(400)
+    expect(await canReadUpload(attachmentUrl, memberC.id)).toBe(false)
   })
 
   it('rejects empty and unowned attachments without creating a message', async () => {
@@ -541,7 +590,7 @@ describe('private conversations', () => {
       headers: { authorization: `Bearer ${tokenA}` },
       payload: { attachmentUrl },
     })
-    expect(legacyFamilyAttachment.statusCode).toBe(400)
+    expect(legacyFamilyAttachment.statusCode).toBe(200)
   })
 })
 
@@ -735,6 +784,20 @@ describe('read receipts and unread counts', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     })
     expect(countsForA.statusCode).toBe(200)
-    expect(countsForA.json()[unreadGroupId]).toBeGreaterThan(0)
+    expect(countsForA.json()[unreadGroupId]).toBe(0)
+
+    await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${unreadGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { content: 'a message from member B' },
+    })
+    const countsForAAfterReply = await app.inject({
+      method: 'GET',
+      url: '/api/chat/unread-counts',
+      headers: { authorization: `Bearer ${tokenA}` },
+    })
+    expect(countsForAAfterReply.statusCode).toBe(200)
+    expect(countsForAAfterReply.json()[unreadGroupId]).toBeGreaterThan(0)
   })
 })

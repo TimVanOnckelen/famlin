@@ -522,16 +522,25 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return
 
     try {
-      const group = await prisma.group.update({
-        where: { id },
-        data: {
-          name: body.name,
-          description: body.description,
-          // Omitted = unchanged; an explicit [] resets to "all allowed".
-          ...(body.allowedPostTypes ? { allowedPostTypes: body.allowedPostTypes } : {}),
-          ...(body.chitchatEnabled !== undefined ? { chitchatEnabled: body.chitchatEnabled } : {}),
-          ...(body.storiesEnabled !== undefined ? { storiesEnabled: body.storiesEnabled } : {}),
-        },
+      const group = await prisma.$transaction(async (tx) => {
+        const updated = await tx.group.update({
+          where: { id },
+          data: {
+            name: body.name,
+            description: body.description,
+            // Omitted = unchanged; an explicit [] resets to "all allowed".
+            ...(body.allowedPostTypes ? { allowedPostTypes: body.allowedPostTypes } : {}),
+            ...(body.chitchatEnabled !== undefined ? { chitchatEnabled: body.chitchatEnabled } : {}),
+            ...(body.storiesEnabled !== undefined ? { storiesEnabled: body.storiesEnabled } : {}),
+          },
+        })
+        if (body.chitchatEnabled === true) {
+          await tx.chatConversation.createMany({
+            data: [{ kind: 'FAMILY', groupId: id }],
+            skipDuplicates: true,
+          })
+        }
+        return updated
       })
       return group
     } catch (err) {

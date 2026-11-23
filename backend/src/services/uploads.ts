@@ -212,7 +212,13 @@ export async function bindAssetsToScope(
   }
 
   await tx.upload.updateMany({
-    where: { assetKey: { in: assetKeys }, uploaderId, bound: false, chatConversationId: null },
+    where: {
+      assetKey: { in: assetKeys },
+      uploaderId,
+      bound: false,
+      chatConversationId: null,
+      participantUserIds: { isEmpty: true },
+    },
     data: scopeData(scope),
   })
 
@@ -228,6 +234,7 @@ export async function bindAssetsToScope(
           circleId: null,
           serverWide: false,
           chatConversationId: null,
+          participantUserIds: { isEmpty: true },
           NOT: [{ groupIds: { isEmpty: true } }, { groupIds: { has: groupId } }],
         },
         data: { groupIds: { push: groupId } },
@@ -316,11 +323,24 @@ export async function canBindOwnedUploadToFamily(
       groupIds: true,
       serverWide: true,
       chatConversationId: true,
+      participantUserIds: true,
     },
   })
   if (!row || row.uploaderId !== uploaderId) return false
+  if (row.participantUserIds.length > 0) return false
   if (!row.bound) return true
   return !row.circleId && !row.chatConversationId
+}
+
+export async function isPrivateConversationUpload(
+  assetPath: string,
+  tx: { upload: { findUnique: typeof prisma.upload.findUnique } }
+): Promise<boolean> {
+  const row = await tx.upload.findUnique({
+    where: { assetKey: uploadAssetKey(assetPath) },
+    select: { chatConversationId: true, participantUserIds: true },
+  })
+  return !!row && (!!row.chatConversationId || row.participantUserIds.length > 0)
 }
 
 // Gives a file the server wrote itself (a cross-posted linked-album asset

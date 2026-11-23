@@ -10,12 +10,12 @@ export function privateParticipantKey(userIds: [string, string]): string {
   return [...userIds].sort().join(':')
 }
 
-export async function ensureFamilyConversation(groupId: string, db: DbClient = prisma) {
-  return db.chatConversation.upsert({
+export async function findFamilyConversation(groupId: string, db: DbClient = prisma) {
+  const conversation = await db.chatConversation.findUnique({
     where: { groupId },
-    update: {},
-    create: { kind: FAMILY_CHAT_KIND, groupId },
   })
+  if (!conversation) throw new Error(`Missing family chat conversation for group ${groupId}`)
+  return conversation
 }
 
 export async function usersShareFamily(userA: string, userB: string, db: DbClient = prisma): Promise<boolean> {
@@ -44,19 +44,45 @@ export async function visiblePrivateConversationCandidates<T extends { participa
   userId: string,
   db: DbClient = prisma
 ): Promise<T[]> {
-  const visible: T[] = []
-  for (const candidate of candidates) {
+  const participantIds = candidates.flatMap((candidate) => {
     if (
-      await isVisiblePrivateParticipantSet(
-        candidate.participants.map((participant) => participant.userId),
-        userId,
-        db
-      )
+      candidate.participants.length !== 2 ||
+      !candidate.participants.some((participant) => participant.userId === userId)
     ) {
-      visible.push(candidate)
+      return []
     }
-  }
-  return visible
+    const other = candidate.participants.find((participant) => participant.userId !== userId)
+    return other ? [other.userId] : []
+  })
+  if (participantIds.length === 0) return []
+
+  const memberships = await db.groupMember.findMany({
+    where: { userId },
+    select: { groupId: true },
+  })
+  const groupIds = memberships.map((membership) => membership.groupId)
+  if (groupIds.length === 0) return []
+
+  const sharedPeers = await db.groupMember.findMany({
+    where: {
+      groupId: { in: groupIds },
+      userId: { in: [...new Set(participantIds)] },
+    },
+    select: { userId: true },
+    distinct: ['userId'],
+  })
+  const sharedPeerIds = new Set(sharedPeers.map((peer) => peer.userId))
+
+  return candidates.filter((candidate) => {
+    if (
+      candidate.participants.length !== 2 ||
+      !candidate.participants.some((participant) => participant.userId === userId)
+    ) {
+      return false
+    }
+    const other = candidate.participants.find((participant) => participant.userId !== userId)
+    return !!other && sharedPeerIds.has(other.userId)
+  })
 }
 
 export async function findAccessibleConversation(conversationId: string, userId: string, db: DbClient = prisma) {

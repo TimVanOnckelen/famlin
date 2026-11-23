@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../db.js'
 import {
   createChatMessageBodySchema,
@@ -16,9 +17,10 @@ import {
   canBindOwnedUploadToFamily,
   claimConversationAttachment,
   deleteUploadFiles,
+  isPrivateConversationUpload,
 } from '../services/uploads.js'
 import {
-  ensureFamilyConversation,
+  findFamilyConversation,
   findAccessibleConversation,
   privateParticipantKey,
   PRIVATE_CHAT_KIND,
@@ -60,6 +62,43 @@ type ConversationSummary = {
 
 class InvalidConversationAttachmentError extends Error {}
 
+type LatestConversationMessage = {
+  id: string
+  conversationId: string
+  authorId: string
+  content: string | null
+  attachmentUrl: string | null
+  createdAt: Date
+  encryption: string
+}
+
+async function latestConversationMessages(conversationIds: string[]): Promise<LatestConversationMessage[]> {
+  if (conversationIds.length === 0) return []
+  return prisma.$queryRaw<LatestConversationMessage[]>`
+    SELECT DISTINCT ON ("conversationId")
+      "id", "conversationId", "authorId", "content", "attachmentUrl", "createdAt", "encryption"
+    FROM "ChatMessage"
+    WHERE "conversationId" IN (${Prisma.join(conversationIds)})
+    ORDER BY "conversationId", "createdAt" DESC, "id" DESC
+  `
+}
+
+async function unreadConversationCounts(conversationIds: string[], userId: string): Promise<Map<string, number>> {
+  if (conversationIds.length === 0) return new Map()
+  const rows = await prisma.$queryRaw<Array<{ conversationId: string; count: number }>>`
+    SELECT message."conversationId", COUNT(*)::int AS count
+    FROM "ChatMessage" message
+    LEFT JOIN "ChatRead" read
+      ON read."conversationId" = message."conversationId"
+      AND read."userId" = ${userId}
+    WHERE message."conversationId" IN (${Prisma.join(conversationIds)})
+      AND message."authorId" <> ${userId}
+      AND message."createdAt" > COALESCE(read."lastReadAt", TIMESTAMPTZ 'epoch')
+    GROUP BY message."conversationId"
+  `
+  return new Map(rows.map((row) => [row.conversationId, row.count]))
+}
+
 async function accessibleConversationSummaries(userId: string): Promise<ConversationSummary[]> {
   const [familyGroups, privateCandidates] = await Promise.all([
     prisma.group.findMany({
@@ -68,6 +107,7 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
         id: true,
         name: true,
         members: { select: { user: { select: { id: true, name: true, avatarUrl: true } } } },
+        chatConversation: { select: { id: true, kind: true, updatedAt: true, groupId: true } },
       },
     }),
     prisma.chatConversation.findMany({
@@ -88,11 +128,8 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
     (await visiblePrivateConversationCandidates(privateCandidates, userId)).map((conversation) => conversation.id)
   )
 
-  const familyConversations = await Promise.all(
-    familyGroups.map(async (group) => {
-      const conversation = await ensureFamilyConversation(group.id)
-      return { conversation, group }
-    })
+  const familyConversations = familyGroups.flatMap((group) =>
+    group.chatConversation ? [{ conversation: group.chatConversation, group }] : []
   )
   const conversations = [
     ...familyConversations,
@@ -102,19 +139,9 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
   ]
 
   const conversationIds = conversations.map(({ conversation }) => conversation.id)
-  const [lastMessages, reads] = await Promise.all([
-    conversationIds.length === 0
-      ? Promise.resolve([])
-      : prisma.chatMessage.findMany({
-          where: { conversationId: { in: conversationIds } },
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        }),
-    conversationIds.length === 0
-      ? Promise.resolve([])
-      : prisma.chatRead.findMany({
-          where: { conversationId: { in: conversationIds }, userId },
-          select: { conversationId: true, lastReadAt: true },
-        }),
+  const [lastMessages, unreadCounts] = await Promise.all([
+    latestConversationMessages(conversationIds),
+    unreadConversationCounts(conversationIds, userId),
   ])
   const lastMessageByConversation = new Map<string, (typeof lastMessages)[number]>()
   for (const message of lastMessages) {
@@ -122,22 +149,6 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
       lastMessageByConversation.set(message.conversationId, message)
     }
   }
-  const lastReadByConversation = new Map(reads.map((read) => [read.conversationId, read.lastReadAt]))
-  const epoch = new Date(0)
-  const unreadCounts = new Map(
-    await Promise.all(
-      conversationIds.map(async (conversationId) => {
-        const count = await prisma.chatMessage.count({
-          where: {
-            conversationId,
-            createdAt: { gt: lastReadByConversation.get(conversationId) ?? epoch },
-          },
-        })
-        return [conversationId, count] as const
-      })
-    )
-  )
-
   return conversations
     .map(({ conversation, group }): ConversationSummary => {
       const privateConversation =
@@ -444,12 +455,12 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       }
     }
 
-    const conversation = await ensureFamilyConversation(groupId)
+    const conversation = await findFamilyConversation(groupId)
     let message
     try {
       message = await prisma.$transaction(async (tx) => {
         if (body.attachmentUrl) {
-          if (!(await canBindOwnedUploadToFamily(body.attachmentUrl, request.user!.id, tx))) {
+          if (await isPrivateConversationUpload(body.attachmentUrl, tx)) {
             throw new InvalidConversationAttachmentError()
           }
           await bindAssetsToScope([body.attachmentUrl], { groupIds: [groupId] }, request.user!.id, tx)
@@ -529,7 +540,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     const { groupId } = request.params as { groupId: string }
     if (await requireGroupMember(request, reply, groupId)) return
 
-    const conversation = await ensureFamilyConversation(groupId)
+    const conversation = await findFamilyConversation(groupId)
     await prisma.chatRead.upsert({
       where: { conversationId_userId: { conversationId: conversation.id, userId: request.user!.id } },
       update: { groupId, lastReadAt: new Date() },
@@ -544,17 +555,19 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     const groupIds = memberships.map((membership) => membership.groupId)
     if (groupIds.length === 0) return {}
 
-    const reads = await prisma.chatRead.findMany({ where: { groupId: { in: groupIds }, userId } })
-    const lastReadByGroupId = new Map(reads.map((read) => [read.groupId, read.lastReadAt]))
-    const epoch = new Date(0)
-    const counts = await Promise.all(
-      groupIds.map(async (groupId) => {
-        const count = await prisma.chatMessage.count({
-          where: { groupId, createdAt: { gt: lastReadByGroupId.get(groupId) ?? epoch } },
-        })
-        return [groupId, count] as const
-      })
+    const conversations = await prisma.chatConversation.findMany({
+      where: { groupId: { in: groupIds } },
+      select: { id: true, groupId: true },
+    })
+    const counts = await unreadConversationCounts(
+      conversations.map((conversation) => conversation.id),
+      userId
     )
-    return Object.fromEntries(counts)
+    return Object.fromEntries(
+      groupIds.map((groupId) => [
+        groupId,
+        counts.get(conversations.find((conversation) => conversation.groupId === groupId)?.id ?? '') ?? 0,
+      ])
+    )
   })
 }
