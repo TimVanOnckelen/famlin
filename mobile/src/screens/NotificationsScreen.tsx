@@ -76,6 +76,10 @@ export function NotificationsScreen() {
                 navigation.navigate('PostDetail', { postId: item.relatedPostId })
               } else if (item.relatedStoryId) {
                 navigation.navigate('StoryViewer', { storyId: item.relatedStoryId })
+              } else if (item.relatedChatConversationId) {
+                navigation.navigate('DirectMessage', {
+                  conversationId: item.relatedChatConversationId,
+                })
               }
             }}
           >
