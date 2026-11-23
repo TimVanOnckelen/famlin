@@ -20,7 +20,7 @@ import {
   isPrivateConversationUpload,
 } from '../services/uploads.js'
 import {
-  findFamilyConversation,
+  ensureFamilyConversation,
   findAccessibleConversation,
   privateParticipantKey,
   PRIVATE_CHAT_KIND,
@@ -455,7 +455,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       }
     }
 
-    const conversation = await findFamilyConversation(groupId)
+    const conversation = await ensureFamilyConversation(groupId)
     let message
     try {
       message = await prisma.$transaction(async (tx) => {
@@ -540,7 +540,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     const { groupId } = request.params as { groupId: string }
     if (await requireGroupMember(request, reply, groupId)) return
 
-    const conversation = await findFamilyConversation(groupId)
+    const conversation = await ensureFamilyConversation(groupId)
     await prisma.chatRead.upsert({
       where: { conversationId_userId: { conversationId: conversation.id, userId: request.user!.id } },
       update: { groupId, lastReadAt: new Date() },

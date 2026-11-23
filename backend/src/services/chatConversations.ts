@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../db.js'
+import { isUniqueConstraintViolation } from '../utils/prismaErrors.js'
 
 export const FAMILY_CHAT_KIND = 'FAMILY'
 export const PRIVATE_CHAT_KIND = 'PRIVATE'
@@ -10,11 +11,21 @@ export function privateParticipantKey(userIds: [string, string]): string {
   return [...userIds].sort().join(':')
 }
 
-export async function findFamilyConversation(groupId: string, db: DbClient = prisma) {
-  const conversation = await db.chatConversation.findUnique({
+export async function ensureFamilyConversation(groupId: string, db: DbClient = prisma) {
+  let conversation = await db.chatConversation.findUnique({
     where: { groupId },
   })
-  if (!conversation) throw new Error(`Missing family chat conversation for group ${groupId}`)
+  if (conversation) return conversation
+
+  try {
+    conversation = await db.chatConversation.create({
+      data: { kind: FAMILY_CHAT_KIND, groupId },
+    })
+  } catch (error) {
+    if (!isUniqueConstraintViolation(error)) throw error
+    conversation = await db.chatConversation.findUnique({ where: { groupId } })
+    if (!conversation) throw error
+  }
   return conversation
 }
 
