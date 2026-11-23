@@ -95,7 +95,7 @@ describe('conversation-aware chat contract', () => {
     })
   })
 
-  it('sends a text-and-attachment conversation message without legacy reply fields', async () => {
+  it('sends a text-and-attachment reply through the conversation endpoint', async () => {
     const client = await import('../client.js')
     const message = {
       id: 'message-1',
@@ -107,6 +107,15 @@ describe('conversation-aware chat contract', () => {
       content: 'For you',
       attachmentUrl: '/uploads/photo.jpg',
       refPostId: null,
+      replyToMessageId: 'message-0',
+      replyTo: {
+        id: 'message-0',
+        authorId: 'user-2',
+        authorName: 'Avery',
+        kind: 'USER',
+        content: 'Original message',
+        attachmentUrl: null,
+      },
       createdAt: '2026-11-23T20:00:00.000Z',
       editedAt: null,
       encryption: 'none',
@@ -115,7 +124,11 @@ describe('conversation-aware chat contract', () => {
     vi.mocked(client.api.post).mockResolvedValue({ data: message })
 
     const { sendChatConversationMessage } = await import('../chat.js')
-    const body = { content: 'For you', attachmentUrl: '/uploads/photo.jpg' }
+    const body = {
+      content: 'For you',
+      attachmentUrl: '/uploads/photo.jpg',
+      replyToMessageId: 'message-0',
+    }
 
     await expect(sendChatConversationMessage('conversation-1', body)).resolves.toEqual(message)
     expect(client.api.post).toHaveBeenCalledWith('/chat/conversations/conversation-1/messages', body)
