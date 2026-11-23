@@ -165,7 +165,7 @@ It is a mirror, not a storage location. Famlin keeps its own files and keeps dec
 
 **Setting it up:**
 
-1. In Immich, create a second API key for the Famlin user with these permissions: `asset.upload`, `asset.read`, `album.create`, `album.read`, `albumAsset.create` and `albumAsset.delete`. Keep the first key read-only.
+1. In Immich, create a second API key for the Famlin user with these permissions: `asset.upload`, `asset.read`, `album.create`, `album.read`, `albumAsset.create`, `albumAsset.delete` and `person.read`. Keep the first key read-only. (`person.read` lets Famlin read Immich's face recognition on mirrored photos, see [faces on uploaded photos](#faces-on-uploaded-photos); without it mirroring still works, just without face tags.)
 2. In `/admin` → Integrations → **Immich** → **Connection**, paste it into **Upload key (optional)** and click **Test upload key**. The test lists any permission the key is missing. Save settings.
 3. Open the **Families** tab, click **Edit** on the family, and find **Mirror uploads to Immich**. Choose **Create a new album "Famlin – &lt;family name&gt;"** or an existing album. Optionally pick a **Mirror posts since** date to also copy older posts (empty = from now on). Click **Turn on mirroring** and confirm.
 
@@ -223,6 +223,15 @@ For Immich albums with face recognition data, you can map recognized people to d
 Mapped people also appear as tags on posts in the family feed, showing who's in each photo — when a person is linked to a Famlin user, their profile avatar appears on the tag.
 
 To remove a mapping, click the × next to it under **Mapped people**.
+
+#### Faces on uploaded photos
+
+Photos members upload straight into Famlin have no face data of their own. Once the [upload mirror](#mirroring-uploads-to-immich) has copied them into a family's Immich album, Immich runs its face recognition on them like on any other photo, and Famlin reads the result back with the upload key. Mapped people then show up on those posts too: as tags in the feed (including photos added to shared albums and trip check-ins), and in the **Photos** tab's person filter.
+
+- There's nothing extra to turn on: it works for every family with mirroring on, as long as the upload key has the `person.read` permission. **Test upload key** lists it when it's missing.
+- People recognized in the mirror albums appear in the **People** tab's catalog, so you can map them like everyone else. If the upload key belongs to a different Immich user than the read key, Immich keeps separate face entries for each user: map both under the same display name and Famlin merges them.
+- Immich needs a few minutes after an upload to detect faces, and Famlin refreshes what it knows about each album every 10 minutes, so new tags can take a while to appear.
+- Only photos that are actually mirrored get tags. Circle posts, gift lists and stories are never mirrored, so they never get face tags this way. Photos posted before the family's **Mirror posts since** date only get them if you backfill.
 
 ## Branding
 

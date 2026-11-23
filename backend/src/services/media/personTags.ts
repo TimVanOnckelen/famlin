@@ -1,6 +1,8 @@
 import { prisma } from '../../db.js'
 import { parseMediaAssetPath } from '../../types.js'
 import { getMediaProvider } from './registry.js'
+import { uploadKeysIn } from '../mediaMirror.js'
+import { mirroredUploadPeople, mirrorPeopleAvailable } from './mirrorPeople.js'
 
 // One admin-mapped person who appears in a post's photos — the enriched
 // shape every post-returning member endpoint attaches as `post.people`.
@@ -144,7 +146,12 @@ export async function attachPeopleToPosts<T extends { id: string; uploadedAssetU
     }
     if (refs.length > 0) postAssetRefs.set(post.id, refs)
   }
-  if (linkIds.size === 0) return tagsByPostId
+
+  // Famlin's own uploads: the post's photos, plus the photos album/trip
+  // posts collect as comments. Face data for these exists only once the
+  // Immich upload mirror has copied them (mirrorPeople.ts).
+  const uploadKeysByPostId = await collectUploadKeys(posts)
+  if (linkIds.size === 0 && uploadKeysByPostId.size === 0) return tagsByPostId
 
   const links = await prisma.mediaAlbumLink.findMany({ where: { id: { in: [...linkIds] } } })
   const providerByLinkId = new Map(links.map((link) => [link.id, link.provider]))
@@ -220,11 +227,25 @@ export async function attachPeopleToPosts<T extends { id: string; uploadedAssetU
     }
   }
 
+  // Mirrored-upload pass: same mapping, applied to the people Immich found on
+  // the mirrored copies of this page's uploads.
+  if (uploadKeysByPostId.size > 0) {
+    const peopleByKey = await mirroredUploadPeople([...uploadKeysByPostId.values()].flatMap((keys) => [...keys]))
+    for (const [postId, keys] of uploadKeysByPostId) {
+      for (const key of keys) {
+        for (const person of peopleByKey.get(key) ?? []) {
+          const personLink = personLinkByProviderAndId.get(cacheKey('immich', person.id))
+          if (personLink) addTag(postId, personLink)
+        }
+      }
+    }
+  }
+
   // Person-centric fallback: only for providers that don't implement
   // getAlbumAssetPeople at all — a provider that does is handled entirely by
   // the pass above (a runtime failure there fails soft to "no tags for that
   // album this request", it does not fall through to a per-person crawl).
-  for (const personLink of personLinks) {
+  for (const personLink of postAssetRefs.size > 0 ? personLinks : []) {
     if (getMediaProvider(personLink.provider)?.getAlbumAssetPeople) continue
 
     const assetIds = await getCachedPersonAssetIds(personLink.provider, personLink.externalPersonId)
@@ -255,4 +276,41 @@ export async function attachPeopleToPosts<T extends { id: string; uploadedAssetU
   }
 
   return tagsByPostId
+}
+
+// postId -> the /uploads/ keys of its own photos and of the album photos /
+// trip check-in photos stored as comments on it. Only posts with something
+// are present.
+async function collectUploadKeys(posts: Array<{ id: string; uploadedAssetUrls: string[] }>) {
+  const keysByPostId = new Map<string, Set<string>>()
+  if (!(await mirrorPeopleAvailable())) return keysByPostId
+  const add = (postId: string, value: unknown) => {
+    const keys = uploadKeysIn(value)
+    if (keys.length === 0) return
+    const set = keysByPostId.get(postId) ?? new Set<string>()
+    for (const key of keys) set.add(key)
+    keysByPostId.set(postId, set)
+  }
+  for (const post of posts)
+    add(
+      post.id,
+      post.uploadedAssetUrls.filter((url) => url.startsWith('/uploads/'))
+    )
+
+  if (posts.length > 0) {
+    const photoComments = await prisma.comment.findMany({
+      where: {
+        postId: { in: posts.map((p) => p.id) },
+        OR: [
+          { metadata: { path: ['kind'], equals: 'album_photo' } },
+          { metadata: { path: ['kind'], equals: 'trip_checkin' } },
+        ],
+      },
+      select: { postId: true, metadata: true },
+    })
+    for (const comment of photoComments) {
+      add(comment.postId, (comment.metadata as { photoUrls?: unknown } | null)?.photoUrls)
+    }
+  }
+  return keysByPostId
 }

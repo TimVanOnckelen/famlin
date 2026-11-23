@@ -102,8 +102,8 @@ interface ImmichSearchAssetItem {
   people?: Array<{ id: string; name?: string }>
 }
 
-async function searchAlbumAssets(immichAlbumId: string) {
-  const creds = await requireImmichSettings()
+async function searchAlbumAssets(immichAlbumId: string, creds?: ImmichCreds) {
+  creds ??= await requireImmichSettings()
   const res = await immichFetch('/search/metadata', creds, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -158,7 +158,7 @@ function extractPeopleList(data: unknown): Array<{ id: string; name?: string }> 
 const MAX_PEOPLE = 100
 const MAX_THUMBNAIL_BYTES = 50 * 1024
 
-async function fetchPersonThumbnailDataUri(personId: string, creds: ImmichCreds): Promise<string | null> {
+export async function fetchPersonThumbnailDataUri(personId: string, creds: ImmichCreds): Promise<string | null> {
   try {
     const res = await immichFetch(`/people/${personId}/thumbnail`, creds, {
       headers: { Accept: '*/*' },
@@ -181,7 +181,7 @@ async function fetchPersonThumbnailDataUri(personId: string, creds: ImmichCreds)
 const PERSON_ASSET_ID_CAP = 5000
 const PERSON_ASSET_MAX_PAGES = 20
 
-interface ImmichPersonRef {
+export interface ImmichPersonRef {
   id: string
   name: string
 }
@@ -207,7 +207,7 @@ const ALBUM_PEOPLE_FALLBACK_CONCURRENCY = 5
 // Bulk pass: POST /search/metadata scoped to the album with withPeople:true,
 // paginated like getPersonAssetIds(). This is the fast path and covers most
 // assets, but Immich's search may still scope results to the API key owner's
-// own library even with albumIds set — see getAlbumAssetPeopleUncached's
+// own library even with albumIds set — see fetchAlbumAssetPeople's
 // coverage check below for the cross-owner fallback.
 async function fetchAlbumAssetPeopleBulk(
   externalAlbumId: string,
@@ -283,8 +283,13 @@ async function fetchAlbumAssetPeopleFallback(
   return result
 }
 
-async function getAlbumAssetPeopleUncached(externalAlbumId: string): Promise<Map<string, ImmichPersonRef[]>> {
-  const creds = await requireImmichSettings()
+// Uncached, with explicit credentials: the provider passes the read key,
+// the upload mirror's face lookup (services/media/mirrorPeople.ts) passes
+// the mirror key — the account that owns the mirrored assets.
+export async function fetchAlbumAssetPeople(
+  externalAlbumId: string,
+  creds: ImmichCreds
+): Promise<Map<string, ImmichPersonRef[]>> {
   const bulk = await fetchAlbumAssetPeopleBulk(externalAlbumId, creds)
 
   // Coverage check: compare against the album's actual asset list (the same
@@ -292,7 +297,7 @@ async function getAlbumAssetPeopleUncached(externalAlbumId: string): Promise<Map
   // asset genuinely missing from the bulk result (not just "returned with no
   // people") is assumed to belong to another Immich user and out of scope for
   // the album-search endpoint, so it gets fetched individually instead.
-  const albumAssets = await searchAlbumAssets(externalAlbumId)
+  const albumAssets = await searchAlbumAssets(externalAlbumId, creds)
   const missingIds = albumAssets.map((a) => a.id).filter((id) => !bulk.has(id))
 
   if (missingIds.length > 0) {
@@ -533,7 +538,7 @@ export const immichProvider: MediaProvider = {
     const cached = albumAssetPeopleCache.get(externalAlbumId)
     if (cached && cached.expiresAt > Date.now()) return cached.data
 
-    const data = await getAlbumAssetPeopleUncached(externalAlbumId)
+    const data = await fetchAlbumAssetPeople(externalAlbumId, await requireImmichSettings())
     albumAssetPeopleCache.set(externalAlbumId, { data, expiresAt: Date.now() + ALBUM_PEOPLE_CACHE_TTL_MS })
     return data
   },

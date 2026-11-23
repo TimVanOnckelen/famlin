@@ -665,7 +665,7 @@ describe('Immich upload mirror', () => {
       })
       expect(res.json()).toEqual({
         ok: true,
-        missingScopes: ['asset.read', 'album.create', 'albumAsset.create', 'albumAsset.delete'],
+        missingScopes: ['asset.read', 'album.create', 'albumAsset.create', 'albumAsset.delete', 'person.read'],
       })
 
       const elsewhere = await app.inject({
