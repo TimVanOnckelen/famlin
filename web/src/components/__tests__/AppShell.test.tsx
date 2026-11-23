@@ -4,6 +4,7 @@ import { AppShell } from '@/components/AppShell'
 import { createTestQueryClient, makeUser, renderWithQueryClient } from '@/test/fixtures'
 import {
   fetchChatUnreadCounts,
+  fetchChatConversationUnreadCounts,
   fetchGroups,
   fetchServerInfo,
   fetchUnreadNotificationCount,
@@ -13,6 +14,7 @@ import {
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchChatUnreadCounts: vi.fn(),
+  fetchChatConversationUnreadCounts: vi.fn(),
   fetchGroups: vi.fn(),
   fetchServerInfo: vi.fn(),
   fetchUnreadNotificationCount: vi.fn(),
@@ -23,6 +25,7 @@ beforeEach(() => {
   vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', readOnly: false, branding: null })
   vi.mocked(fetchUnreadNotificationCount).mockResolvedValue(0)
   vi.mocked(fetchChatUnreadCounts).mockResolvedValue({})
+  vi.mocked(fetchChatConversationUnreadCounts).mockResolvedValue({ total: 0, byConversation: {} })
   // Most tests don't care about family-scoped tab hiding — give the shell a
   // member of one family by default.
   vi.mocked(fetchGroups).mockResolvedValue([
@@ -77,6 +80,23 @@ describe('AppShell navigation', () => {
     for (const button of feedButtons) {
       expect(button).not.toHaveAttribute('aria-current')
     }
+  })
+
+  it('uses only generalized unread totals on capable servers', async () => {
+    vi.mocked(fetchServerInfo).mockResolvedValue({
+      version: '1.0.0',
+      readOnly: false,
+      branding: null,
+      features: ['directMessages'],
+    })
+    vi.mocked(fetchChatUnreadCounts).mockResolvedValue({ 'group-1': 5 })
+    vi.mocked(fetchChatConversationUnreadCounts).mockResolvedValue({ total: 0, byConversation: {} })
+    const { container } = renderShell()
+
+    await waitFor(() => expect(fetchChatConversationUnreadCounts).toHaveBeenCalledOnce())
+    expect(fetchChatUnreadCounts).not.toHaveBeenCalled()
+    expect(container.querySelector('.sidebar-item-badge')).not.toBeInTheDocument()
+    expect(container.querySelector('.bottom-nav-badge')).not.toBeInTheDocument()
   })
 
   it('clicking a sidebar tab calls its callback', async () => {

@@ -65,7 +65,12 @@ export function useAppNavigation() {
           { replace: true }
         ),
       toPhotos: () => navigate(paths.photos),
-      toChat: () => navigate(paths.chat),
+      toChat: (conversationId?: string, groupId?: string) => {
+        const search = new URLSearchParams()
+        if (conversationId) search.set('conversation', conversationId)
+        else if (groupId) search.set('group', groupId)
+        navigate({ pathname: paths.chat, search: search.toString() })
+      },
       toProfile: () => navigate(paths.profile),
       toFavorites: () => navigate(paths.favorites),
       toNotifications: () => navigate(paths.notifications),
