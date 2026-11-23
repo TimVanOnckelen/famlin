@@ -33,6 +33,7 @@ export function sanitizeUser(user: User) {
     pushOnNewComment: user.pushOnNewComment,
     pushOnNewLike: user.pushOnNewLike,
     pushOnChitchat: user.pushOnChitchat,
+    pushOnDirectMessage: user.pushOnDirectMessage,
     pushOnStory: user.pushOnStory,
     pushOnGiftList: user.pushOnGiftList,
   }

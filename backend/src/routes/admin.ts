@@ -77,6 +77,7 @@ import adminBackupRoutes from './adminBackups.js'
 import adminMediaMirrorRoutes, { isMirroredElsewhere } from './adminMediaMirror.js'
 import { getIntegrationsOverview, invalidateIntegrationChecks } from '../services/integrations.js'
 import { getPublicOrigin } from '../utils/publicOrigin.js'
+import { deleteUserWithPrivateConversations } from '../services/accountDeletion.js'
 
 // Safety cap on GET /media/:provider/people's combined (own + cross-owner
 // discovered) catalog size — this feeds an admin "map this person" picker,
@@ -102,6 +103,7 @@ const userSelect = {
   pushOnNewComment: true,
   pushOnNewLike: true,
   pushOnChitchat: true,
+  pushOnDirectMessage: true,
   pushOnStory: true,
   pushOnGiftList: true,
   createdAt: true,
@@ -431,7 +433,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       // leave the disk too.
       await deleteStoriesWithMedia({ authorId: id })
       const giftLists = await giftListsOfUser(id)
-      await prisma.user.delete({ where: { id } })
+      await deleteUserWithPrivateConversations(id)
       invalidateSessionCache(id)
       await afterGiftListParticipantsRemoved(giftLists, request.user!.id)
       return { success: true }
@@ -493,14 +495,18 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const body = createGroupBodySchema.parse(request.body)
     if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return
 
-    const group = await prisma.group.create({
-      data: {
-        name: body.name,
-        description: body.description,
-        allowedPostTypes: body.allowedPostTypes ?? [],
-        chitchatEnabled: body.chitchatEnabled ?? false,
-        storiesEnabled: body.storiesEnabled ?? true,
-      },
+    const group = await prisma.$transaction(async (tx) => {
+      const created = await tx.group.create({
+        data: {
+          name: body.name,
+          description: body.description,
+          allowedPostTypes: body.allowedPostTypes ?? [],
+          chitchatEnabled: body.chitchatEnabled ?? false,
+          storiesEnabled: body.storiesEnabled ?? true,
+        },
+      })
+      await tx.chatConversation.create({ data: { kind: 'FAMILY', groupId: created.id } })
+      return created
     })
 
     return group

@@ -74,6 +74,58 @@ describe('GET /api/auth/me/export', () => {
     expect(res.rawPayload.subarray(0, 2).toString('latin1')).toBe('PK')
   })
 
+  it('includes only direct conversations that are currently visible to the caller', async () => {
+    const me = await createUser()
+    const peer = await createUser()
+    const stranger = await createUser()
+    const group = await createGroupWithMember(me)
+    await addMember(group.id, peer.id)
+    const otherGroup = await createGroupWithMember(stranger)
+    await addMember(otherGroup.id, peer.id)
+
+    const mine = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: authHeader(me),
+      payload: { kind: 'PRIVATE', participantIds: [peer.id] },
+    })
+    const mineId = mine.json().id
+    await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${mineId}/messages`,
+      headers: authHeader(me),
+      payload: { content: 'My visible direct message' },
+    })
+
+    const other = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: authHeader(peer),
+      payload: { kind: 'PRIVATE', participantIds: [stranger.id] },
+    })
+    const otherId = other.json().id
+    await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${otherId}/messages`,
+      headers: authHeader(peer),
+      payload: { content: 'A direct message outside my families' },
+    })
+
+    const visible = await exportBody(app, me)
+    expect(visible).toContain('My visible direct message')
+    expect(visible).toContain(mineId)
+    expect(visible).toContain('data/chat-conversation-participants.json')
+    expect(visible).not.toContain('A direct message outside my families')
+    expect(visible).not.toContain(otherId)
+
+    await prisma.groupMember.delete({
+      where: { groupId_userId: { groupId: group.id, userId: peer.id } },
+    })
+    const hidden = await exportBody(app, me)
+    expect(hidden).not.toContain('My visible direct message')
+    expect(hidden).not.toContain(mineId)
+  })
+
   it('includes only the caller’s latest device diagnostics', async () => {
     const member = await createUser()
     const other = await createUser()

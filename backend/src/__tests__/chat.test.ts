@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../app.js'
 import { prisma } from '../db.js'
 import { createUserToken } from '../plugins/auth.js'
+import { canReadUpload, recordUpload } from '../services/uploads.js'
 
 // Exercises the chitchat (per-group chat) API: group-membership + the
 // chitchatEnabled gate, message create/list/delete authorization, and the
@@ -72,12 +73,34 @@ afterAll(async () => {
   // Deleting the groups cascades their memberships and ChatMessage/ChatRead
   // rows; deleting the users cascades anything left.
   await prisma.group.deleteMany({ where: { id: { in: [chitchatGroupId, disabledGroupId, unreadGroupId] } } })
+  await prisma.chatConversation.deleteMany({
+    where: { participantKey: [memberA.id, memberB.id].sort().join(':') },
+  })
   await prisma.user.deleteMany({ where: { id: { in: [memberA.id, memberB.id, memberC.id, admin.id] } } })
   await app.close()
   await prisma.$disconnect()
 })
 
 describe('group membership + chitchatEnabled gate', () => {
+  it('lists only people who currently share a family with the caller', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/chat/people',
+      headers: { authorization: `Bearer ${tokenA}` },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({
+      items: [
+        {
+          id: memberB.id,
+          name: memberB.name,
+          avatarUrl: null,
+        },
+      ],
+    })
+  })
+
   it('blocks a non-member from listing messages', async () => {
     const res = await app.inject({
       method: 'GET',
@@ -114,6 +137,273 @@ describe('group membership + chitchatEnabled gate', () => {
       payload: { content: 'should not be allowed either' },
     })
     expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('private conversations', () => {
+  it('returns the same one-to-one conversation for either participant', async () => {
+    const fromA = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+    })
+    expect(fromA.statusCode).toBe(200)
+    expect(fromA.json()).toMatchObject({
+      kind: 'PRIVATE',
+      participants: expect.arrayContaining([
+        { id: memberA.id, name: memberA.name, avatarUrl: null },
+        { id: memberB.id, name: memberB.name, avatarUrl: null },
+      ]),
+    })
+
+    const fromB = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberA.id] },
+    })
+    expect(fromB.statusCode).toBe(200)
+    expect(fromB.json().id).toBe(fromA.json().id)
+  })
+
+  it('rejects self-selection and people outside the caller families', async () => {
+    const self = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberA.id] },
+    })
+    expect(self.statusCode).toBe(400)
+
+    const outsider = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberC.id] },
+    })
+    expect(outsider.statusCode).toBe(404)
+  })
+
+  it('hides a conversation after the last shared family is lost and restores it with membership', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+    })
+    const conversationId = create.json().id
+
+    await prisma.groupMember.deleteMany({
+      where: { userId: memberB.id, groupId: { in: [unreadGroupId, chitchatGroupId] } },
+    })
+    const hidden = await app.inject({
+      method: 'GET',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(hidden.statusCode).toBe(404)
+
+    await prisma.groupMember.create({ data: { userId: memberB.id, groupId: unreadGroupId } })
+    const restored = await app.inject({
+      method: 'GET',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(restored.statusCode).toBe(200)
+
+    await prisma.groupMember.create({ data: { userId: memberB.id, groupId: chitchatGroupId } })
+  })
+
+  it('keeps messages, unread state, notifications, and deletion participant-scoped', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+    })
+    const conversationId = create.json().id
+
+    const sent = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'private hello' },
+    })
+    expect(sent.statusCode).toBe(200)
+    expect(sent.json()).toMatchObject({
+      conversationId,
+      groupId: null,
+      content: 'private hello',
+      encryption: 'none',
+      encryptedPayload: null,
+    })
+    expect(sent.json()).not.toHaveProperty('replyTo')
+
+    const outsider = await app.inject({
+      method: 'GET',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${adminToken}` },
+    })
+    expect(outsider.statusCode).toBe(404)
+
+    const unread = await app.inject({
+      method: 'GET',
+      url: '/api/chat/conversations/unread',
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(unread.json().byConversation[conversationId]).toBeGreaterThan(0)
+
+    const markRead = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/read`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(markRead.statusCode).toBe(200)
+    const read = await app.inject({
+      method: 'GET',
+      url: '/api/chat/conversations/unread',
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(read.json().byConversation[conversationId]).toBe(0)
+
+    await expect
+      .poll(async () =>
+        prisma.notification.findMany({
+          where: { userId: memberB.id, type: 'new_direct_message' },
+          select: { message: true, relatedChatConversationId: true },
+        })
+      )
+      .toContainEqual({
+        message: expect.stringContaining(memberA.name),
+        relatedChatConversationId: conversationId,
+      })
+
+    const blocked = await app.inject({
+      method: 'DELETE',
+      url: `/api/chat/messages/${sent.json().id}`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(blocked.statusCode).toBe(403)
+
+    const deleted = await app.inject({
+      method: 'DELETE',
+      url: `/api/chat/messages/${sent.json().id}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    })
+    expect(deleted.statusCode).toBe(200)
+  })
+
+  it('does not preview unsupported encrypted messages but preserves them in history', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+    })
+    const conversationId = create.json().id
+    const message = await prisma.chatMessage.create({
+      data: {
+        conversationId,
+        authorId: memberA.id,
+        kind: 'USER',
+        content: 'ciphertext-compatible placeholder',
+        attachmentUrl: `/uploads/${randomUUID()}.jpg`,
+        encryption: 'future-cipher-v1',
+        encryptedPayload: { ciphertext: 'opaque' },
+      },
+    })
+
+    const inbox = await app.inject({
+      method: 'GET',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    const summary = inbox.json().items.find((item: { id: string }) => item.id === conversationId)
+    expect(summary.lastMessage).toMatchObject({
+      id: message.id,
+      content: null,
+      hasAttachment: false,
+      encryption: 'future-cipher-v1',
+    })
+
+    const history = await app.inject({
+      method: 'GET',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    })
+    expect(history.json().items[0]).toMatchObject({
+      id: message.id,
+      content: 'ciphertext-compatible placeholder',
+      encryption: 'future-cipher-v1',
+      encryptedPayload: { ciphertext: 'opaque' },
+    })
+  })
+
+  it('atomically binds private attachments and never widens them into a family', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+    })
+    const conversationId = create.json().id
+    const attachmentUrl = `/uploads/${randomUUID()}.jpg`
+    await recordUpload(attachmentUrl, memberA.id)
+    await prisma.groupMember.create({ data: { groupId: chitchatGroupId, userId: memberC.id } })
+
+    const sent = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { attachmentUrl },
+    })
+    expect(sent.statusCode).toBe(200)
+    expect(await canReadUpload(attachmentUrl, memberB.id)).toBe(true)
+    expect(await canReadUpload(attachmentUrl, memberC.id)).toBe(false)
+
+    const rebound = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { attachmentUrl },
+    })
+    expect(rebound.statusCode).toBe(200)
+    expect(await canReadUpload(attachmentUrl, memberC.id)).toBe(false)
+
+    await prisma.groupMember.delete({ where: { groupId_userId: { groupId: chitchatGroupId, userId: memberC.id } } })
+  })
+
+  it('rejects empty and unowned attachments without creating a message', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { kind: 'PRIVATE', participantIds: [memberB.id] },
+    })
+    const conversationId = create.json().id
+
+    const empty = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: '   ' },
+    })
+    expect(empty.statusCode).toBe(400)
+
+    const attachmentUrl = `/uploads/${randomUUID()}.jpg`
+    const unowned = await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { attachmentUrl },
+    })
+    expect(unowned.statusCode).toBe(400)
+    expect(
+      await prisma.chatMessage.count({
+        where: { conversationId, attachmentUrl },
+      })
+    ).toBe(0)
   })
 })
 

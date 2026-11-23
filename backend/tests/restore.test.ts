@@ -215,14 +215,52 @@ describe('POST /api/auth/setup/restore', () => {
     await prisma.like.create({ data: { commentId: parent.id, userId: member.id } })
     await prisma.favorite.create({ data: { postId: plain.id, userId: admin.id } })
 
-    const msg = await prisma.chatMessage.create({ data: { groupId: group.id, authorId: admin.id, content: 'Hi' } })
-    await prisma.chatMessage.create({
-      data: { groupId: group.id, authorId: member.id, content: 'Hey', replyToMessageId: msg.id },
+    const chatConversation = await prisma.chatConversation.create({ data: { kind: 'FAMILY', groupId: group.id } })
+    const msg = await prisma.chatMessage.create({
+      data: { conversationId: chatConversation.id, groupId: group.id, authorId: admin.id, content: 'Hi' },
     })
     await prisma.chatMessage.create({
-      data: { groupId: group.id, authorId: member.id, kind: 'SYSTEM_MILESTONE', refPostId: plain.id },
+      data: {
+        conversationId: chatConversation.id,
+        groupId: group.id,
+        authorId: member.id,
+        content: 'Hey',
+        replyToMessageId: msg.id,
+      },
     })
-    await prisma.chatRead.create({ data: { groupId: group.id, userId: admin.id } })
+    await prisma.chatMessage.create({
+      data: {
+        conversationId: chatConversation.id,
+        groupId: group.id,
+        authorId: member.id,
+        kind: 'SYSTEM_MILESTONE',
+        refPostId: plain.id,
+      },
+    })
+    await prisma.chatRead.create({
+      data: { conversationId: chatConversation.id, groupId: group.id, userId: admin.id },
+    })
+    const privateConversation = await prisma.chatConversation.create({
+      data: {
+        kind: 'PRIVATE',
+        participantKey: [admin.id, member.id].sort().join(':'),
+        createdById: admin.id,
+        participants: { create: [{ userId: admin.id }, { userId: member.id }] },
+      },
+    })
+    await prisma.chatMessage.create({
+      data: {
+        conversationId: privateConversation.id,
+        authorId: admin.id,
+        kind: 'USER',
+        content: 'opaque encrypted placeholder',
+        encryption: 'future-cipher',
+        encryptedPayload: { ciphertext: 'preserve-this' },
+      },
+    })
+    await prisma.chatRead.create({
+      data: { conversationId: privateConversation.id, userId: member.id },
+    })
     await prisma.mediaAlbumLink.create({
       data: {
         groupId: group.id,
@@ -372,6 +410,8 @@ describe('POST /api/auth/setup/restore', () => {
       comments: await prisma.comment.findMany({ orderBy: { id: 'asc' } }),
       likes: await prisma.like.findMany({ orderBy: { id: 'asc' } }),
       favorites: await prisma.favorite.findMany({ orderBy: { id: 'asc' } }),
+      chatConversations: await prisma.chatConversation.findMany({ orderBy: { id: 'asc' } }),
+      chatConversationParticipants: await prisma.chatConversationParticipant.findMany({ orderBy: { id: 'asc' } }),
       chatMessages: await prisma.chatMessage.findMany({ orderBy: { id: 'asc' } }),
       chatReads: await prisma.chatRead.findMany({ orderBy: { id: 'asc' } }),
       mediaAlbumLinks: await prisma.mediaAlbumLink.findMany({ orderBy: { id: 'asc' } }),
@@ -426,8 +466,10 @@ describe('POST /api/auth/setup/restore', () => {
       comments: 2,
       reactions: 2,
       favorites: 1,
-      chatMessages: 3,
-      chatReads: 1,
+      chatConversations: 2,
+      chatConversationParticipants: 2,
+      chatMessages: 4,
+      chatReads: 2,
       mediaAlbumLinks: 1,
       mediaPersonLinks: 1,
       uploads: 5,

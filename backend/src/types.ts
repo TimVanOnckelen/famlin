@@ -225,6 +225,21 @@ export const createChatMessageBodySchema = z
     path: ['content'],
   })
 
+export const createConversationBodySchema = z.object({
+  kind: z.literal('PRIVATE'),
+  participantIds: z.array(z.string()).length(1),
+})
+
+export const createConversationMessageBodySchema = z
+  .object({
+    content: z.string().max(2000).optional(),
+    attachmentUrl: uploadPathSchema.optional(),
+  })
+  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
+    message: 'content or attachmentUrl is required',
+    path: ['content'],
+  })
+
 export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'])
 
 export const reactionBodySchema = z.object({
@@ -357,6 +372,7 @@ export const notificationPrefsSchema = z.object({
   pushOnNewComment: z.boolean().optional(),
   pushOnNewLike: z.boolean().optional(),
   pushOnChitchat: z.boolean().optional(),
+  pushOnDirectMessage: z.boolean().optional(),
   pushOnStory: z.boolean().optional(),
   pushOnGiftList: z.boolean().optional(),
 })

@@ -18,7 +18,13 @@ export interface PushSendResult {
 // MVP-scale feature set.
 const PUSH_PREF_FIELD: Record<
   NotifyType,
-  'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike' | 'pushOnChitchat' | 'pushOnStory' | 'pushOnGiftList'
+  | 'pushOnNewPost'
+  | 'pushOnNewComment'
+  | 'pushOnNewLike'
+  | 'pushOnChitchat'
+  | 'pushOnDirectMessage'
+  | 'pushOnStory'
+  | 'pushOnGiftList'
 > = {
   new_post: 'pushOnNewPost',
   new_comment: 'pushOnNewComment',
@@ -28,6 +34,7 @@ const PUSH_PREF_FIELD: Record<
   on_this_day: 'pushOnNewPost',
   new_media_assets: 'pushOnNewPost',
   new_chat_message: 'pushOnChitchat',
+  new_direct_message: 'pushOnDirectMessage',
   trip_checkin: 'pushOnNewPost',
   album_photo: 'pushOnNewPost',
   new_story: 'pushOnStory',
@@ -46,7 +53,7 @@ const PUSH_PREF_FIELD: Record<
 // deliberately hides from callers that only iterate the generic channel
 // list.
 export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
-  const { recipients, message, settings, postId, storyId, type, triggeredByAdminId } = args
+  const { recipients, message, settings, postId, storyId, chatConversationId, type, triggeredByAdminId } = args
   const tokens = await prisma.pushToken.findMany({
     where: { userId: { in: recipients.map((r) => r.id) } },
   })
@@ -67,7 +74,11 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
       body: message,
       // Lets the client's notification-tap handler navigate straight to the
       // relevant post (see mobile's usePushNotifications.ts).
-      data: storyId ? { relatedPostId: postId, relatedStoryId: storyId } : { relatedPostId: postId },
+      data: chatConversationId
+        ? { relatedPostId: null, relatedChatConversationId: chatConversationId }
+        : storyId
+          ? { relatedPostId: postId, relatedStoryId: storyId }
+          : { relatedPostId: postId },
     }))
 
     const chunks = expo.chunkPushNotifications(messages)

@@ -89,6 +89,43 @@ describe('GET /api/admin/export', () => {
     expect(body).not.toContain('data/devices.json')
   })
 
+  it('includes private conversations, participants, messages, and reads in full backups', async () => {
+    const admin = await createUser({ isAdmin: true })
+    const peer = await createUser()
+    const group = await createGroupWithMember(admin)
+    await prisma.groupMember.create({ data: { groupId: group.id, userId: peer.id } })
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: authHeader(admin),
+      payload: { kind: 'PRIVATE', participantIds: [peer.id] },
+    })
+    const conversationId = created.json().id
+    await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: authHeader(admin),
+      payload: { content: 'Private message retained by the full backup' },
+    })
+    await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/read`,
+      headers: authHeader(peer),
+    })
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/admin/export',
+      headers: authHeader(admin),
+    })
+    const body = response.rawPayload.toString('latin1')
+    expect(body).toContain('data/chat-conversations.json')
+    expect(body).toContain('data/chat-conversation-participants.json')
+    expect(body).toContain('data/chat-reads.json')
+    expect(body).toContain('Private message retained by the full backup')
+    expect(body).toContain(conversationId)
+  })
+
   it('omits media bytes but retains required keys, sizes and branding when includeMedia=false', async () => {
     const admin = await createUser({ isAdmin: true })
     const key = `${randomUUID()}.jpg`

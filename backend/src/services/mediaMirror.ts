@@ -55,7 +55,7 @@ function uploadKeysIn(value: unknown): string[] {
 // in a shared Immich album is readable by everyone that album is shared
 // with, which would bypass circle privacy entirely.
 export async function privateUploadKeys(): Promise<Set<string>> {
-  const [circlePosts, circleComments, stories, wishes, wikiPages] = await Promise.all([
+  const [circlePosts, circleComments, stories, wishes, wikiPages, privateMessages, privateUploads] = await Promise.all([
     prisma.post.findMany({ where: { circleId: { not: null } }, select: { uploadedAssetUrls: true, typeData: true } }),
     prisma.comment.findMany({
       where: { post: { circleId: { not: null } } },
@@ -64,6 +64,14 @@ export async function privateUploadKeys(): Promise<Set<string>> {
     prisma.story.findMany({ select: { imageUrl: true } }),
     prisma.giftListItem.findMany({ where: { photoUrl: { not: null } }, select: { photoUrl: true } }),
     prisma.wikiPage.findMany({ where: { circleId: { not: null } }, select: { content: true } }),
+    prisma.chatMessage.findMany({
+      where: { conversation: { kind: 'PRIVATE' }, attachmentUrl: { not: null } },
+      select: { attachmentUrl: true },
+    }),
+    prisma.upload.findMany({
+      where: { chatConversationId: { not: null } },
+      select: { assetKey: true },
+    }),
   ])
   const keys = new Set<string>()
   const add = (value: unknown) => uploadKeysIn(value).forEach((key) => keys.add(key))
@@ -72,6 +80,8 @@ export async function privateUploadKeys(): Promise<Set<string>> {
   for (const story of stories) add(story.imageUrl)
   for (const wish of wishes) add(wish.photoUrl)
   for (const page of wikiPages) add(page.content)
+  for (const message of privateMessages) add(message.attachmentUrl)
+  for (const upload of privateUploads) keys.add(upload.assetKey)
   return keys
 }
 

@@ -7,12 +7,15 @@ import { excerptText } from './notifications.js'
 
 interface ChatMessageRow {
   id: string
-  groupId: string
+  conversationId: string
+  groupId: string | null
   authorId: string
   author: { id: string; name: string; avatarUrl: string | null }
   kind: string
   content: string | null
   attachmentUrl: string | null
+  encryption: string
+  encryptedPayload: unknown
   refPostId: string | null
   replyToMessageId: string | null
   replyToMessage: {
@@ -62,6 +65,24 @@ export function shapeChatMessage(message: ChatMessageRow, readBy: ChatUser[]) {
     createdAt: message.createdAt,
     editedAt: message.editedAt,
     readBy,
+  }
+}
+
+export function shapeConversationChatMessage(message: ChatMessageRow) {
+  return {
+    id: message.id,
+    conversationId: message.conversationId,
+    groupId: message.groupId,
+    authorId: message.authorId,
+    author: message.author,
+    kind: message.kind,
+    content: message.content,
+    attachmentUrl: message.attachmentUrl,
+    refPostId: message.refPostId,
+    createdAt: message.createdAt,
+    editedAt: message.editedAt,
+    encryption: message.encryption,
+    encryptedPayload: message.encryptedPayload,
   }
 }
 

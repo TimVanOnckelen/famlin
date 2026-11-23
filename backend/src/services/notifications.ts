@@ -5,6 +5,7 @@ import { notificationChannels } from './notificationChannels/index.js'
 import { pushChannel, sendPush } from './notificationChannels/push.js'
 import type { NotifyType, Recipient } from './notificationChannels/types.js'
 import { filterRecipientsByCircle } from './circles.js'
+import { findAccessibleConversation } from './chatConversations.js'
 
 export type { NotifyType, Recipient } from './notificationChannels/types.js'
 // Re-exported for callers that only need the SMTP transport (not a full
@@ -58,6 +59,7 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   on_this_day: 'notifications.onThisDay',
   new_media_assets: 'notifications.newMediaAssets',
   new_chat_message: 'notifications.newChatMessage',
+  new_direct_message: 'notifications.newDirectMessage',
   // count-pluralized (_one/_other) — see notifications.tripCheckin_one/_other
   // in the locale files and src/subscribers/notifications.ts, which computes
   // `count` (today's check-in count for this author on this trip).
@@ -100,6 +102,7 @@ interface NotifyOptions {
   // Set instead of postId for story notifications (new_story, story_reply,
   // story_reaction). Circle-filtered exactly like postId below.
   storyId?: string | null
+  chatConversationId?: string | null
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -120,6 +123,7 @@ async function notify(options: NotifyOptions) {
   const { type, senderId, params, recipientIds, bundleSince } = options
   const postId = options.postId ?? null
   const storyId = options.storyId ?? null
+  const chatConversationId = options.chatConversationId ?? null
 
   let ids = [...new Set(recipientIds)].filter((id) => id !== senderId)
   if (ids.length === 0) return
@@ -145,6 +149,13 @@ async function notify(options: NotifyOptions) {
     ids = await filterRecipientsByCircle(story?.circleId ?? null, ids)
     if (ids.length === 0) return
   }
+  if (chatConversationId) {
+    const eligible = await Promise.all(
+      ids.map(async (id) => ((await findAccessibleConversation(chatConversationId, id)) ? id : null))
+    )
+    ids = eligible.filter((id): id is string => !!id)
+    if (ids.length === 0) return
+  }
 
   const recipients: Recipient[] = await prisma.user.findMany({
     where: { id: { in: ids } },
@@ -158,6 +169,7 @@ async function notify(options: NotifyOptions) {
       pushOnNewComment: true,
       pushOnNewLike: true,
       pushOnChitchat: true,
+      pushOnDirectMessage: true,
       pushOnStory: true,
       pushOnGiftList: true,
     },
@@ -196,15 +208,32 @@ async function notify(options: NotifyOptions) {
   // The in-app history row is written unconditionally (for non-bundled
   // recipients) — channels below are the optional deliveries of it.
   if (createRecipients.length > 0) {
-    await prisma.notification.createMany({
-      data: createRecipients.map((r) => ({
-        userId: r.id,
-        type,
-        relatedPostId: postId,
-        relatedStoryId: storyId,
-        message,
-      })),
-    })
+    try {
+      await prisma.notification.createMany({
+        data: createRecipients.map((r) => ({
+          userId: r.id,
+          type,
+          relatedPostId: postId,
+          relatedStoryId: storyId,
+          relatedChatConversationId: chatConversationId,
+          message,
+        })),
+      })
+    } catch (error) {
+      // A private conversation can disappear between the access re-check and
+      // this insert (for example while either participant deletes an
+      // account). Treat that race as "no notification left to deliver";
+      // every other integrity error must still surface.
+      if (
+        chatConversationId &&
+        typeof error === 'object' &&
+        error !== null &&
+        (error as { code?: string }).code === 'P2003'
+      ) {
+        return
+      }
+      throw error
+    }
   }
 
   // Channels run in parallel and each failure is trapped, so one broken
@@ -218,7 +247,7 @@ async function notify(options: NotifyOptions) {
       const wanted = createRecipients.filter((r) => channel.wants(r, type))
       if (wanted.length === 0) return
       try {
-        await channel.send({ type, recipients: wanted, message, settings, postId, storyId })
+        await channel.send({ type, recipients: wanted, message, settings, postId, storyId, chatConversationId })
       } catch (err) {
         console.error(`Notification channel "${channel.id}" failed`, err)
       }
@@ -254,6 +283,7 @@ export async function notifyUser(options: {
   senderId: string
   postId?: string | null
   storyId?: string | null
+  chatConversationId?: string | null
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -272,6 +302,7 @@ export async function notifyUsers(options: {
   senderId: string
   postId?: string | null
   storyId?: string | null
+  chatConversationId?: string | null
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -360,6 +391,7 @@ export async function resendPostPush(postId: string, triggeredByAdminId: string)
       pushOnNewComment: true,
       pushOnNewLike: true,
       pushOnChitchat: true,
+      pushOnDirectMessage: true,
       pushOnStory: true,
       pushOnGiftList: true,
     },

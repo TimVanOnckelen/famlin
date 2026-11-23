@@ -20,6 +20,7 @@ export type ServerFeature =
   | 'paginatedComments' // after 0.8.7
   | 'configurableLimits' // after 0.8.7
   | 'calendarFeed' // after 0.8.7
+  | 'directMessages' // after 0.10.0
 
 // What a server that sends no `features` array is known to support.
 // Servers started advertising features after 0.8.7, so one without the
