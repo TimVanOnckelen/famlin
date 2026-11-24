@@ -225,7 +225,7 @@ export function ProfileScreen() {
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
     ...(directMessagesSupport === 'supported'
-      ? [{ labelKey: 'profile.notifyDirectMessage', pushKey: 'pushOnDirectMessage' as const }]
+      ? [{ labelKey: 'profile.notifyDirectMessage', pushKey: 'pushOnChitchat' as const }]
       : []),
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
     { labelKey: 'profile.notifyGiftList', pushKey: 'pushOnGiftList' },
