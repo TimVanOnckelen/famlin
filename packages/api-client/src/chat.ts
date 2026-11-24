@@ -115,6 +115,7 @@ export async function createChatConversation(data: CreateChatConversationBody): 
   return response.data
 }
 
+/** @deprecated Use fetchChatConversationMessages(conversationId, params). This function may be removed in the next breaking release. */
 export async function fetchChatMessages(groupId: string, cursor?: string): Promise<ChatMessagesPage> {
   const response = await api.get<ChatMessagesPage>(`/chat/groups/${groupId}/messages`, {
     params: cursor ? { cursor } : undefined,

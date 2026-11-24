@@ -41,6 +41,7 @@ async function createChatConversation(data) {
     const response = await client_1.api.post('/chat/conversations', data);
     return response.data;
 }
+/** @deprecated Use fetchChatConversationMessages(conversationId, params). This function may be removed in the next breaking release. */
 async function fetchChatMessages(groupId, cursor) {
     const response = await client_1.api.get(`/chat/groups/${groupId}/messages`, {
         params: cursor ? { cursor } : undefined,

@@ -81,6 +81,7 @@ export interface CreateChatConversationBody {
 export declare function fetchChatPeople(): Promise<ChatPeoplePage>;
 export declare function fetchChatConversations(): Promise<ChatConversationsPage>;
 export declare function createChatConversation(data: CreateChatConversationBody): Promise<ChatConversation>;
+/** @deprecated Use fetchChatConversationMessages(conversationId, params). This function may be removed in the next breaking release. */
 export declare function fetchChatMessages(groupId: string, cursor?: string): Promise<ChatMessagesPage>;
 export interface ChatConversationMessage {
     id: string;
