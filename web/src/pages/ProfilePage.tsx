@@ -199,7 +199,7 @@ export function ProfilePage({
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
     { labelKey: 'profile.notifyGiftList', pushKey: 'pushOnGiftList' },
     ...(serverFeatureSupport(serverInfo, 'directMessages') === 'supported'
-      ? [{ labelKey: 'profile.notifyDirectMessage', pushKey: 'pushOnDirectMessage' as const }]
+      ? [{ labelKey: 'profile.notifyDirectMessage', pushKey: 'pushOnChitchat' as const }]
       : []),
   ]
 

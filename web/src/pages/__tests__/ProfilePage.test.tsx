@@ -107,14 +107,14 @@ describe('ProfilePage', () => {
     await waitFor(() => expect(updateMe).toHaveBeenCalledWith({ pushOnNewPost: true }))
   })
 
-  it('shows and saves the direct-message push preference on capable servers', async () => {
+  it('uses the shared chat push preference for direct messages on capable servers', async () => {
     vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', features: ['directMessages'] })
     renderWithQueryClient(
-      <ProfilePage user={makeUser({ pushOnDirectMessage: false })} onBack={() => {}} onLogout={() => {}} />
+      <ProfilePage user={makeUser({ pushOnChitchat: false })} onBack={() => {}} onLogout={() => {}} />
     )
 
     await userEvent.click(await screen.findByRole('switch', { name: 'Direct messages — Push' }))
-    await waitFor(() => expect(updateMe).toHaveBeenCalledWith({ pushOnDirectMessage: true }))
+    await waitFor(() => expect(updateMe).toHaveBeenCalledWith({ pushOnChitchat: true }))
   })
 
   it('hides the push column when the server has no push configured', async () => {
