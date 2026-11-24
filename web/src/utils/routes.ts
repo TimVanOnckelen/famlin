@@ -65,10 +65,10 @@ export function useAppNavigation() {
           { replace: true }
         ),
       toPhotos: () => navigate(paths.photos),
-      toChat: (conversationId?: string, groupId?: string) => {
+      toChat: () => navigate(paths.chat),
+      toChatConversation: (conversationId?: unknown) => {
         const search = new URLSearchParams()
-        if (conversationId) search.set('conversation', conversationId)
-        else if (groupId) search.set('group', groupId)
+        if (typeof conversationId === 'string') search.set('conversation', conversationId)
         navigate({ pathname: paths.chat, search: search.toString() })
       },
       toProfile: () => navigate(paths.profile),

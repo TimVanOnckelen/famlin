@@ -348,6 +348,7 @@
     "familyChat": "Chat familiar",
     "unavailable": "Esta conversación no está disponible.",
     "noConversationSelected": "No hay ninguna conversación seleccionada.",
+    "emptyInbox": "Aún no hay conversaciones. Usa el botón Nuevo mensaje de la parte superior derecha para iniciar una.",
     "encryptedMessage": "Mensaje cifrado",
     "newMessage": "Nuevo mensaje",
     "searchPeople": "Buscar personas",
