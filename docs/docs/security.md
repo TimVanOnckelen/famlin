@@ -160,6 +160,8 @@ A member export includes that member's own latest device diagnostics and the dia
 
 Private one-to-one messages are encrypted on the sender's device and decrypted on the recipient's, so the server (and anyone with access to it, including its administrator and its backups) stores only ciphertext. Encryption is on by default for each private conversation, and either person can opt a conversation out; that choice is always shown in the conversation as a visible notice and never happens silently. Each message records whether it is encrypted.
 
+An administrator can turn encryption off for new messages (Server settings → Direct messages); members are then told in every private conversation that new messages are readable by the server's administrator, and already encrypted messages stay encrypted.
+
 Each member has one key identity, created automatically the first time they open a direct message in the app. It reaches their other devices in three ways:
 
 - **Automatically through the phone's own keychain backup.** On iOS the app stores the keys as a synchronizable iCloud Keychain item; on Android in Google's Block Store, which is backed up with the device. Both are end-to-end encrypted by Apple or Google, so the Famlin server never sees them. A new phone signed in to the same Apple or Google account (and restored from its backup on Android) can read old messages without any action. This extends trust to that Apple or Google account and the device passcode that protects it. It does not work between an iPhone and an Android phone, or when iCloud Keychain or the Android backup is turned off.

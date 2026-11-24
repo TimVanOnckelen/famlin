@@ -745,8 +745,30 @@ paths:
                       /api/diagnostics/reports`), `giftListGuests` (guest
                       wishlists on gift lists), `paginatedComments`,
                       `configurableLimits` (`limits` below),
-                      `calendarFeed` (`/api/auth/me/calendar-feed`).
-                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports, giftListGuests, paginatedComments, configurableLimits, calendarFeed]
+                      `calendarFeed` (`/api/auth/me/calendar-feed`),
+                      `directMessages` (private conversations; listed only
+                      while an admin allows direct messages) and
+                      `e2eDirectMessages` (end-to-end encrypted private
+                      messages; listed only while direct messages and
+                      encryption are both allowed).
+                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports, giftListGuests, paginatedComments, configurableLimits, calendarFeed, directMessages, e2eDirectMessages]
+                  directMessages:
+                    type: object
+                    description: >-
+                      Direct-message policy the admin configured. Absent on
+                      older servers; clients then use the `directMessages`
+                      and `e2eDirectMessages` feature ids. `web` is only a
+                      hint for the web app and is not enforced by the server.
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: Private conversations exist on this server.
+                      web:
+                        type: boolean
+                        description: The web app should offer direct messages (`enabled` and the admin's web setting).
+                      encryption:
+                        type: boolean
+                        description: New direct messages may be end-to-end encrypted (`enabled` and the admin's encryption setting).
                   limits:
                     type: object
                     description: >-
@@ -2138,6 +2160,14 @@ paths:
                       $ref: '#/components/schemas/UserSummary'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Direct messages are turned off on this server
+            (`errors.directMessagesDisabled`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/chat/conversations:
     get:
@@ -2147,6 +2177,8 @@ paths:
       description: |
         Includes enabled family chats for the caller and private conversations
         whose participants currently share a family. Newest activity is first.
+        Private conversations are omitted while an admin has turned direct
+        messages off (nothing is deleted).
       responses:
         '200':
           description: Visible conversations
@@ -2186,6 +2218,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChatConversation'
+        '403':
+          description: |
+            Direct messages are turned off on this server
+            (`errors.directMessagesDisabled`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2237,6 +2277,14 @@ paths:
                 $ref: '#/components/schemas/ChatConversationMessagesPage'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Direct messages are turned off on this server
+            (`errors.directMessagesDisabled`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           $ref: '#/components/responses/NotFound'
     post:
@@ -2288,6 +2336,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChatConversationMessage'
+        '403':
+          description: |
+            Direct messages are turned off on this server
+            (`errors.directMessagesDisabled`) or, when sending an encrypted message, end-to-end encryption is turned off (`errors.e2eDirectMessagesDisabled`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2320,6 +2376,14 @@ paths:
                 $ref: '#/components/schemas/Success'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Direct messages are turned off on this server
+            (`errors.directMessagesDisabled`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -2347,7 +2411,10 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Not the author or an admin.
+          description: |
+            Not the author or an admin, or the message is in a private
+            conversation while direct messages are turned off
+            (`errors.directMessagesDisabled`).
           content:
             application/json:
               schema:
@@ -3296,6 +3363,14 @@ paths:
                 properties:
                   encryptionDisabledAt: { type: string, format: date-time, nullable: true }
                   encryptionDisabledById: { type: string, nullable: true }
+        '403':
+          description: |
+            Direct messages are turned off on this server
+            (`errors.directMessagesDisabled`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '400': { $ref: '#/components/responses/BadRequest' }
         '404': { $ref: '#/components/responses/NotFound' }
 
