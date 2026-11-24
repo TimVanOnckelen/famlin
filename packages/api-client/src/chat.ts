@@ -173,9 +173,6 @@ export interface SendChatMessageBody {
 /** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
 export type CreateChatMessageBody = SendChatMessageBody
 
-/** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
-export type CreateChatConversationMessageBody = SendChatMessageBody
-
 export async function sendChatConversationMessage(
   conversationId: string,
   data: SendChatMessageBody
@@ -194,6 +191,7 @@ export async function deleteChatMessage(messageId: string): Promise<void> {
   await api.delete(`/chat/messages/${messageId}`)
 }
 
+/** @deprecated Use markChatConversationRead(conversationId). This function may be removed in the next breaking release. */
 export async function markChatRead(groupId: string): Promise<void> {
   await api.post(`/chat/groups/${groupId}/read`)
 }
@@ -214,6 +212,7 @@ export async function fetchChatConversationUnreadCounts(): Promise<ChatConversat
   return response.data
 }
 
+/** @deprecated Use fetchChatConversationUnreadCounts(). This function may be removed in the next breaking release. */
 export async function fetchChatUnreadCounts(): Promise<Record<string, number>> {
   const response = await api.get<Record<string, number>>('/chat/unread-counts')
   return response.data

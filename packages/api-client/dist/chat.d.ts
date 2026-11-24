@@ -115,11 +115,10 @@ export interface SendChatMessageBody {
 }
 /** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
 export type CreateChatMessageBody = SendChatMessageBody;
-/** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
-export type CreateChatConversationMessageBody = SendChatMessageBody;
 export declare function sendChatConversationMessage(conversationId: string, data: SendChatMessageBody): Promise<ChatConversationMessage>;
 export declare function sendChatMessage(groupId: string, data: SendChatMessageBody): Promise<ChatMessage>;
 export declare function deleteChatMessage(messageId: string): Promise<void>;
+/** @deprecated Use markChatConversationRead(conversationId). This function may be removed in the next breaking release. */
 export declare function markChatRead(groupId: string): Promise<void>;
 export declare function markChatConversationRead(conversationId: string): Promise<void>;
 export interface ChatConversationUnreadCounts {
@@ -127,4 +126,5 @@ export interface ChatConversationUnreadCounts {
     byConversation: Record<string, number>;
 }
 export declare function fetchChatConversationUnreadCounts(): Promise<ChatConversationUnreadCounts>;
+/** @deprecated Use fetchChatConversationUnreadCounts(). This function may be removed in the next breaking release. */
 export declare function fetchChatUnreadCounts(): Promise<Record<string, number>>;

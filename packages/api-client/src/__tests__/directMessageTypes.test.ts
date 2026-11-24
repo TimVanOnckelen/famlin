@@ -4,7 +4,6 @@ import type {
   ChatConversationMessage,
   ChatMessage,
   ChatMessageReply,
-  CreateChatConversationMessageBody,
   CreateChatMessageBody,
   SendChatMessageBody,
 } from '../chat'
@@ -33,7 +32,6 @@ describe('direct-message profile and notification types', () => {
       replyToMessageId: 'message-0',
     }
     const familyBody: CreateChatMessageBody = body
-    const conversationBody: CreateChatConversationMessageBody = body
     const reply: ChatMessageReply = {
       id: 'message-0',
       authorId: 'user-2',
@@ -58,9 +56,9 @@ describe('direct-message profile and notification types', () => {
       replyTo: reply,
     }
 
-    expect({ familyBody, conversationBody, familyMessage, conversationMessage }).toEqual({
+    expect({ familyBody, conversationMessageBody: body, familyMessage, conversationMessage }).toEqual({
       familyBody: body,
-      conversationBody: body,
+      conversationMessageBody: body,
       familyMessage: { groupId: 'group-1', readBy: [], replyTo: reply },
       conversationMessage: {
         conversationId: 'conversation-1',

@@ -69,6 +69,7 @@ async function sendChatMessage(groupId, data) {
 async function deleteChatMessage(messageId) {
     await client_1.api.delete(`/chat/messages/${messageId}`);
 }
+/** @deprecated Use markChatConversationRead(conversationId). This function may be removed in the next breaking release. */
 async function markChatRead(groupId) {
     await client_1.api.post(`/chat/groups/${groupId}/read`);
 }
@@ -81,6 +82,7 @@ async function fetchChatConversationUnreadCounts() {
     const response = await client_1.api.get('/chat/conversations/unread');
     return response.data;
 }
+/** @deprecated Use fetchChatConversationUnreadCounts(). This function may be removed in the next breaking release. */
 async function fetchChatUnreadCounts() {
     const response = await client_1.api.get('/chat/unread-counts');
     return response.data;

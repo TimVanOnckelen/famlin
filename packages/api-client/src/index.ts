@@ -245,7 +245,6 @@ export type {
   ChatConversationMessage,
   ChatConversationMessagesPage,
   FetchChatConversationMessagesParams,
-  CreateChatConversationMessageBody,
   ChatConversationUnreadCounts,
 } from './chat'
 export {
