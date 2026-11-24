@@ -307,6 +307,7 @@ it('keeps the newest private conversation unselected and prompts to start from a
   expect(await screen.findByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
   const inbox = await screen.findByRole('complementary', { name: 'Chats' })
   expect(within(inbox).getByRole('button', { name: /Emma/ })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Family chats' })).not.toBeInTheDocument()
   expect(screen.getByTestId('location')).toHaveTextContent('/chat')
   expect(fetchChatConversationMessages).not.toHaveBeenCalled()
   first.unmount()
@@ -324,6 +325,28 @@ it('keeps the newest private conversation unselected and prompts to start from a
   expect(screen.getByRole('button', { name: 'New message' })).toBeInTheDocument()
   expect(fetchChatConversationMessages).not.toHaveBeenCalled()
   expect(markChatConversationRead).not.toHaveBeenCalled()
+})
+
+it('hides direct messages when only family chats exist', async () => {
+  vi.mocked(fetchChatConversations).mockResolvedValue({
+    items: [
+      {
+        id: 'family-1',
+        kind: 'FAMILY',
+        group: { id: 'group-1', name: 'De Vries family' },
+        participants: [{ id: 'user-1', name: 'Grandpa John', avatarUrl: null }],
+        lastMessage: null,
+        unreadCount: 0,
+        updatedAt: '2026-11-22T10:00:00Z',
+      },
+    ],
+  })
+
+  renderPage()
+
+  expect(await screen.findByRole('heading', { name: 'Family chats' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Direct messages' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /De Vries family/ })).toBeInTheDocument()
 })
 
 it('shows a neutral detail state while the inbox loads or fails', async () => {

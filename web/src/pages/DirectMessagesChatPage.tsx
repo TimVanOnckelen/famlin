@@ -162,22 +162,26 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
         >
           {conversations.isSuccess && (
             <aside className="chat-unified-inbox" aria-label={t('chat.groupListLabel')}>
-              <InboxSection
-                title={t('chat.familyChats')}
-                items={family}
-                user={props.user}
-                locale={i18n.language}
-                onSelect={selectConversation}
-                selectedId={selectedId}
-              />
-              <InboxSection
-                title={t('chat.directMessages')}
-                items={direct}
-                user={props.user}
-                locale={i18n.language}
-                onSelect={selectConversation}
-                selectedId={selectedId}
-              />
+              {family.length > 0 && (
+                <InboxSection
+                  title={t('chat.familyChats')}
+                  items={family}
+                  user={props.user}
+                  locale={i18n.language}
+                  onSelect={selectConversation}
+                  selectedId={selectedId}
+                />
+              )}
+              {direct.length > 0 && (
+                <InboxSection
+                  title={t('chat.directMessages')}
+                  items={direct}
+                  user={props.user}
+                  locale={i18n.language}
+                  onSelect={selectConversation}
+                  selectedId={selectedId}
+                />
+              )}
             </aside>
           )}
           {selected ? (
