@@ -73,6 +73,18 @@ jest.mock('react-native-reanimated', () => {
 jest.mock('@/stores/authStore', () => ({
   useAuthStore: (selector: any) => selector({ user: { id: 'me' } }),
 }))
+// End-to-end behaviour has its own tests (src/e2e/__tests__); here the server has no encryption.
+jest.mock('@/e2e/useDmCrypto', () => ({
+  useDmCrypto: (_conversation: unknown, items: { id: string; encryption: string }[]) => ({
+    e2e: { status: 'unsupported', myKeys: [], latestKeys: undefined },
+    decision: { kind: 'plaintext', reason: 'unsupported' },
+    rows: items.map((message) => ({ message, kind: message.encryption === 'none' ? 'plain' : 'unsupported' })),
+    peerId: 'ana',
+    verified: false,
+    keyChanged: false,
+    dismissKeyChange: jest.fn(),
+  }),
+}))
 jest.mock('@/i18n/utils', () => ({ formatRelativeDate: () => 'now' }))
 jest.mock('@famlin/api-client', () => ({
   ...jest.requireActual('@famlin/api-client'),

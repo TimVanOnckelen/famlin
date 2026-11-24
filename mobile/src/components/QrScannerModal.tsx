@@ -11,11 +11,22 @@ import { parseConnectQr } from '@/utils/connectQr'
 interface QrScannerModalProps {
   visible: boolean
   onClose: () => void
-  /** Called once with the server origin read from a valid Famlin QR code. */
-  onScanned: (server: string) => void
+  /** Called once with the value `parse` accepted (by default the server origin of a Famlin connect QR). */
+  onScanned: (value: string) => void
+  /** Turns a scanned QR text into a value, or null when it isn't a code this scan expects. */
+  parse?: (data: string) => string | null
+  title?: string
+  hint?: string
 }
 
-export function QrScannerModal({ visible, onClose, onScanned }: QrScannerModalProps) {
+export function QrScannerModal({
+  visible,
+  onClose,
+  onScanned,
+  parse = parseConnectQr,
+  title,
+  hint,
+}: QrScannerModalProps) {
   const { t } = useTranslation()
   const [permission, requestPermission] = useCameraPermissions()
   const [invalid, setInvalid] = useState(false)
@@ -41,7 +52,7 @@ export function QrScannerModal({ visible, onClose, onScanned }: QrScannerModalPr
 
   function handleScan({ data }: { data: string }) {
     if (handledRef.current) return
-    const server = parseConnectQr(data)
+    const server = parse(data)
     if (!server) {
       // Keep scanning, but tell the user this wasn't a Famlin code.
       setInvalid(true)
@@ -59,7 +70,7 @@ export function QrScannerModal({ visible, onClose, onScanned }: QrScannerModalPr
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>{t('connect.scanTitle')}</Text>
+          <Text style={styles.title}>{title ?? t('connect.scanTitle')}</Text>
           <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
             <Icon name="x" size={26} color={colors.white} />
           </TouchableOpacity>
@@ -93,7 +104,7 @@ export function QrScannerModal({ visible, onClose, onScanned }: QrScannerModalPr
         )}
 
         <Text style={[styles.hint, invalid && styles.hintInvalid]}>
-          {invalid ? t('connect.invalidCode') : t('connect.scanHint')}
+          {invalid ? t('connect.invalidCode') : (hint ?? t('connect.scanHint'))}
         </Text>
       </SafeAreaView>
     </Modal>

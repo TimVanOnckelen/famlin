@@ -393,7 +393,8 @@
     "deleteMessageTitle": "删除消息？",
     "deleteMessageConfirm": "这会为此对话中的所有人永久删除消息。",
     "delete": "删除",
-    "deleteMessage": "删除消息"
+    "deleteMessage": "删除消息",
+    "previewEncrypted": "加密消息"
   },
   "photos": {
     "title": "照片",
@@ -836,5 +837,137 @@
     "sent": "已发送给管理员",
     "sendFailed": "未发送，请重试",
     "close": "关闭滚动诊断"
+  },
+  "e2e": {
+    "title": "加密消息",
+    "addPhoto": "添加照片",
+    "photoFailed": "无法加载照片。点按重试。",
+    "encryptedMessage": "加密消息",
+    "stillChecking": "正在检查加密状态…",
+    "decrypting": "正在解密…",
+    "conversationMenu": "加密与安全码",
+    "turnOn": "开启",
+    "turnOff": "关闭加密",
+    "turnOffTitle": "关闭加密？",
+    "turnOffConfirm": "与 {{name}} 的此聊天中的新消息将不再加密。你们双方都会在聊天中看到一条提示。你可以随时重新开启。",
+    "verify": "验证",
+    "dismiss": "忽略",
+    "keyChanged": "{{name}} 的安全码已更改。这可能是因为对方换了新手机或重置了密钥。请核对安全码以确认。",
+    "state": {
+      "encrypted": "已加密",
+      "notEncrypted": "未加密"
+    },
+    "system": {
+      "disabled": "{{name}} 关闭了加密",
+      "enabled": "{{name}} 重新开启了加密"
+    },
+    "banner": {
+      "encrypted": "此聊天中的消息已端到端加密。目前仅支持照片，不支持视频。",
+      "disabled": "此对话已关闭加密。你发送的消息不会被加密。",
+      "peerNoKey": "{{name}} 尚未设置加密消息。消息不会被加密。",
+      "needsSetup": "目前无法设置加密，因此消息不会被加密。",
+      "needsRestore": "你的消息不会被加密，因为这部手机还没有你的密钥。",
+      "setUp": "设置加密消息",
+      "restore": "恢复你的加密消息"
+    },
+    "error": {
+      "noKeyForMe": "这条消息是发给你之前的手机或密钥的，因此无法在此阅读。",
+      "unknownVersion": "请更新应用以阅读这条消息。",
+      "badSignature": "这条消息无法验证，已被隐藏。",
+      "corrupt": "无法解密这条消息。",
+      "restoreKeys": "恢复你的密钥"
+    },
+    "restore": {
+      "title": "在这部手机上获取你的密钥",
+      "body": "你之前已设置过加密消息，但这部手机还没有你的密钥。请选择获取方式。",
+      "scan": "从我的另一部手机扫描",
+      "enterCode": "输入我的恢复码",
+      "startOver": "我弄丢了，重新开始",
+      "startOverTitle": "重新开始？",
+      "startOverMessage": "你将获得新密钥。新消息仍可使用，但旧消息只能在旧手机上以及对方那里阅读。",
+      "startOverConfirm": "重新开始",
+      "scanTitle": "用你的另一部手机扫描",
+      "scanBody": "在加密消息已可使用的手机上，打开 Famlin → 个人资料 → 加密消息 → 关联新设备，然后扫描此码。",
+      "waiting": "正在等待你的另一部手机…",
+      "scanTimeout": "等待时间过长。",
+      "tryAgain": "重试",
+      "codeTitle": "输入你的恢复码",
+      "codeBody": "请输入设置加密消息时保存的 8 组、每组 4 个字符。",
+      "restore": "恢复",
+      "invalid": "这看起来不像恢复码。请检查是否有输入错误。",
+      "wrong": "此恢复码不匹配。请检查后重试。",
+      "failed": "无法恢复你的密钥。请重试。",
+      "doneTitle": "你的密钥已恢复",
+      "doneBody": "你现在可以在这部手机上阅读和发送加密消息了。",
+      "noBackup": "你的消息没有恢复码。如果你不再拥有另一部手机，可以重新开始：新消息仍可使用，但旧消息只能在旧手机上以及对方那里阅读。"
+    },
+    "link": {
+      "title": "关联新设备",
+      "heading": "关联新手机",
+      "body": "在新手机上打开 Famlin，选择“恢复你的密钥”→“从我的另一部手机扫描”，然后扫描它显示的码。",
+      "scan": "扫描二维码",
+      "scanTitle": "扫描新手机",
+      "scanHint": "将相机对准新手机上的码。",
+      "failed": "无法关联手机。请重试。",
+      "doneTitle": "手机已关联",
+      "doneBody": "你的新手机稍后就会拥有你的密钥。",
+      "notReady": "这部手机还没有你的密钥，因此无法关联其他手机。"
+    },
+    "safetyCode": {
+      "menu": "安全码",
+      "title": "安全码",
+      "unavailable": "当你和 {{name}} 都设置好加密消息后，才会有安全码。",
+      "body": "为确认没有人在窃听，请当面或通话时与 {{name}} 核对这个码。如果两部手机上的相同，你们的聊天就是私密的。",
+      "scan": "扫描 {{name}} 的码",
+      "mark": "一致：标记为已验证",
+      "unmark": "取消验证",
+      "verified": "已与 {{name}} 验证",
+      "scanMatch": "两个码一致。",
+      "scanMismatch": "两个码不一致！在向对方确认之前，请不要信任此聊天。",
+      "scanTitle": "扫描安全码",
+      "scanHint": "扫描 {{name}} 手机上的码。"
+    },
+    "profile": {
+      "status": {
+        "unsupported": "此服务器不支持加密消息。",
+        "loading": "正在检查…",
+        "needsSetup": "正在设置…",
+        "needsRestore": "这部手机还没有你的密钥，因此无法阅读或发送加密消息。",
+        "ready": "已开启。你的私密消息已加密。"
+      },
+      "reminder": "你的加密消息尚未备份。备份后才能在新手机上阅读。",
+      "showCode": "显示恢复码",
+      "showTitle": "显示恢复码？",
+      "showMessage": "任何看到此码的人都能阅读你的私密消息。请确认周围没有人在看。",
+      "show": "显示",
+      "codeTitle": "你的恢复码",
+      "noCodeTitle": "这部手机上没有该码",
+      "noCodeMessage": "这部手机没有保存你的恢复码。请创建一个新的，以获得可保存的码。",
+      "newCode": "新的恢复码",
+      "newCodeTitle": "创建新的恢复码？",
+      "newCodeMessage": "旧的恢复码将失效。",
+      "newCodeSaved": "请立即保存。旧的恢复码已失效。",
+      "linkDevice": "关联新设备",
+      "reset": "重置密钥",
+      "resetTitle": "重置你的密钥？",
+      "resetMessage": "你将获得新密钥和新的恢复码。发给旧密钥的消息只能在仍保有旧密钥的手机上阅读。你的联系人会看到你的安全码已更改。",
+      "backupNow": "备份你的加密消息",
+      "resetDone": "已创建新密钥。"
+    },
+    "backup": {
+      "title": "备份你的加密消息",
+      "body": "备份可让你在不再拥有这部手机时，在新手机上阅读旧的加密消息。备份是可选的：没有它加密消息也能正常使用。",
+      "start": "创建备份码",
+      "accountLabel": "账户",
+      "codeTitle": "你的恢复码",
+      "codeBody": "请把这个码保存到密码管理器或写下来。在新手机上阅读旧消息时需要它。任何拥有此码的人都能阅读你的消息，请勿分享。",
+      "shareCode": "复制或保存到密码管理器",
+      "saved": "我已保存恢复码"
+    },
+    "reminder": {
+      "text": "备份你的加密消息，以便在新手机上阅读。",
+      "action": "备份",
+      "dismiss": "以后再说"
+    }
   }
 }

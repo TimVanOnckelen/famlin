@@ -393,7 +393,8 @@
     "deleteMessageTitle": "Bericht verwijderen?",
     "deleteMessageConfirm": "Hiermee verwijder je het bericht definitief voor iedereen in dit gesprek.",
     "delete": "Verwijderen",
-    "deleteMessage": "Bericht verwijderen"
+    "deleteMessage": "Bericht verwijderen",
+    "previewEncrypted": "Versleuteld bericht"
   },
   "photos": {
     "title": "Foto's",
@@ -836,5 +837,137 @@
     "sent": "Naar admin gestuurd",
     "sendFailed": "Niet verstuurd, probeer opnieuw",
     "close": "Scrolldiagnose sluiten"
+  },
+  "e2e": {
+    "title": "Versleutelde berichten",
+    "addPhoto": "Foto toevoegen",
+    "photoFailed": "Foto laden mislukt. Tik om het opnieuw te proberen.",
+    "encryptedMessage": "Versleuteld bericht",
+    "stillChecking": "Versleuteling controleren…",
+    "decrypting": "Ontsleutelen…",
+    "conversationMenu": "Versleuteling en veiligheidscode",
+    "turnOn": "Aanzetten",
+    "turnOff": "Versleuteling uitzetten",
+    "turnOffTitle": "Versleuteling uitzetten?",
+    "turnOffConfirm": "Nieuwe berichten in deze chat met {{name}} worden niet meer versleuteld. Jullie allebei zien een melding in de chat. Je kunt het altijd weer aanzetten.",
+    "verify": "Controleren",
+    "dismiss": "Sluiten",
+    "keyChanged": "De beveiligingscode van {{name}} is veranderd. Dat kan gebeuren bij een nieuwe telefoon of nieuwe sleutels. Vergelijk de veiligheidscode om zeker te zijn.",
+    "state": {
+      "encrypted": "Versleuteld",
+      "notEncrypted": "Niet versleuteld"
+    },
+    "system": {
+      "disabled": "{{name}} heeft de versleuteling uitgezet",
+      "enabled": "{{name}} heeft de versleuteling weer aangezet"
+    },
+    "banner": {
+      "encrypted": "Berichten in deze chat zijn end-to-end versleuteld. Voorlopig alleen foto's, geen video's.",
+      "disabled": "Versleuteling staat uit voor dit gesprek. Berichten die je stuurt zijn niet versleuteld.",
+      "peerNoKey": "{{name}} heeft versleutelde berichten nog niet ingesteld. Berichten zijn niet versleuteld.",
+      "needsSetup": "Versleuteling kon nu niet worden ingesteld, dus berichten zijn niet versleuteld.",
+      "needsRestore": "Je berichten zijn niet versleuteld omdat deze telefoon je sleutels nog niet heeft.",
+      "setUp": "Versleutelde berichten instellen",
+      "restore": "Je versleutelde berichten terugzetten"
+    },
+    "error": {
+      "noKeyForMe": "Dit bericht is naar je vorige telefoon of sleutels gestuurd en kan hier niet gelezen worden.",
+      "unknownVersion": "Werk de app bij om dit bericht te lezen.",
+      "badSignature": "Dit bericht kon niet worden geverifieerd en is verborgen.",
+      "corrupt": "Dit bericht kan niet worden ontsleuteld.",
+      "restoreKeys": "Je sleutels terugzetten"
+    },
+    "restore": {
+      "title": "Zet je sleutels op deze telefoon",
+      "body": "Je hebt eerder versleutelde berichten ingesteld, maar deze telefoon heeft je sleutels nog niet. Kies hoe je ze wilt ophalen.",
+      "scan": "Scannen vanaf mijn andere telefoon",
+      "enterCode": "Mijn herstelcode invoeren",
+      "startOver": "Ik ben ze kwijt, opnieuw beginnen",
+      "startOverTitle": "Opnieuw beginnen?",
+      "startOverMessage": "Je krijgt nieuwe sleutels. Nieuwe berichten blijven werken, maar oude berichten blijven alleen leesbaar op de oude telefoon en voor de ander.",
+      "startOverConfirm": "Opnieuw beginnen",
+      "scanTitle": "Scan met je andere telefoon",
+      "scanBody": "Open op de telefoon waar versleutelde berichten al werken Famlin → Profiel → Versleutelde berichten → Nieuw apparaat koppelen en scan deze code.",
+      "waiting": "Wachten op je andere telefoon…",
+      "scanTimeout": "Dat duurde te lang.",
+      "tryAgain": "Opnieuw proberen",
+      "codeTitle": "Voer je herstelcode in",
+      "codeBody": "Typ de 8 groepen van 4 tekens die je hebt bewaard toen je versleutelde berichten instelde.",
+      "restore": "Terugzetten",
+      "invalid": "Dit lijkt niet op een herstelcode. Controleer op typefouten.",
+      "wrong": "Deze herstelcode klopt niet. Controleer hem en probeer het opnieuw.",
+      "failed": "Je sleutels terugzetten is mislukt. Probeer het opnieuw.",
+      "doneTitle": "Je sleutels zijn terug",
+      "doneBody": "Je kunt op deze telefoon versleutelde berichten lezen en sturen.",
+      "noBackup": "Er is geen herstelcode voor je berichten. Heb je je andere telefoon niet meer, dan kun je opnieuw beginnen: nieuwe berichten blijven werken, maar oude blijven alleen leesbaar op de oude telefoon en voor de ander."
+    },
+    "link": {
+      "title": "Nieuw apparaat koppelen",
+      "heading": "Een nieuwe telefoon koppelen",
+      "body": "Open Famlin op de nieuwe telefoon en kies Je sleutels terugzetten → Scannen vanaf mijn andere telefoon. Scan daarna de code die daar getoond wordt.",
+      "scan": "Code scannen",
+      "scanTitle": "Scan de nieuwe telefoon",
+      "scanHint": "Richt de camera op de code op je nieuwe telefoon.",
+      "failed": "Koppelen van de telefoon is mislukt. Probeer het opnieuw.",
+      "doneTitle": "Telefoon gekoppeld",
+      "doneBody": "Je nieuwe telefoon heeft zo meteen je sleutels.",
+      "notReady": "Deze telefoon heeft je sleutels nog niet en kan dus geen andere koppelen."
+    },
+    "safetyCode": {
+      "menu": "Veiligheidscode",
+      "title": "Veiligheidscode",
+      "unavailable": "Een veiligheidscode is beschikbaar zodra jij en {{name}} allebei versleutelde berichten hebben ingesteld.",
+      "body": "Vergelijk deze code met {{name}}, persoonlijk of tijdens een gesprek, om zeker te weten dat niemand meeluistert. Is hij op beide telefoons hetzelfde, dan is jullie chat privé.",
+      "scan": "Code van {{name}} scannen",
+      "mark": "Hij komt overeen: markeer als geverifieerd",
+      "unmark": "Verificatie verwijderen",
+      "verified": "Geverifieerd met {{name}}",
+      "scanMatch": "De codes komen overeen.",
+      "scanMismatch": "De codes komen NIET overeen. Vertrouw deze chat niet totdat je het met de ander hebt gecontroleerd.",
+      "scanTitle": "Scan de veiligheidscode",
+      "scanHint": "Scan de code op de telefoon van {{name}}."
+    },
+    "profile": {
+      "status": {
+        "unsupported": "Deze server ondersteunt geen versleutelde berichten.",
+        "loading": "Controleren…",
+        "needsSetup": "Instellen…",
+        "needsRestore": "Deze telefoon heeft je sleutels nog niet en kan dus geen versleutelde berichten lezen of sturen.",
+        "ready": "Aan. Je privéberichten zijn versleuteld."
+      },
+      "reminder": "Je versleutelde berichten hebben nog geen back-up. Maak er een om ze op een nieuwe telefoon te lezen.",
+      "showCode": "Herstelcode tonen",
+      "showTitle": "Herstelcode tonen?",
+      "showMessage": "Wie deze code ziet, kan je privéberichten lezen. Zorg dat niemand meekijkt.",
+      "show": "Tonen",
+      "codeTitle": "Je herstelcode",
+      "noCodeTitle": "Code niet op deze telefoon",
+      "noCodeMessage": "Deze telefoon bewaart je herstelcode niet. Maak een nieuwe aan om een code te krijgen die je kunt bewaren.",
+      "newCode": "Nieuwe herstelcode",
+      "newCodeTitle": "Nieuwe herstelcode maken?",
+      "newCodeMessage": "Je oude code werkt dan niet meer.",
+      "newCodeSaved": "Bewaar hem nu. De oude code werkt niet meer.",
+      "linkDevice": "Nieuw apparaat koppelen",
+      "reset": "Sleutels opnieuw instellen",
+      "resetTitle": "Sleutels opnieuw instellen?",
+      "resetMessage": "Je krijgt nieuwe sleutels en een nieuwe herstelcode. Berichten die naar je oude sleutels zijn gestuurd, kunnen alleen gelezen worden op telefoons die ze nog hebben. Je contacten zien dat je beveiligingscode is veranderd.",
+      "backupNow": "Back-up van je versleutelde berichten maken",
+      "resetDone": "Nieuwe sleutels gemaakt."
+    },
+    "backup": {
+      "title": "Maak een back-up van je versleutelde berichten",
+      "body": "Met een back-up kun je je oude versleutelde berichten lezen op een nieuwe telefoon als je deze niet meer hebt. Het is optioneel: versleutelde berichten werken ook zonder.",
+      "start": "Back-upcode maken",
+      "accountLabel": "Account",
+      "codeTitle": "Je herstelcode",
+      "codeBody": "Bewaar deze code in je wachtwoordmanager of schrijf hem op. Je hebt hem nodig om je oude berichten op een nieuwe telefoon te lezen. Wie deze code heeft, kan je berichten lezen, deel hem dus niet.",
+      "shareCode": "Kopiëren of bewaren in wachtwoordmanager",
+      "saved": "Ik heb mijn herstelcode bewaard"
+    },
+    "reminder": {
+      "text": "Maak een back-up van je versleutelde berichten zodat je ze op een nieuwe telefoon kunt lezen.",
+      "action": "Back-up maken",
+      "dismiss": "Niet nu"
+    }
   }
 }

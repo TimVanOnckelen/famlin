@@ -393,7 +393,8 @@
     "deleteMessageTitle": "¿Eliminar mensaje?",
     "deleteMessageConfirm": "Esto elimina permanentemente el mensaje para todos en esta conversación.",
     "delete": "Eliminar",
-    "deleteMessage": "Eliminar mensaje"
+    "deleteMessage": "Eliminar mensaje",
+    "previewEncrypted": "Mensaje cifrado"
   },
   "photos": {
     "title": "Fotos",
@@ -836,5 +837,137 @@
     "sent": "Enviado al administrador",
     "sendFailed": "No enviado, inténtalo de nuevo",
     "close": "Cerrar diagnóstico de desplazamiento"
+  },
+  "e2e": {
+    "title": "Mensajes cifrados",
+    "addPhoto": "Adjuntar una foto",
+    "photoFailed": "No se pudo cargar la foto. Toca para intentarlo de nuevo.",
+    "encryptedMessage": "Mensaje cifrado",
+    "stillChecking": "Comprobando el cifrado…",
+    "decrypting": "Descifrando…",
+    "conversationMenu": "Cifrado y código de seguridad",
+    "turnOn": "Activar",
+    "turnOff": "Desactivar el cifrado",
+    "turnOffTitle": "¿Desactivar el cifrado?",
+    "turnOffConfirm": "Los mensajes nuevos de este chat con {{name}} dejarán de estar cifrados. Los dos verán una nota en el chat. Puedes volver a activarlo cuando quieras.",
+    "verify": "Verificar",
+    "dismiss": "Descartar",
+    "keyChanged": "El código de seguridad de {{name}} ha cambiado. Puede pasar si tiene un teléfono nuevo o nuevas claves. Compara el código de seguridad para estar seguro.",
+    "state": {
+      "encrypted": "Cifrado",
+      "notEncrypted": "Sin cifrar"
+    },
+    "system": {
+      "disabled": "{{name}} desactivó el cifrado",
+      "enabled": "{{name}} volvió a activar el cifrado"
+    },
+    "banner": {
+      "encrypted": "Los mensajes de este chat están cifrados de extremo a extremo. Por ahora solo fotos, sin vídeos.",
+      "disabled": "El cifrado está desactivado en esta conversación. Los mensajes que envíes no están cifrados.",
+      "peerNoKey": "{{name}} aún no ha configurado los mensajes cifrados. Los mensajes no están cifrados.",
+      "needsSetup": "No se pudo configurar el cifrado ahora, así que los mensajes no están cifrados.",
+      "needsRestore": "Tus mensajes no están cifrados porque este teléfono aún no tiene tus claves.",
+      "setUp": "Configurar mensajes cifrados",
+      "restore": "Restaurar tus mensajes cifrados"
+    },
+    "error": {
+      "noKeyForMe": "Este mensaje se envió a tu teléfono o claves anteriores, así que no se puede leer aquí.",
+      "unknownVersion": "Actualiza la aplicación para leer este mensaje.",
+      "badSignature": "No se pudo verificar este mensaje y se ocultó.",
+      "corrupt": "Este mensaje no se puede descifrar.",
+      "restoreKeys": "Restaurar tus claves"
+    },
+    "restore": {
+      "title": "Consigue tus claves en este teléfono",
+      "body": "Ya configuraste los mensajes cifrados, pero este teléfono aún no tiene tus claves. Elige cómo conseguirlas.",
+      "scan": "Escanear desde mi otro teléfono",
+      "enterCode": "Introducir mi código de recuperación",
+      "startOver": "Las perdí, empezar de nuevo",
+      "startOverTitle": "¿Empezar de nuevo?",
+      "startOverMessage": "Recibirás claves nuevas. Los mensajes nuevos seguirán funcionando, pero los antiguos solo se podrán leer en el teléfono antiguo y por la otra persona.",
+      "startOverConfirm": "Empezar de nuevo",
+      "scanTitle": "Escanea con tu otro teléfono",
+      "scanBody": "En el teléfono donde los mensajes cifrados ya funcionan, abre Famlin → Perfil → Mensajes cifrados → Vincular un dispositivo nuevo y escanea este código.",
+      "waiting": "Esperando a tu otro teléfono…",
+      "scanTimeout": "Ha tardado demasiado.",
+      "tryAgain": "Intentar de nuevo",
+      "codeTitle": "Introduce tu código de recuperación",
+      "codeBody": "Escribe los 8 grupos de 4 caracteres que guardaste al configurar los mensajes cifrados.",
+      "restore": "Restaurar",
+      "invalid": "Eso no parece un código de recuperación. Revisa si hay errores.",
+      "wrong": "Ese código de recuperación no coincide. Revísalo e inténtalo de nuevo.",
+      "failed": "No se pudieron restaurar tus claves. Inténtalo de nuevo.",
+      "doneTitle": "Tus claves han vuelto",
+      "doneBody": "Ya puedes leer y enviar mensajes cifrados en este teléfono.",
+      "noBackup": "No hay un código de recuperación para tus mensajes. Si ya no tienes tu otro teléfono, puedes empezar de nuevo: los mensajes nuevos seguirán funcionando, pero los antiguos solo se podrán leer en el teléfono antiguo y por la otra persona."
+    },
+    "link": {
+      "title": "Vincular un dispositivo nuevo",
+      "heading": "Vincular un teléfono nuevo",
+      "body": "En el teléfono nuevo, abre Famlin y elige Restaurar tus claves → Escanear desde mi otro teléfono. Después escanea el código que muestra.",
+      "scan": "Escanear el código",
+      "scanTitle": "Escanea el teléfono nuevo",
+      "scanHint": "Apunta la cámara al código de tu teléfono nuevo.",
+      "failed": "No se pudo vincular el teléfono. Inténtalo de nuevo.",
+      "doneTitle": "Teléfono vinculado",
+      "doneBody": "Tu teléfono nuevo tendrá tus claves en un momento.",
+      "notReady": "Este teléfono aún no tiene tus claves, así que no puede vincular otro."
+    },
+    "safetyCode": {
+      "menu": "Código de seguridad",
+      "title": "Código de seguridad",
+      "unavailable": "El código de seguridad estará disponible cuando tú y {{name}} hayáis configurado los mensajes cifrados.",
+      "body": "Para asegurarte de que nadie escucha, compara este código con {{name}}, en persona o en una llamada. Si es igual en los dos teléfonos, vuestro chat es privado.",
+      "scan": "Escanear el código de {{name}}",
+      "mark": "Coincide: marcar como verificado",
+      "unmark": "Quitar la verificación",
+      "verified": "Verificado con {{name}}",
+      "scanMatch": "Los códigos coinciden.",
+      "scanMismatch": "Los códigos NO coinciden. No confíes en este chat hasta comprobarlo con la otra persona.",
+      "scanTitle": "Escanear el código de seguridad",
+      "scanHint": "Escanea el código en el teléfono de {{name}}."
+    },
+    "profile": {
+      "status": {
+        "unsupported": "Este servidor no admite mensajes cifrados.",
+        "loading": "Comprobando…",
+        "needsSetup": "Configurando…",
+        "needsRestore": "Este teléfono aún no tiene tus claves, así que no puede leer ni enviar mensajes cifrados.",
+        "ready": "Activado. Tus mensajes privados están cifrados."
+      },
+      "reminder": "Tus mensajes cifrados aún no tienen copia. Haz una para leerlos en un teléfono nuevo.",
+      "showCode": "Mostrar el código de recuperación",
+      "showTitle": "¿Mostrar el código de recuperación?",
+      "showMessage": "Cualquiera que vea este código puede leer tus mensajes privados. Asegúrate de que nadie esté mirando.",
+      "show": "Mostrar",
+      "codeTitle": "Tu código de recuperación",
+      "noCodeTitle": "El código no está en este teléfono",
+      "noCodeMessage": "Este teléfono no guarda tu código de recuperación. Crea uno nuevo para obtener un código que puedas guardar.",
+      "newCode": "Nuevo código de recuperación",
+      "newCodeTitle": "¿Crear un nuevo código de recuperación?",
+      "newCodeMessage": "Tu código anterior dejará de funcionar.",
+      "newCodeSaved": "Guárdalo ahora. El código anterior ya no funciona.",
+      "linkDevice": "Vincular un dispositivo nuevo",
+      "reset": "Restablecer las claves",
+      "resetTitle": "¿Restablecer tus claves?",
+      "resetMessage": "Recibirás claves nuevas y un nuevo código de recuperación. Los mensajes enviados a tus claves antiguas solo se pueden leer en teléfonos que aún las tengan. Tus contactos verán que tu código de seguridad cambió.",
+      "backupNow": "Hacer una copia de tus mensajes cifrados",
+      "resetDone": "Claves nuevas creadas."
+    },
+    "backup": {
+      "title": "Haz una copia de tus mensajes cifrados",
+      "body": "Una copia te permite leer tus mensajes cifrados antiguos en un teléfono nuevo si ya no tienes este. Es opcional: los mensajes cifrados funcionan sin ella.",
+      "start": "Crear un código de copia",
+      "accountLabel": "Cuenta",
+      "codeTitle": "Tu código de recuperación",
+      "codeBody": "Guarda este código en tu gestor de contraseñas o apúntalo. Lo necesitarás para leer tus mensajes antiguos en un teléfono nuevo. Cualquiera que tenga este código puede leer tus mensajes, así que no lo compartas.",
+      "shareCode": "Copiar o guardar en el gestor de contraseñas",
+      "saved": "He guardado mi código de recuperación"
+    },
+    "reminder": {
+      "text": "Haz una copia de tus mensajes cifrados para poder leerlos en un teléfono nuevo.",
+      "action": "Hacer copia",
+      "dismiss": "Ahora no"
+    }
   }
 }

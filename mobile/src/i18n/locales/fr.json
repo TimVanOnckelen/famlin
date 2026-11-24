@@ -393,7 +393,8 @@
     "deleteMessageTitle": "Supprimer le message ?",
     "deleteMessageConfirm": "Le message sera définitivement supprimé pour tous les membres de cette conversation.",
     "delete": "Supprimer",
-    "deleteMessage": "Supprimer le message"
+    "deleteMessage": "Supprimer le message",
+    "previewEncrypted": "Message chiffré"
   },
   "photos": {
     "title": "Photos",
@@ -836,5 +837,137 @@
     "sent": "Envoyé à l'admin",
     "sendFailed": "Non envoyé, réessayez",
     "close": "Fermer le diagnostic de défilement"
+  },
+  "e2e": {
+    "title": "Messages chiffrés",
+    "addPhoto": "Joindre une photo",
+    "photoFailed": "Impossible de charger la photo. Touchez pour réessayer.",
+    "encryptedMessage": "Message chiffré",
+    "stillChecking": "Vérification du chiffrement…",
+    "decrypting": "Déchiffrement…",
+    "conversationMenu": "Chiffrement et code de sécurité",
+    "turnOn": "Activer",
+    "turnOff": "Désactiver le chiffrement",
+    "turnOffTitle": "Désactiver le chiffrement ?",
+    "turnOffConfirm": "Les nouveaux messages de cette conversation avec {{name}} ne seront plus chiffrés. Vous verrez tous les deux une note dans la conversation. Vous pouvez le réactiver à tout moment.",
+    "verify": "Vérifier",
+    "dismiss": "Ignorer",
+    "keyChanged": "Le code de sécurité de {{name}} a changé. Cela peut arriver avec un nouveau téléphone ou de nouvelles clés. Comparez le code de sécurité pour en être sûr.",
+    "state": {
+      "encrypted": "Chiffré",
+      "notEncrypted": "Non chiffré"
+    },
+    "system": {
+      "disabled": "{{name}} a désactivé le chiffrement",
+      "enabled": "{{name}} a réactivé le chiffrement"
+    },
+    "banner": {
+      "encrypted": "Les messages de cette conversation sont chiffrés de bout en bout. Photos uniquement pour l'instant, pas de vidéos.",
+      "disabled": "Le chiffrement est désactivé pour cette conversation. Les messages que vous envoyez ne sont pas chiffrés.",
+      "peerNoKey": "{{name}} n'a pas encore configuré les messages chiffrés. Les messages ne sont pas chiffrés.",
+      "needsSetup": "Le chiffrement n'a pas pu être configuré pour le moment, les messages ne sont donc pas chiffrés.",
+      "needsRestore": "Vos messages ne sont pas chiffrés car ce téléphone n'a pas encore vos clés.",
+      "setUp": "Configurer les messages chiffrés",
+      "restore": "Restaurer vos messages chiffrés"
+    },
+    "error": {
+      "noKeyForMe": "Ce message a été envoyé à votre ancien téléphone ou à vos anciennes clés, il ne peut pas être lu ici.",
+      "unknownVersion": "Mettez l'application à jour pour lire ce message.",
+      "badSignature": "Ce message n'a pas pu être vérifié et a été masqué.",
+      "corrupt": "Ce message ne peut pas être déchiffré.",
+      "restoreKeys": "Restaurer vos clés"
+    },
+    "restore": {
+      "title": "Récupérer vos clés sur ce téléphone",
+      "body": "Vous avez déjà configuré les messages chiffrés, mais ce téléphone n'a pas encore vos clés. Choisissez comment les récupérer.",
+      "scan": "Scanner depuis mon autre téléphone",
+      "enterCode": "Saisir mon code de récupération",
+      "startOver": "Je les ai perdues, repartir à zéro",
+      "startOverTitle": "Repartir à zéro ?",
+      "startOverMessage": "Vous recevrez de nouvelles clés. Les nouveaux messages fonctionnent, mais les anciens ne restent lisibles que sur l'ancien téléphone et pour l'autre personne.",
+      "startOverConfirm": "Repartir à zéro",
+      "scanTitle": "Scannez avec votre autre téléphone",
+      "scanBody": "Sur le téléphone où les messages chiffrés fonctionnent déjà, ouvrez Famlin → Profil → Messages chiffrés → Associer un nouvel appareil et scannez ce code.",
+      "waiting": "En attente de votre autre téléphone…",
+      "scanTimeout": "Cela a pris trop de temps.",
+      "tryAgain": "Réessayer",
+      "codeTitle": "Saisissez votre code de récupération",
+      "codeBody": "Saisissez les 8 groupes de 4 caractères que vous avez conservés lors de la configuration des messages chiffrés.",
+      "restore": "Restaurer",
+      "invalid": "Cela ne ressemble pas à un code de récupération. Vérifiez les fautes de frappe.",
+      "wrong": "Ce code de récupération ne correspond pas. Vérifiez-le et réessayez.",
+      "failed": "Impossible de restaurer vos clés. Réessayez.",
+      "doneTitle": "Vos clés sont de retour",
+      "doneBody": "Vous pouvez lire et envoyer des messages chiffrés sur ce téléphone.",
+      "noBackup": "Il n'existe pas de code de récupération pour vos messages. Si vous n'avez plus votre autre téléphone, vous pouvez repartir à zéro : les nouveaux messages fonctionnent, mais les anciens ne restent lisibles que sur l'ancien téléphone et pour l'autre personne."
+    },
+    "link": {
+      "title": "Associer un nouvel appareil",
+      "heading": "Associer un nouveau téléphone",
+      "body": "Sur le nouveau téléphone, ouvrez Famlin et choisissez Restaurer vos clés → Scanner depuis mon autre téléphone. Scannez ensuite le code qui s'y affiche.",
+      "scan": "Scanner le code",
+      "scanTitle": "Scannez le nouveau téléphone",
+      "scanHint": "Dirigez l'appareil photo vers le code sur votre nouveau téléphone.",
+      "failed": "Impossible d'associer le téléphone. Réessayez.",
+      "doneTitle": "Téléphone associé",
+      "doneBody": "Votre nouveau téléphone aura vos clés dans un instant.",
+      "notReady": "Ce téléphone n'a pas encore vos clés, il ne peut donc pas en associer un autre."
+    },
+    "safetyCode": {
+      "menu": "Code de sécurité",
+      "title": "Code de sécurité",
+      "unavailable": "Un code de sécurité est disponible dès que vous et {{name}} avez configuré les messages chiffrés.",
+      "body": "Pour être sûr que personne n'écoute, comparez ce code avec {{name}}, en personne ou lors d'un appel. S'il est identique sur les deux téléphones, votre conversation est privée.",
+      "scan": "Scanner le code de {{name}}",
+      "mark": "Il correspond : marquer comme vérifié",
+      "unmark": "Retirer la vérification",
+      "verified": "Vérifié avec {{name}}",
+      "scanMatch": "Les codes correspondent.",
+      "scanMismatch": "Les codes ne correspondent PAS. Ne faites pas confiance à cette conversation avant d'avoir vérifié avec l'autre personne.",
+      "scanTitle": "Scanner le code de sécurité",
+      "scanHint": "Scannez le code sur le téléphone de {{name}}."
+    },
+    "profile": {
+      "status": {
+        "unsupported": "Ce serveur ne prend pas en charge les messages chiffrés.",
+        "loading": "Vérification…",
+        "needsSetup": "Configuration…",
+        "needsRestore": "Ce téléphone n'a pas encore vos clés, il ne peut donc ni lire ni envoyer de messages chiffrés.",
+        "ready": "Activé. Vos messages privés sont chiffrés."
+      },
+      "reminder": "Vos messages chiffrés ne sont pas encore sauvegardés. Sauvegardez-les pour les lire sur un nouveau téléphone.",
+      "showCode": "Afficher le code de récupération",
+      "showTitle": "Afficher le code de récupération ?",
+      "showMessage": "Toute personne qui voit ce code peut lire vos messages privés. Assurez-vous que personne ne regarde.",
+      "show": "Afficher",
+      "codeTitle": "Votre code de récupération",
+      "noCodeTitle": "Code absent de ce téléphone",
+      "noCodeMessage": "Ce téléphone ne conserve pas votre code de récupération. Créez-en un nouveau pour obtenir un code à conserver.",
+      "newCode": "Nouveau code de récupération",
+      "newCodeTitle": "Créer un nouveau code de récupération ?",
+      "newCodeMessage": "Votre ancien code ne fonctionnera plus.",
+      "newCodeSaved": "Conservez-le maintenant. L'ancien code ne fonctionne plus.",
+      "linkDevice": "Associer un nouvel appareil",
+      "reset": "Réinitialiser les clés",
+      "resetTitle": "Réinitialiser vos clés ?",
+      "resetMessage": "Vous recevrez de nouvelles clés et un nouveau code de récupération. Les messages envoyés à vos anciennes clés ne peuvent être lus que sur les téléphones qui les ont encore. Vos contacts verront que votre code de sécurité a changé.",
+      "backupNow": "Sauvegarder vos messages chiffrés",
+      "resetDone": "Nouvelles clés créées."
+    },
+    "backup": {
+      "title": "Sauvegarder vos messages chiffrés",
+      "body": "Une sauvegarde vous permet de lire vos anciens messages chiffrés sur un nouveau téléphone si vous n'avez plus celui-ci. Elle est facultative : les messages chiffrés fonctionnent sans.",
+      "start": "Créer un code de sauvegarde",
+      "accountLabel": "Compte",
+      "codeTitle": "Votre code de récupération",
+      "codeBody": "Enregistrez ce code dans votre gestionnaire de mots de passe ou notez-le. Il vous servira à lire vos anciens messages sur un nouveau téléphone. Quiconque a ce code peut lire vos messages, ne le partagez donc pas.",
+      "shareCode": "Copier ou enregistrer dans un gestionnaire de mots de passe",
+      "saved": "J'ai conservé mon code de récupération"
+    },
+    "reminder": {
+      "text": "Sauvegardez vos messages chiffrés pour pouvoir les lire sur un nouveau téléphone.",
+      "action": "Sauvegarder",
+      "dismiss": "Pas maintenant"
+    }
   }
 }

@@ -28,6 +28,7 @@ import { Logo } from '@/components/Logo'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
 import { CalendarFeedSection } from '@/components/CalendarFeedSection'
+import { E2eProfileSection } from '@/components/E2eProfileSection'
 import { profileSectionStyles } from '@/components/profileSectionStyles'
 import { useAuthStore } from '@/stores/authStore'
 import { useScrollDiagnosticsStore } from '@/stores/scrollDiagnosticsStore'
@@ -464,6 +465,8 @@ export function ProfileScreen() {
         )}
 
         <CalendarFeedSection />
+
+        <E2eProfileSection />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
