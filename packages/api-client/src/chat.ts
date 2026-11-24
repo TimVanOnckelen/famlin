@@ -182,6 +182,7 @@ export async function sendChatConversationMessage(
   return response.data
 }
 
+/** @deprecated Use sendChatConversationMessage(conversationId, body). This function may be removed in the next breaking release. */
 export async function sendChatMessage(groupId: string, data: SendChatMessageBody): Promise<ChatMessage> {
   const response = await api.post<ChatMessage>(`/chat/groups/${groupId}/messages`, data)
   return response.data

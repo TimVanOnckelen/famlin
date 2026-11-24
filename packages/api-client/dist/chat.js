@@ -62,6 +62,7 @@ async function sendChatConversationMessage(conversationId, data) {
     const response = await client_1.api.post(`/chat/conversations/${conversationId}/messages`, data);
     return response.data;
 }
+/** @deprecated Use sendChatConversationMessage(conversationId, body). This function may be removed in the next breaking release. */
 async function sendChatMessage(groupId, data) {
     const response = await client_1.api.post(`/chat/groups/${groupId}/messages`, data);
     return response.data;

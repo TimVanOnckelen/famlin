@@ -116,6 +116,7 @@ export interface SendChatMessageBody {
 /** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
 export type CreateChatMessageBody = SendChatMessageBody;
 export declare function sendChatConversationMessage(conversationId: string, data: SendChatMessageBody): Promise<ChatConversationMessage>;
+/** @deprecated Use sendChatConversationMessage(conversationId, body). This function may be removed in the next breaking release. */
 export declare function sendChatMessage(groupId: string, data: SendChatMessageBody): Promise<ChatMessage>;
 export declare function deleteChatMessage(messageId: string): Promise<void>;
 /** @deprecated Use markChatConversationRead(conversationId). This function may be removed in the next breaking release. */
