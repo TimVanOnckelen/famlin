@@ -10,6 +10,7 @@ exports.fetchMe = fetchMe;
 exports.updateMe = updateMe;
 exports.fetchNotificationConfig = fetchNotificationConfig;
 exports.resolveServerLimits = resolveServerLimits;
+exports.resolveDirectMessagePolicy = resolveDirectMessagePolicy;
 exports.getBrandingAssetUrl = getBrandingAssetUrl;
 exports.fetchServerInfo = fetchServerInfo;
 exports.deleteAccount = deleteAccount;
@@ -75,6 +76,18 @@ async function fetchNotificationConfig() {
 const DEFAULT_LIMITS = { maxAttachments: 10, maxVideoDurationSeconds: 120, maxUploadSizeMb: 200 };
 function resolveServerLimits(serverInfo) {
     return { ...DEFAULT_LIMITS, ...serverInfo?.limits };
+}
+/**
+ * The server's direct-message policy. A server without the field predates
+ * the settings: DMs and encryption then follow its advertised features, and
+ * web shows DMs whenever the server has them.
+ */
+function resolveDirectMessagePolicy(serverInfo) {
+    if (serverInfo?.directMessages)
+        return serverInfo.directMessages;
+    const features = serverInfo?.features ?? [];
+    const enabled = features.includes('directMessages');
+    return { enabled, web: enabled, encryption: enabled && features.includes('e2eDirectMessages') };
 }
 // Absolute URL for a branding asset path, for clients (mobile) that don't
 // share the server's origin. Branding assets are public — no media token.

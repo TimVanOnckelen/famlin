@@ -56,6 +56,12 @@ export interface ServerInfo {
     branding?: Branding | null;
     features?: string[];
     limits?: ServerLimits;
+    directMessages?: DirectMessagePolicy;
+}
+export interface DirectMessagePolicy {
+    enabled: boolean;
+    web: boolean;
+    encryption: boolean;
 }
 export interface ServerLimits {
     maxAttachments: number;
@@ -63,6 +69,12 @@ export interface ServerLimits {
     maxUploadSizeMb: number;
 }
 export declare function resolveServerLimits(serverInfo: ServerInfo | null | undefined): ServerLimits;
+/**
+ * The server's direct-message policy. A server without the field predates
+ * the settings: DMs and encryption then follow its advertised features, and
+ * web shows DMs whenever the server has them.
+ */
+export declare function resolveDirectMessagePolicy(serverInfo: ServerInfo | null | undefined): DirectMessagePolicy;
 export interface BrandPalette {
     primary: string;
     primaryDark: string;
