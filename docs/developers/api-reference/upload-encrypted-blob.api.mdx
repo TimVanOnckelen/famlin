@@ -1,0 +1,73 @@
+---
+id: upload-encrypted-blob
+title: "Upload an encrypted attachment blob"
+description: "Multipart upload of one already-encrypted file (any bytes, limited by"
+sidebar_label: "Upload an encrypted attachment blob"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVs1u20YQfpUBD61kSJTTpEChBgHs1kFTpHWQxAgCywiX5ErceLnL7C5lM4aAPkSfsE/Sb5aUZMc+9JBTER5kmjs7883fN3OT2EY6EZQ1L8pknrSNtqI8MYXrmiDLY23zZJIEsfLJ/Dw5i6eevqNalkokF5OklL5wqmEFuP5Hq4NqhAvUKyK7JGskCe2kKLup3CqmpdKSRsJ0lHdB+glpVSs+yLuFCZUkL91auu891eJa1W291ejVZzlO6U2wDtIQyYG+JuEXJpv1Mn72tG1V+SzNlcnoSoWKjKVSFrZUZjWhULV1boTSZB1ZGHML0zhbSO9xntKZFznQWaM76CVGk4kQRFHV0oQzpzP2SxjaubMwo2z9KBtTqZwsAsLjvVjJn+NdL2q5/UKFFqr2pAItYRzHC1NYAzd8TEK6MIi3k59a6cOxLbtkfhP/hV7kJ7hWThJcCADCR/U24DOoq6elCII/+6KSdXwLXSORGJt/BC6ohp9IeFDS8yln4ZaUDw4BgBQrEzCQIILCdckmPgzMN9b4/vIPh4/4z90K6POS3AEpmkarIvo3++hZ7L8jbJ1+CKC8FnXD2JNdzg/zH4vD5WM5PcQzfcI/P/HP4a2HK2LnDETu439h1kKrkoYU0ChHzeHVdYQwI5MBqZpQa3zbNNZxxQLwWpXSTUiGIh1/Pd+lc9Y95P1dyL+1tTBTbjAuW5S3E8ZrwdDWSvTle1QUsgnTl8KsWpRhRhXEpaNRJtE2mdHZOE02jLx8sCDuWjyNL0KjN4tKGbkzThEysZaUstcnR79+OP3z5fsMgu7Sk6DsyeHjLJa+oCuHhqdc2+KS+14WovWS9r1PDlEmZYi1T7kbZ6WsLdXQTiMv4RafnOIADWkom4lGzUQbqlmvYKrM0rJjt+tlByrpC3rbWudDuMFpQYUoehI/DMXy6PH9YnnOJBasJS3cSn5L/P8v8ZBEy1eWZ2NjfUyVCBXzDtvccs9uEOC8h8DzcmCvpAqh8fPZbClqrUw6QEoLW98L8HvbYiRdGXoeZTG0YKHjsZNsLlh30SJ4XVSeS+GkO2oZzvnF7eM3XGd9Kd0W2mWXATHSKMYsH4XugTki1KSP+RYFT0fU+qU0qJ3ekw8IxYc0TbMJFUgI1x0gcx6vZE5ogDEG7MIIpBWTFYn6/d1bWjpbU/bq9M1b2qdN2xVGdUrHmMYELLhhwn54XolujvHOXlinPsemmtNxRE1PI6hnGY9OzhfnPvo6JHOI5NGrF3CQM9M7h0g5DuuXTp+smeuHS0M9ymvkXvImoDy9PgF0aMMM4EaKxZfRP3/9vcfLp3G02+VSFYr7xebMFcKU29h4QtGn9I63E0HnD0b6YoTCX0vN3ODZznhhOttSgd0jb5UuqdvWiwLxrPpFDu22EspgeMVT5ErpDotU7wzCtDBHWtPAVQSXfAELvHrRwcHK2bbBulLnsFmp5uBgTlubcSPi1usd4TaO60uvx1C862kUTYLLxvFmDgfMCh5N4jXetyRbxU6GxCLdto2fRcAahohG17Hhoc/Pz3gji4FFTO+HoycUlAUADGQ7GRYqE0PRm7yyjplmaDwfK2US+xkEyrViROyDfr+9s9nRfvFjxsq/rJebPed/236/zvY7kFSQ12HW4EJM1rAH9uR7jumqIDk4zDS/I2DQYMVEDaGbm1x4CcSbDX+OWxxTJWhAOMVeRuLEhTgTI6leSogkv/Q5nb5lKCyuW4b00La9mWwv9aP2lvi9FYA5ejdOmAIhnA9Lfh0HcNy8o97J/pVBbjb/An3Xz3w=
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Upload an encrypted attachment blob"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/uploads/encrypted"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Multipart upload of one already-encrypted file (any bytes, limited by
+the server's maximum upload size). Stored verbatim as
+`/uploads/<uuid>.bin` with no decoding, thumbnail or other
+processing. Usable only as the `attachmentUrl` of an encrypted
+(`v1`) direct message; the same message claims it for the
+conversation.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./upload-encrypted-blob.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./upload-encrypted-blob.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

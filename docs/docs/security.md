@@ -156,6 +156,20 @@ Stories follow the same family and circle rules as posts, including direct media
 
 A member export includes that member's own latest device diagnostics and the diagnostic reports they sent. Admin backups and restores exclude devices and push tokens; mobile apps report their current state again after a restore.
 
+### End-to-end encrypted direct messages
+
+Private one-to-one messages are encrypted on the sender's device and decrypted on the recipient's, so the server (and anyone with access to it, including its administrator and its backups) stores only ciphertext. Encryption is on by default for each private conversation, and either person can opt a conversation out; that choice is always shown in the conversation as a visible notice and never happens silently. Each message records whether it is encrypted.
+
+Each member has one key identity, shared between their own devices by scanning a QR code on a signed-in device or with a recovery code. The server stores the public keys and a copy of the private keys that is encrypted with the recovery code, which it cannot open. Photos and videos in encrypted messages are encrypted before upload and stored as opaque files.
+
+What this does **not** protect:
+
+- **Metadata.** The server still knows who talks to whom, when, how often, and roughly how large each message or attachment is. Notifications only say that a new direct message arrived.
+- **A malicious app.** A tampered or compromised app build can read messages before encryption or after decryption, and a server operator who also controls the app code someone runs could swap keys. Compare safety codes with the other person in person to detect key substitution; until you have, treat the contact as unverified.
+- **Plaintext conversations.** Messages are not encrypted when someone has opted the conversation out, when a client without encryption support (for example the web app) sends them, or in family group chat, which is not end-to-end encrypted.
+- **Lost keys.** If you lose every signed-in device and have no recovery code, your encrypted message history cannot be read again, by you or by an administrator. Resetting your keys lets you start over but does not bring old messages back.
+- **Backups and exports.** They contain the ciphertext and the encrypted recovery data exactly as stored, never plaintext.
+
 ### Public branding
 
 The family name and logo configured under **Server settings → Branding** are public to anyone who can reach the server because the login page displays them. Logos use the public `/branding/...` path, never protected `/uploads/...` URLs. Uploaded logos are re-encoded from pixels; SVG is rejected because it can contain script. Login backgrounds are color gradients rather than photos for the same reason.

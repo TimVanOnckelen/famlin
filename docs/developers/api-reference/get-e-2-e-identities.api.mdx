@@ -1,0 +1,72 @@
+---
+id: get-e-2-e-identities
+title: "Get a member's public key identities"
+description: "All versions, newest first, never the recovery backup. Allowed for"
+sidebar_label: "Get a member's public key identities"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVs1u20YQfpUBL7UNSnJdn9SigIK6adq0DpwEQWAZ4ZIcSRuTu8zu0jIrCOhD9An7JP1mSdtylSaXXlpUF5Gc2Z2/b76ZTWIbdipoa56VyTRZcjg74Wclm6CDZp+kSVBLn0wvkzNTjoIdsSmJTeG6Rg4lV2lSsi+c7l+nyayq6Iadx5tPyfCafaCFdj7IGyQUVkyOC4vnjnJVXLfNmHDMrrmkhXVz09nWea4WpEz8gv/OGia/Uk6bJSlaqFpX3ddkcZlba890enyKWwxx3YRubioNszUr46O91sPwSnkyNpDnQG2zE8V4bhBoo5yqOcB3hLtJDF4Qj5xEatJES3SNCis8O/7QasfIWHAtp4kvVlyrZLpJQtfIKR/E0WS7vRJl3yAZSCbkJ8fH8vc4Zy/avNIF6d20F9YEvIqyahqIY5Em772c2OxbtPl7LoKE4aSk8RZIB/f3PUNAD+YexMo51Um0gWv/+euHSu8oari9ZCcGvF6aPrSfuPuoC7m9/bRC4VgFLmdhX5omQEatIElK6IyCRr22OIOYKtEDkPvLBzh3kMZfmpwef7lfhZ+197g4JW1uVKXLlPi2kSqnBAg6vrHXACg8itep6p8rEjtn3ccifOzgD22tzAgZKVVecUrBAd6V5IdutIo4z2ZFwU0YPVdm2aolZ7SCOrB/kLHJJpmpssNxTKwt+fMWz+ODqqhWxUobvjdO0WWSW8aUXZzNvnt3/svztxkU3bVHg2anx19lfe/S2gFNlFe2kATmXCigMroLcAojuBZtqg3J7SNrqm5Scm2pxu104BlhieQcgoysoWyiGj1RbVhN+gtG2iysBJYmfKvqJpb/3qkIioeOvRzSfbWDlPjhDhqn+9C4YA9KKjjSx8K2pvy/+P+94kMT/L+ywyCMIwF0P02iST7hyUCZ3WTT8+oWOr0X/cxoXQX1VQiNn04mGFKVNuPBq3Fh670cvwWsyK4NfR91qeSmsl0tsJLR4blonTCXXJ6zcuxmrbh0ebUrfilQ69G0q3RfYHEoGaaUvPdKe87MCLD0seQKSPIYnaA8A/j0kbxDOt6Nx+MspYGXpW5SyjXnhB44JJneCpX1MhXoxzevaOFsTdmL85ev6KFylV1qk43pCeY3wRecMKEHBaYurVU3nZtMorBO/xr7akpPotf0TXTq20yGtpRMyh9jHeo5ZHL24hkCvJ9PCTLlJK1/DfosriHDoQGS4H2LGOCQ9nRxBtdxG6HrIYv4y+iP335/8FekeJkbu1joQkvL2FyjUWR/GXLjZQcZ0xstEdPlRzN9dQDs33Al9ODFzmHchahQhvJWVyV1d3iJY7Zf3NBxS6UN9p0o7VejL/wQDNI0N7KUDXRFCMkXsIBm7OjoaOksdqGa6xw2V7o5OprSnU3pxtiXfSDSyXNzf4+heNbTQTQJOjuMJ3MEgCUt2DQekw2NxaqxUliUW/gTn1WYm0b2QQl9TC/R6pevZQLHxCKn++noOQWwkDbs+TaNHt3Ih7hxRk+tE7IZGs9HpKCZrQ/gUMHKsNs9xSKohtiRsKZfw665e7yKPQLM5oH3/8W77kAMgW/DpKmAHklQZK/NQHqXGGpaOPWEk/tdUTbD6bBSgn9WyKhobja58vzaVdutfP7QIlrhKPQfgpCREQms1F6eQa8LVXn+RGIPLgbGPqS/c/ZuXzXiE/a1Vt7weC2b5N3au72CZj8Eowe9sB+TO8f2xreQ6/0oeHr2CkTzJ+zhm/8=
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get a member's public key identities"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/e2e/identity/{userId}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+All versions, newest first, never the recovery backup. Allowed for
+yourself and for anyone sharing a family; otherwise 404. An empty
+list means the user has not set up encryption.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./get-e-2-e-identities.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./get-e-2-e-identities.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./get-e-2-e-identities.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

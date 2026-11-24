@@ -28,6 +28,11 @@ security:
   - bearerAuth: []
 
 tags:
+  - name: End-to-end encryption
+    description: |
+      Key directory, recovery backup and device-transfer relay for end-to-end
+      encrypted direct messages. The server stores public keys and ciphertext
+      only. Server feature id `e2eDirectMessages`.
   - name: Account
     description: |
       Log in and manage the authenticated user's own profile and preferences.
@@ -2255,8 +2260,22 @@ paths:
           application/json:
             schema:
               type: object
+              description: |
+                Plaintext (`encryption` omitted or `none`; `content` and/or
+                `attachmentUrl`) or end-to-end encrypted (`encryption: v1`
+                with `encryptedPayload`, no `content`). A `v1` message is only
+                allowed in private conversations and needs one wrapped key for
+                each of the two participants at their latest key versions
+                (400 `errors.invalidEncryptedMessage` if malformed; 409
+                `errors.e2eRecipientHasNoKey` / `errors.e2eKeyVersionStale`
+                so the client can refetch keys and retry). Its optional
+                `attachmentUrl` must be an `/uploads/<uuid>.bin` blob from
+                `POST /api/uploads/encrypted`; a plaintext message can never
+                use one (400 `errors.invalidChatAttachment`).
               properties:
+                encryption: { type: string, enum: [none, v1] }
                 content: { type: string, maxLength: 2000 }
+                encryptedPayload: { $ref: '#/components/schemas/E2eMessagePayloadV1' }
                 attachmentUrl: { type: string }
                 replyToMessageId:
                   type: string
@@ -3045,6 +3064,276 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           description: Invalid key or inaccessible upload
+
+  /api/e2e/identity/me:
+    get:
+      operationId: listMyE2eIdentities
+      tags: [End-to-end encryption]
+      summary: List your own key identities
+      description: |
+        Every version of your identity, newest first, including the
+        password-wrapped `recoveryBackup`. The only response that carries it.
+        Session-only (API tokens get 403).
+      responses:
+        '200':
+          description: Your identities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  identities:
+                    type: array
+                    items: { $ref: '#/components/schemas/E2eOwnIdentity' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/e2e/identity:
+    post:
+      operationId: createE2eIdentity
+      tags: [End-to-end encryption]
+      summary: Publish a new key identity version
+      description: |
+        `version` must be your latest version plus one (1 for the first). A
+        higher version is a key reset: older versions stay so earlier
+        signatures still verify. Session-only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, signPublicKey, boxPublicKey]
+              properties:
+                version: { type: integer, minimum: 1 }
+                signPublicKey: { type: string, description: Base64 Ed25519 public key (32 bytes). }
+                boxPublicKey: { type: string, description: Base64 X25519 public key (32 bytes). }
+                recoveryBackup: { $ref: '#/components/schemas/E2eRecoveryBackup' }
+      responses:
+        '201':
+          description: The created public identity
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/E2ePublicIdentity' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: '`version` is not the latest plus one (`errors.e2eIdentityVersionConflict`).'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/e2e/identity/{version}/recovery:
+    put:
+      operationId: setE2eRecoveryBackup
+      tags: [End-to-end encryption]
+      summary: Set or clear the recovery backup
+      description: Only on your latest version. Session-only.
+      parameters:
+        - name: version
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recoveryBackup]
+              properties:
+                recoveryBackup:
+                  nullable: true
+                  allOf:
+                    - $ref: '#/components/schemas/E2eRecoveryBackup'
+      responses:
+        '200':
+          description: The updated identity
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/E2eOwnIdentity' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: '`version` is not your latest (`errors.e2eIdentityVersionConflict`).'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/e2e/identity/{userId}:
+    get:
+      operationId: getE2eIdentities
+      tags: [End-to-end encryption]
+      summary: Get a member's public key identities
+      description: |
+        All versions, newest first, never the recovery backup. Allowed for
+        yourself and for anyone sharing a family; otherwise 404. An empty
+        list means the user has not set up encryption.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Public identities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId: { type: string }
+                  identities:
+                    type: array
+                    items: { $ref: '#/components/schemas/E2ePublicIdentity' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/e2e/transfers/{sessionId}:
+    put:
+      operationId: putE2eTransfer
+      tags: [End-to-end encryption]
+      summary: Hand an encrypted identity to a new device
+      description: |
+        The signed-in device encrypts the identity for the ephemeral key shown
+        by the new device and stores it under the QR's `sessionId`
+        (16-64 chars of `A-Za-z0-9_-`). Held in memory for 10 minutes, one
+        put per session. Session-only.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload: { $ref: '#/components/schemas/E2eTransferPayload' }
+      responses:
+        '200':
+          description: Stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: The session already has a payload (`errors.e2eTransferExists`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: Too many pending transfers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      operationId: takeE2eTransfer
+      tags: [End-to-end encryption]
+      summary: Receive a pending transfer (one-shot)
+      description: |
+        Returns and deletes the payload, only for the same user who stored
+        it. Missing, expired or another user's session is 404. Session-only.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The transfer payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payload: { $ref: '#/components/schemas/E2eTransferPayload' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/chat/conversations/{conversationId}/encryption:
+    put:
+      operationId: setConversationEncryption
+      tags: [Chat]
+      summary: Opt a private conversation out of, or back into, encryption
+      description: |
+        Either participant may toggle. A change records
+        `encryptionDisabledAt`/`encryptionDisabledById` and posts one
+        `SYSTEM_ENCRYPTION_DISABLED` / `SYSTEM_ENCRYPTION_ENABLED` message
+        (no push). Repeating the current state is a no-op. Family chat
+        returns 400 (`errors.chatEncryptionNotSupported`). The server accepts
+        plaintext and encrypted messages either way: the flag exists so the
+        choice is visible to both people.
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        '200':
+          description: Current state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  encryptionDisabledAt: { type: string, format: date-time, nullable: true }
+                  encryptionDisabledById: { type: string, nullable: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/uploads/encrypted:
+    post:
+      operationId: uploadEncryptedBlob
+      tags: [Uploads & media]
+      summary: Upload an encrypted attachment blob
+      description: |
+        Multipart upload of one already-encrypted file (any bytes, limited by
+        the server's maximum upload size). Stored verbatim as
+        `/uploads/<uuid>.bin` with no decoding, thumbnail or other
+        processing. Usable only as the `attachmentUrl` of an encrypted
+        (`v1`) direct message; the same message claims it for the
+        conversation.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, example: /uploads/0b5c0f3e-0000-4000-8000-000000000000.bin }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /api/uploads/media-token:
     get:
@@ -5099,6 +5388,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Not allowed (for example an API token used on a session-only route)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     BadRequest:
       description: Invalid request (bad query parameters, unsupported provider, etc.)
       content:
@@ -6050,6 +6345,12 @@ components:
       type: object
       required: [id, kind, participants, lastMessage, unreadCount, updatedAt]
       properties:
+        encryptionDisabledAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set while a participant has opted this private conversation out of encryption.
+        encryptionDisabledById: { type: string, nullable: true }
         id: { type: string }
         kind: { type: string, enum: [FAMILY, PRIVATE] }
         group:
@@ -6071,10 +6372,74 @@ components:
                 authorId: { type: string }
                 content: { type: string, nullable: true }
                 hasAttachment: { type: boolean }
+                kind: { type: string, description: 'USER, or a SYSTEM_* kind such as SYSTEM_ENCRYPTION_DISABLED.' }
                 createdAt: { type: string, format: date-time }
                 encryption: { type: string }
+                encryptedPayload:
+                  description: Ciphertext envelope of an encrypted last message (`content` stays null).
         unreadCount: { type: integer }
         updatedAt: { type: string, format: date-time }
+
+    E2ePublicIdentity:
+      type: object
+      properties:
+        version: { type: integer }
+        signPublicKey: { type: string }
+        boxPublicKey: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    E2eOwnIdentity:
+      allOf:
+        - $ref: '#/components/schemas/E2ePublicIdentity'
+        - type: object
+          properties:
+            recoveryBackup:
+              nullable: true
+              allOf:
+                - $ref: '#/components/schemas/E2eRecoveryBackup'
+
+    E2eRecoveryBackup:
+      type: object
+      description: Password-wrapped identity secret (opaque ciphertext to the server).
+      required: [v, salt, nonce, ct]
+      properties:
+        v: { type: integer, enum: [1] }
+        salt: { type: string, description: Base64, max 64 chars. }
+        nonce: { type: string, description: Base64, max 64 chars. }
+        ct: { type: string, description: Base64, max 4096 chars. }
+
+    E2eTransferPayload:
+      type: object
+      required: [v, epk, nonce, ct]
+      properties:
+        v: { type: integer, enum: [1] }
+        epk: { type: string }
+        nonce: { type: string }
+        ct: { type: string, description: Base64, max 4096 chars. }
+
+    E2eMessagePayloadV1:
+      type: object
+      description: Envelope of an end-to-end encrypted message. The server validates its shape and key versions, never the ciphertext.
+      required: [v, senderKeyVersion, nonce, ct, keys, sig]
+      properties:
+        v: { type: integer, enum: [1] }
+        senderKeyVersion: { type: integer, minimum: 1 }
+        nonce: { type: string }
+        ct: { type: string, description: Base64, max 65536 chars. }
+        keys:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            type: object
+            required: [userId, keyVersion, epk, nonce, wk]
+            properties:
+              userId: { type: string }
+              keyVersion: { type: integer, minimum: 1 }
+              epk: { type: string }
+              nonce: { type: string }
+              wk: { type: string }
+        sig: { type: string }
 
     ChatConversationsPage:
       type: object
@@ -6111,12 +6476,16 @@ components:
                 authorId: { type: string }
                 authorName: { type: string }
                 kind: { type: string }
-                content: { type: string, nullable: true }
+                content: { type: string, nullable: true, description: Always null when the replied-to message is encrypted. }
                 attachmentUrl: { type: string, nullable: true }
+                encryption: { type: string, description: 'none or v1; clients resolve an encrypted quote locally.' }
         createdAt: { type: string, format: date-time }
         editedAt: { type: string, format: date-time, nullable: true }
-        encryption: { type: string }
-        encryptedPayload: {}
+        encryption: { type: string, enum: [none, v1] }
+        encryptedPayload:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/E2eMessagePayloadV1'
 
     ChatConversationMessagesPage:
       type: object

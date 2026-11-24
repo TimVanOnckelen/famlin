@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"version":{"type":"integer"},"signPublicKey":{"type":"string"},"boxPublicKey":{"type":"string"},"createdAt":{"type":"string","format":"date-time"}},"title":"E2ePublicIdentity"},"schemaType":"response"}
