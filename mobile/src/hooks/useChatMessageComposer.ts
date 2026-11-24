@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useTranslation } from 'react-i18next'
-import type { CreateChatConversationMessageBody } from '@famlin/api-client'
+import type { SendChatMessageBody } from '@famlin/api-client'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 
 interface Attachment {
@@ -11,11 +11,7 @@ interface Attachment {
   uploadedUrl?: string
 }
 
-export function useChatMessageComposer({
-  send,
-}: {
-  send: (body: CreateChatConversationMessageBody) => Promise<unknown>
-}) {
+export function useChatMessageComposer({ send }: { send: (body: SendChatMessageBody) => Promise<unknown> }) {
   const { t } = useTranslation()
   const [textValue, setTextValue] = useState('')
   const [attachment, setAttachmentValue] = useState<Attachment | null>(null)

@@ -1,7 +1,7 @@
 import React from 'react'
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import type { CreateChatConversationMessageBody } from '@famlin/api-client'
+import type { SendChatMessageBody } from '@famlin/api-client'
 
 import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
@@ -9,7 +9,7 @@ import { MediaThumbnail } from '@/components/MediaThumbnail'
 import { UploadProgressOverlay } from '@/components/UploadProgressOverlay'
 import { useChatMessageComposer } from '@/hooks/useChatMessageComposer'
 
-export function ChatComposer({ send }: { send: (body: CreateChatConversationMessageBody) => Promise<unknown> }) {
+export function ChatComposer({ send }: { send: (body: SendChatMessageBody) => Promise<unknown> }) {
   const { t } = useTranslation()
   const composer = useChatMessageComposer({ send })
 
