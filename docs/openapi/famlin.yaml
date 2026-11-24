@@ -350,9 +350,6 @@ paths:
                 pushOnNewComment: { type: boolean }
                 pushOnNewLike: { type: boolean }
                 pushOnChitchat: { type: boolean }
-                pushOnDirectMessage:
-                  type: boolean
-                  description: Push notifications for direct messages (push only, on by default).
                 pushOnStory:
                   type: boolean
                   description: Opt-in push for other members' new stories (push only, off by default).
@@ -5408,10 +5405,7 @@ components:
         pushOnNewLike: { type: boolean }
         pushOnChitchat:
           type: boolean
-          description: Push notifications for new chat messages (email variant not supported).
-        pushOnDirectMessage:
-          type: boolean
-          description: Push notifications for direct messages (push only, on by default).
+          description: Push notifications for family chat and direct messages (email variant not supported).
         pushOnStory:
           type: boolean
           description: |

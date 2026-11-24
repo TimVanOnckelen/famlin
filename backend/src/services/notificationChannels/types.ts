@@ -60,7 +60,6 @@ export interface Recipient {
   pushOnNewComment: boolean
   pushOnNewLike: boolean
   pushOnChitchat: boolean
-  pushOnDirectMessage: boolean
   pushOnStory: boolean
   pushOnGiftList: boolean
 }

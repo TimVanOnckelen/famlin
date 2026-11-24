@@ -31,8 +31,8 @@ export type { CreateCommentBody, UpdateCommentBody, CommentsPage } from './comme
 export { fetchComments, fetchCommentsPage, flattenCommentPages, patchCommentInCaches, addCommentToCaches, pagedCommentsQueryKey, COMMENTS_PAGE_SIZE, createComment, updateComment, deleteComment, reactToComment, } from './comments';
 export type { CommentGroup } from './commentGroups';
 export { commentAttachments, groupCommentAttachments } from './commentGroups';
-export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat';
-export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts } from './chat';
+export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind, ChatMessageReply, SendChatMessageBody, ChatEligiblePerson, ChatPeoplePage, ChatConversationKind, ChatConversationParticipant, ChatConversationLastMessage, ChatConversation, ChatConversationInboxItem, ChatConversationsPage, ChatConversationList, CreateChatConversationBody, ChatConversationMessage, ChatConversationMessagesPage, FetchChatConversationMessagesParams, ChatConversationUnreadCounts, } from './chat';
+export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts, fetchChatPeople, fetchChatConversations, createChatConversation, fetchChatConversationMessages, sendChatConversationMessage, markChatConversationRead, fetchChatConversationUnreadCounts, isChatEncryptionSupported, chatConversationsQueryKey, chatPeopleQueryKey, chatMessagesQueryKey, chatUnreadConversationsQueryKey, } from './chat';
 export { fetchNotifications, fetchUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, } from './notifications';
 export { registerPushToken, unregisterPushToken } from './pushTokens';
 export type { DevicePlatform, PushPermission, DevicePayload, MemberDevice } from './devices';

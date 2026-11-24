@@ -57,8 +57,7 @@ ALTER TABLE "ChatMessage" ALTER COLUMN "groupId" DROP NOT NULL;
 ALTER TABLE "ChatRead" ALTER COLUMN "conversationId" SET NOT NULL;
 ALTER TABLE "ChatRead" ALTER COLUMN "groupId" DROP NOT NULL;
 
--- New settings and access scopes.
-ALTER TABLE "User" ADD COLUMN "pushOnDirectMessage" BOOLEAN NOT NULL DEFAULT true;
+-- New access scopes.
 ALTER TABLE "Notification" ADD COLUMN "relatedChatConversationId" TEXT;
 ALTER TABLE "Upload"
     ADD COLUMN "chatConversationId" TEXT,

@@ -159,7 +159,6 @@ const userRow = z.object({
   pushOnNewComment: optionalBool,
   pushOnNewLike: optionalBool,
   pushOnChitchat: optionalBool,
-  pushOnDirectMessage: optionalBool,
   pushOnStory: optionalBool,
   pushOnGiftList: optionalBool,
 })

@@ -41,7 +41,6 @@ model User {
   postInteractions             PostInteraction[]
   triggeredPushLogs            PushDeliveryLog[]
   pushOnChitchat               Boolean                       @default(true)
-  pushOnDirectMessage          Boolean                       @default(true)
   chatMessages                 ChatMessage[]
   chatReads                    ChatRead[]
   createdChatConversations     ChatConversation[]            @relation("ChatConversationCreatedBy")
