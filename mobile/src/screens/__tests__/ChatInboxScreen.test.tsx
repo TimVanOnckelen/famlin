@@ -26,17 +26,17 @@ jest.mock('@famlin/api-client', () => ({
 
 import { ChatInboxScreen } from '../ChatInboxScreen'
 
-function conversation(id: string, kind: 'FAMILY' | 'PRIVATE', updatedAt: string) {
+function conversation(id: string, kind: 'FAMILY' | 'PRIVATE', updatedAt: string, label = id) {
   return {
     id,
     kind,
-    ...(kind === 'FAMILY' ? { group: { id: `g-${id}`, name: 'Family' } } : { group: null }),
+    ...(kind === 'FAMILY' ? { group: { id: `g-${id}`, name: label } } : { group: null }),
     participants:
       kind === 'FAMILY'
         ? [{ id: 'me', name: 'Gabriel', avatarUrl: null }]
         : [
             { id: 'me', name: 'Gabriel', avatarUrl: null },
-            { id: 'ana', name: 'Ana', avatarUrl: null },
+            { id: `other-${id}`, name: label, avatarUrl: null },
           ],
     lastMessage: {
       id: `m-${id}`,
@@ -44,7 +44,7 @@ function conversation(id: string, kind: 'FAMILY' | 'PRIVATE', updatedAt: string)
       content: id === 'private' ? 'Hello' : 'Family news',
       hasAttachment: false,
       createdAt: updatedAt,
-      encryption: id === 'private' ? 'future' : 'none',
+      encryption: kind === 'PRIVATE' ? 'future' : 'none',
     },
     unreadCount: id === 'private' ? 2 : 0,
     updatedAt,
@@ -66,25 +66,38 @@ beforeEach(() => {
   jest.clearAllMocks()
 })
 
-it('renders the authoritative unified list newest-first and opens the correct routes', async () => {
+it('renders family chats first, then private messages, newest-first within each section', async () => {
   jest.mocked(fetchChatConversations).mockResolvedValue({
     items: [
-      conversation('family', 'FAMILY', '2026-11-23T17:00:00.000Z'),
-      conversation('private', 'PRIVATE', '2026-11-23T18:00:00.000Z'),
+      conversation('private-old', 'PRIVATE', '2026-11-21T18:00:00.000Z', 'Private old'),
+      conversation('family-old', 'FAMILY', '2026-11-20T17:00:00.000Z', 'Family old'),
+      conversation('private-new', 'PRIVATE', '2026-11-24T18:00:00.000Z', 'Private new'),
+      conversation('family-new', 'FAMILY', '2026-11-23T17:00:00.000Z', 'Family new'),
     ],
   })
 
   await renderScreen()
 
   const names = await screen.findAllByTestId('chat-conversation-row')
-  expect(names.map((row) => row.props.accessibilityLabel)).toEqual(['Ana', 'Family'])
-  expect(await screen.findByText('chat.unsupportedEncryption')).toBeTruthy()
-  expect(screen.getByText('2')).toBeTruthy()
+  expect(names.map((row) => row.props.accessibilityLabel)).toEqual([
+    'Family new',
+    'Family old',
+    'Private new',
+    'Private old',
+  ])
+  expect(screen.getByTestId('chat-family-section')).toHaveTextContent('chat.familyChats')
+  expect(screen.getByTestId('chat-private-section')).toHaveTextContent('chat.privateMessages')
+  expect(screen.getAllByTestId(/chat-(family|private)-section/).map((section) => section.props.testID)).toEqual([
+    'chat-family-section',
+    'chat-private-section',
+  ])
+  expect(mockNavigate).not.toHaveBeenCalled()
+  expect(screen.getAllByText('chat.unsupportedEncryption')).toHaveLength(2)
 
   await fireEvent.press(names[0])
-  expect(mockNavigate).toHaveBeenCalledWith('DirectMessage', { conversationId: 'private' })
-  await fireEvent.press(names[1])
-  expect(mockNavigate).toHaveBeenCalledWith('Chat', { groupId: 'g-family', groupName: 'Family' })
+  expect(mockNavigate).toHaveBeenCalledWith('Chat', { groupId: 'g-family-new', groupName: 'Family new' })
+  await fireEvent.press(names[2])
+  expect(mockNavigate).toHaveBeenCalledWith('DirectMessage', { conversationId: 'private-new' })
 
   await fireEvent.press(screen.getByLabelText('chat.newMessage'))
   expect(mockNavigate).toHaveBeenCalledWith('DmMemberPicker')
