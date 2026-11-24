@@ -347,6 +347,7 @@
     "directMessage": "Direct bericht",
     "familyChat": "Familiechat",
     "unavailable": "Dit gesprek is niet beschikbaar.",
+    "noConversationSelected": "Geen gesprek geselecteerd.",
     "encryptedMessage": "Versleuteld bericht",
     "newMessage": "Nieuw bericht",
     "searchPeople": "Personen zoeken",

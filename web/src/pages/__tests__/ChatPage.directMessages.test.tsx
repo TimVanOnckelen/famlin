@@ -175,15 +175,134 @@ beforeEach(() => {
   })
 })
 
-it('uses the authoritative unified inbox on a capable server', async () => {
+it('orders family chats first and selects the newest family without rewriting the URL', async () => {
+  vi.mocked(fetchChatConversations).mockResolvedValue({
+    items: [
+      {
+        id: 'private-new',
+        kind: 'PRIVATE',
+        participants: [
+          { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
+          { id: 'user-4', name: 'Emma', avatarUrl: null },
+        ],
+        lastMessage: null,
+        unreadCount: 0,
+        updatedAt: '2026-11-23T12:00:00Z',
+      },
+      {
+        id: 'family-old',
+        kind: 'FAMILY',
+        group: { id: 'group-2', name: 'Santos family' },
+        participants: [{ id: 'user-1', name: 'Grandpa John', avatarUrl: null }],
+        lastMessage: null,
+        unreadCount: 0,
+        updatedAt: '2026-11-20T10:00:00Z',
+      },
+      {
+        id: 'private-old',
+        kind: 'PRIVATE',
+        participants: [
+          { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
+          { id: 'user-2', name: 'Sophie', avatarUrl: null },
+        ],
+        lastMessage: null,
+        unreadCount: 0,
+        updatedAt: '2026-11-21T10:00:00Z',
+      },
+      {
+        id: 'family-new',
+        kind: 'FAMILY',
+        group: { id: 'group-1', name: 'De Vries family' },
+        participants: [{ id: 'user-1', name: 'Grandpa John', avatarUrl: null }],
+        lastMessage: null,
+        unreadCount: 0,
+        updatedAt: '2026-11-22T10:00:00Z',
+      },
+    ],
+  })
   renderPage()
 
-  expect(await screen.findByRole('heading', { name: 'Direct messages' })).toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: 'Family chats' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /Sophie/ })).toHaveTextContent('See you Sunday')
-  expect(screen.getByRole('button', { name: /De Vries family/ })).toBeInTheDocument()
-  await waitFor(() => expect(fetchChatConversations).toHaveBeenCalledOnce())
+  const familyHeading = await screen.findByRole('heading', { name: 'Family chats' })
+  const directHeading = screen.getByRole('heading', { name: 'Direct messages' })
+  expect(familyHeading.compareDocumentPosition(directHeading) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+  expect(
+    within(familyHeading.closest('section')!)
+      .getAllByRole('button')
+      .map((button) => button.textContent)
+  ).toEqual([expect.stringContaining('De Vries family'), expect.stringContaining('Santos family')])
+  expect(
+    within(directHeading.closest('section')!)
+      .getAllByRole('button')
+      .map((button) => button.textContent)
+  ).toEqual([expect.stringContaining('Emma'), expect.stringContaining('Sophie')])
+  await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('family-new', { cursor: undefined }))
+  expect(screen.getByTestId('location')).toHaveTextContent('/chat')
   expect(fetchChatMessages).not.toHaveBeenCalled()
+})
+
+it('falls back to the newest private conversation and shows no selection for an empty inbox', async () => {
+  vi.mocked(fetchChatConversations)
+    .mockResolvedValueOnce({
+      items: [
+        {
+          id: 'private-old',
+          kind: 'PRIVATE',
+          participants: [
+            { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
+            { id: 'user-2', name: 'Sophie', avatarUrl: null },
+          ],
+          lastMessage: null,
+          unreadCount: 0,
+          updatedAt: '2026-11-20T10:00:00Z',
+        },
+        {
+          id: 'private-new',
+          kind: 'PRIVATE',
+          participants: [
+            { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
+            { id: 'user-3', name: 'Emma', avatarUrl: null },
+          ],
+          lastMessage: null,
+          unreadCount: 0,
+          updatedAt: '2026-11-23T10:00:00Z',
+        },
+      ],
+    })
+    .mockResolvedValueOnce({ items: [] })
+
+  const first = renderPage()
+  expect(await screen.findByRole('heading', { name: 'Emma' })).toBeInTheDocument()
+  expect(screen.getByTestId('location')).toHaveTextContent('/chat')
+  await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('private-new', { cursor: undefined }))
+  first.unmount()
+
+  vi.clearAllMocks()
+  vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', features: ['directMessages'] })
+  vi.mocked(fetchChatConversations).mockResolvedValue({ items: [] })
+  renderPage()
+
+  expect(await screen.findByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
+  expect(fetchChatConversationMessages).not.toHaveBeenCalled()
+  expect(markChatConversationRead).not.toHaveBeenCalled()
+})
+
+it('shows a neutral detail state while the inbox loads or fails', async () => {
+  vi.mocked(fetchChatConversations).mockReturnValue(new Promise(() => {}) as never)
+  const loading = renderPage('/chat?conversation=private-1')
+
+  expect(await screen.findByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'This conversation is unavailable.' })).not.toBeInTheDocument()
+  expect(fetchChatConversationMessages).not.toHaveBeenCalled()
+  loading.unmount()
+
+  vi.clearAllMocks()
+  vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', features: ['directMessages'] })
+  vi.mocked(fetchChatConversations).mockRejectedValue(new Error('offline'))
+  renderPage('/chat?conversation=private-1')
+
+  expect(await screen.findByText(/Chats couldn't be loaded/)).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
+  expect(fetchChatConversationMessages).not.toHaveBeenCalled()
 })
 
 it('opens a selected conversation with browser history and marks only it read', async () => {
@@ -209,21 +328,32 @@ it('opens a selected conversation with browser history and marks only it read', 
   })
   renderPage()
 
-  await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+  await waitFor(() => expect(markChatConversationRead).toHaveBeenCalledWith('family-1'))
+  const inbox = screen.getByRole('complementary', { name: 'Chats' })
+  await userEvent.click(await within(inbox).findByRole('button', { name: /Sophie/ }))
   expect(screen.getByTestId('location')).toHaveTextContent('/chat?conversation=private-1')
   expect(await screen.findByRole('heading', { name: 'Sophie' })).toBeInTheDocument()
   expect(screen.getAllByText('See you Sunday')).not.toHaveLength(0)
   await waitFor(() => expect(markChatConversationRead).toHaveBeenCalledWith('private-1'))
-  expect(markChatConversationRead).toHaveBeenCalledTimes(1)
+  expect(markChatConversationRead).toHaveBeenCalledWith('family-1')
   await waitFor(() => expect(screen.queryByLabelText('2 unread messages')).not.toBeInTheDocument())
   expect(screen.getByRole('button', { name: 'Back to inbox' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Delete message' })).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Back to inbox' }))
   expect(screen.getByTestId('location')).toHaveTextContent('/chat')
   expect(screen.getByTestId('location')).not.toHaveTextContent('conversation=')
+  expect(screen.getByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
+  expect(screen.getByRole('complementary', { name: 'Chats' })).toBeInTheDocument()
+
+  const inboxAfterBack = screen.getByRole('complementary', { name: 'Chats' })
+  await userEvent.click(within(inboxAfterBack).getByRole('button', { name: /Sophie/ }))
+  expect(await screen.findByRole('heading', { name: 'Sophie' })).toBeInTheDocument()
+  expect(screen.getByTestId('location')).toHaveTextContent('/chat?conversation=private-1')
+
   await userEvent.click(screen.getByRole('button', { name: 'Browser back' }))
   expect(screen.getByTestId('location')).toHaveTextContent('/chat')
   expect(screen.getByTestId('location')).not.toHaveTextContent('conversation=')
+  expect(screen.getByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
 })
 
 it('focuses a searchable recipient picker and delegates conversation reuse to the server', async () => {
@@ -404,28 +534,31 @@ it('confirms and removes an own message from the conversation cache', async () =
 })
 
 it('loads older conversation pages without leaving the shell', async () => {
-  vi.mocked(fetchChatConversationMessages)
-    .mockResolvedValueOnce({
-      items: [
-        {
-          id: 'newer-message',
-          conversationId: 'private-1',
-          groupId: null,
-          authorId: 'user-2',
-          author: { id: 'user-2', name: 'Sophie', avatarUrl: null },
-          kind: 'USER',
-          content: 'Newest',
-          attachmentUrl: null,
-          refPostId: null,
-          createdAt: '2026-11-23T12:00:00Z',
-          editedAt: null,
-          encryption: 'none',
-          encryptedPayload: null,
-        },
-      ],
-      nextCursor: 'older-cursor',
-    })
-    .mockResolvedValueOnce({
+  vi.mocked(fetchChatConversationMessages).mockImplementation(async (conversationId, params) => {
+    if (conversationId === 'family-1') return { items: [], nextCursor: null }
+    if (!params?.cursor) {
+      return {
+        items: [
+          {
+            id: 'newer-message',
+            conversationId: 'private-1',
+            groupId: null,
+            authorId: 'user-2',
+            author: { id: 'user-2', name: 'Sophie', avatarUrl: null },
+            kind: 'USER',
+            content: 'Newest',
+            attachmentUrl: null,
+            refPostId: null,
+            createdAt: '2026-11-23T12:00:00Z',
+            editedAt: null,
+            encryption: 'none',
+            encryptedPayload: null,
+          },
+        ],
+        nextCursor: 'older-cursor',
+      }
+    }
+    return {
       items: [
         {
           id: 'older-message',
@@ -444,7 +577,8 @@ it('loads older conversation pages without leaving the shell', async () => {
         },
       ],
       nextCursor: null,
-    })
+    }
+  })
   renderPage()
   await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
   await userEvent.click(await screen.findByRole('button', { name: 'Load older messages' }))
@@ -465,13 +599,25 @@ it('resolves a family deep link without rewriting it', async () => {
   await waitFor(() => expect(markChatConversationRead).toHaveBeenCalledWith('family-1'))
 })
 
-it('shows an unavailable state for a stale conversation deep link', async () => {
-  vi.mocked(fetchChatConversationMessages).mockRejectedValue({ response: { status: 404 } })
-  renderPage('/chat?conversation=missing')
+it.each(['/chat?conversation=missing', '/chat?group=missing'])(
+  'keeps an invalid explicit link unavailable without polling: %s',
+  async (route) => {
+    const { queryClient } = renderPage(route)
 
-  expect(await screen.findByRole('heading', { name: 'This conversation is unavailable.' })).toBeInTheDocument()
-  expect(screen.queryByRole('textbox', { name: 'Message' })).not.toBeInTheDocument()
-})
+    expect(await screen.findByRole('heading', { name: 'This conversation is unavailable.' })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Message' })).not.toBeInTheDocument()
+    expect(queryClient.getQueryState(['chat-messages', null])?.fetchStatus).toBe('idle')
+    vi.useFakeTimers()
+    try {
+      await vi.advanceTimersByTimeAsync(6500)
+      expect(fetchChatConversationMessages).not.toHaveBeenCalled()
+      expect(markChatConversationRead).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(screen.getByTestId('location')).toHaveTextContent(route)
+  }
+)
 
 it('preserves the legacy family chat and endpoints on unsupported servers', async () => {
   vi.mocked(fetchServerInfo).mockResolvedValue({ version: '0.9.0', features: [] })
@@ -642,15 +788,17 @@ it('polls only the active conversation while the document is visible', async () 
   try {
     renderPage()
     await waitFor(() => expect(screen.getByRole('button', { name: /Sophie/ })).toBeInTheDocument())
+    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('family-1', { cursor: undefined }))
     await user.click(screen.getByRole('button', { name: /Sophie/ }))
-    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledOnce())
+    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('private-1', { cursor: undefined }))
 
-    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledTimes(2), { timeout: 7000 })
+    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledTimes(3), { timeout: 7000 })
 
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
     document.dispatchEvent(new Event('visibilitychange'))
     await new Promise((resolve) => setTimeout(resolve, 6500))
-    expect(fetchChatConversationMessages).toHaveBeenCalledTimes(2)
+    expect(fetchChatConversationMessages).toHaveBeenCalledTimes(3)
+    expect(fetchChatConversationMessages).toHaveBeenLastCalledWith('private-1', { cursor: undefined })
   } finally {
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
   }

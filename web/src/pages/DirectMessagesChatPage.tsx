@@ -55,21 +55,34 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
     queryFn: fetchChatConversations,
   })
   const items = conversations.data?.items ?? []
-  const direct = items.filter((item) => item.kind === 'PRIVATE')
-  const family = items.filter((item) => item.kind === 'FAMILY')
+  const sortedItems = [...items].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  const family = sortedItems.filter((item) => item.kind === 'FAMILY')
+  const direct = sortedItems.filter((item) => item.kind === 'PRIVATE')
   const params = new URLSearchParams(location.search)
   const requestedConversationId = params.get('conversation')
   const requestedGroupId = params.get('group')
-  const selectedId =
-    requestedConversationId ?? items.find((item) => item.kind === 'FAMILY' && item.group?.id === requestedGroupId)?.id
-  const selected = items.find((item) => item.id === selectedId) ?? null
+  const hasExplicitSelection = requestedConversationId !== null || requestedGroupId !== null
+  const showInboxOnly = (location.state as { showInboxOnly?: boolean } | null)?.showInboxOnly === true
+  const selected = conversations.isSuccess
+    ? hasExplicitSelection
+      ? (items.find((item) =>
+          requestedConversationId
+            ? item.id === requestedConversationId
+            : item.kind === 'FAMILY' && item.group?.id === requestedGroupId
+        ) ?? null)
+      : showInboxOnly
+        ? null
+        : (family[0] ?? direct[0] ?? null)
+    : null
+  const selectedId = selected?.id ?? null
+  const explicitSelectionUnavailable = conversations.isSuccess && hasExplicitSelection && !selected
 
   const messagesQuery = useInfiniteQuery({
     queryKey: ['chat-messages', selectedId],
     queryFn: ({ pageParam }) => fetchChatConversationMessages(selectedId!, { cursor: pageParam ?? undefined }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: !!selectedId,
+    enabled: selected !== null,
     refetchInterval: () => (document.visibilityState === 'hidden' ? false : 6000),
   })
   const messages = [...(messagesQuery.data?.pages.flatMap((page) => page.items) ?? [])].reverse()
@@ -101,12 +114,15 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
     const search = new URLSearchParams()
     search.set('conversation', conversation.id)
     const chatFromInbox = (location.state as { chatFromInbox?: boolean } | null)?.chatFromInbox ?? !selectedId
-    navigate({ pathname: '/chat', search: search.toString() }, { replace: !!selectedId, state: { chatFromInbox } })
+    navigate(
+      { pathname: '/chat', search: search.toString() },
+      { replace: !!selectedId, state: { chatFromInbox, showInboxOnly: false } }
+    )
   }
 
   function openInbox() {
     if ((location.state as { chatFromInbox?: boolean } | null)?.chatFromInbox) navigate(-1)
-    else navigate('/chat', { replace: true })
+    else navigate('/chat', { replace: true, state: { showInboxOnly: true } })
   }
 
   return (
@@ -131,7 +147,6 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
             <span>{t('chat.newMessage')}</span>
           </button>
         </div>
-        {conversations.isLoading && <div className="chat-hint">{t('common.loading')}</div>}
         {conversations.isError && (
           <div className="chat-hint">
             {t('chat.inboxLoadFailed')}{' '}
@@ -140,17 +155,11 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
             </button>
           </div>
         )}
-        {conversations.isSuccess && (
-          <div className={`chat-unified-layout${selectedId ? ' chat-conversation-open' : ''}`}>
+        <div
+          className={`chat-unified-layout${selected || explicitSelectionUnavailable || !conversations.isSuccess || items.length === 0 ? ' chat-conversation-open' : ''}`}
+        >
+          {conversations.isSuccess && (
             <aside className="chat-unified-inbox" aria-label={t('chat.groupListLabel')}>
-              <InboxSection
-                title={t('chat.directMessages')}
-                items={direct}
-                user={props.user}
-                locale={i18n.language}
-                onSelect={selectConversation}
-                selectedId={selectedId}
-              />
               <InboxSection
                 title={t('chat.familyChats')}
                 items={family}
@@ -159,39 +168,62 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
                 onSelect={selectConversation}
                 selectedId={selectedId}
               />
-            </aside>
-            {selectedId && (
-              <ConversationShell
-                key={selectedId}
-                conversation={selected}
-                messages={messages}
-                messagesQuery={messagesQuery}
-                locale={i18n.language}
-                onBack={openInbox}
+              <InboxSection
+                title={t('chat.directMessages')}
+                items={direct}
                 user={props.user}
+                locale={i18n.language}
+                onSelect={selectConversation}
+                selectedId={selectedId}
               />
-            )}
-            {pickerOpen && (
-              <RecipientPicker
-                onClose={() => setPickerOpen(false)}
-                onCreated={(conversation) => {
-                  client.setQueryData<{ items: ChatConversation[] }>(['chat-conversations'], (old) => {
-                    if (!old) return { items: [conversation] }
-                    return {
-                      items: [conversation, ...old.items.filter((item) => item.id !== conversation.id)].sort(
-                        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-                      ),
-                    }
-                  })
-                  setPickerOpen(false)
-                  selectConversation(conversation)
-                }}
-              />
-            )}
-          </div>
-        )}
+            </aside>
+          )}
+          {selected ? (
+            <ConversationShell
+              key={selectedId}
+              conversation={selected}
+              messages={messages}
+              messagesQuery={messagesQuery}
+              locale={i18n.language}
+              onBack={openInbox}
+              user={props.user}
+            />
+          ) : (
+            <ConversationPlaceholder unavailable={explicitSelectionUnavailable} />
+          )}
+          {pickerOpen && (
+            <RecipientPicker
+              onClose={() => setPickerOpen(false)}
+              onCreated={(conversation) => {
+                client.setQueryData<{ items: ChatConversation[] }>(['chat-conversations'], (old) => {
+                  if (!old) return { items: [conversation] }
+                  return {
+                    items: [conversation, ...old.items.filter((item) => item.id !== conversation.id)].sort(
+                      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                    ),
+                  }
+                })
+                setPickerOpen(false)
+                selectConversation(conversation)
+              }}
+            />
+          )}
+        </div>
       </div>
     </AppShell>
+  )
+}
+
+function ConversationPlaceholder({ unavailable }: { unavailable: boolean }) {
+  const { t } = useTranslation()
+  const title = unavailable ? t('chat.unavailable') : t('chat.noConversationSelected')
+
+  return (
+    <section className="chat-panel chat-panel-placeholder">
+      <div className="chat-messages">
+        <h2 className="chat-panel-placeholder-title">{title}</h2>
+      </div>
+    </section>
   )
 }
 
