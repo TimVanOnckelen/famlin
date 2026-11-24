@@ -142,9 +142,14 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
       <div className="chat-column">
         <div className="chat-page-heading">
           <ScreenHeader title={t('chat.title')} />
-          <button type="button" className="btn btn-primary chat-new-message" onClick={() => setPickerOpen(true)}>
-            <Icon name="plus" size={17} />
-            <span>{t('chat.newMessage')}</span>
+          <button
+            type="button"
+            className="btn btn-primary chat-new-message"
+            aria-label={t('chat.newMessage')}
+            onClick={() => setPickerOpen(true)}
+          >
+            <Icon name="plus" size={18} strokeWidth={2.5} className="chat-new-message-icon" />
+            <span className="chat-new-message-label">{t('chat.newMessage')}</span>
           </button>
         </div>
         {conversations.isError && (
@@ -262,7 +267,9 @@ function RecipientPicker({
         ref={dialogRef}
       >
         <div className="modal-header">
-          <h2 id="chat-recipient-title" className="modal-title">{t('chat.newMessage')}</h2>
+          <h2 id="chat-recipient-title" className="modal-title">
+            {t('chat.newMessage')}
+          </h2>
           <button type="button" className="post-detail-modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={20} />
           </button>
