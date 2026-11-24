@@ -6,6 +6,8 @@ import {
   createConversationBodySchema,
   createConversationMessageBodySchema,
   paginationQuerySchema,
+  setConversationEncryptionBodySchema,
+  type EncryptedMessagePayloadV1,
 } from '../types.js'
 import { emitDomainEvent } from '../events.js'
 import { requireGroupMember } from '../plugins/auth.js'
@@ -13,6 +15,7 @@ import { paginationArgs, paginate } from '../services/pagination.js'
 import { shapeChatMessagesWithReadBy, shapeConversationChatMessage } from '../services/chat.js'
 import { getT } from '../i18n/index.js'
 import {
+  uploadAssetKey,
   bindAssetsToScope,
   canBindOwnedUploadToFamily,
   claimConversationAttachment,
@@ -40,6 +43,7 @@ const chatMessageInclude = {
       kind: true,
       content: true,
       attachmentUrl: true,
+      encryption: true,
     },
   },
 }
@@ -54,14 +58,58 @@ type ConversationSummary = {
     authorId: string
     content: string | null
     hasAttachment: boolean
+    kind: string
     createdAt: Date
     encryption: string
+    // Ciphertext envelope of an encrypted last message (content stays null).
+    encryptedPayload?: unknown
   } | null
   unreadCount: number
   updatedAt: Date
+  // Set while either participant has opted this private conversation out of
+  // end-to-end encryption; null/absent otherwise (always for family chat).
+  encryptionDisabledAt: Date | null
+  encryptionDisabledById: string | null
 }
 
 class InvalidConversationAttachmentError extends Error {}
+
+type EncryptedSendError = 'invalidEncryptedMessage' | 'e2eRecipientHasNoKey' | 'e2eKeyVersionStale'
+const ENCRYPTED_SEND_STATUS: Record<EncryptedSendError, number> = {
+  invalidEncryptedMessage: 400,
+  e2eRecipientHasNoKey: 409,
+  e2eKeyVersionStale: 409,
+}
+
+// Validates the (public) envelope of a v1 message against the key directory
+// without ever touching ciphertext: one wrapped key per participant, each
+// naming that participant's latest key version, signed with the author's
+// latest version.
+async function checkEncryptedEnvelope(
+  payload: EncryptedMessagePayloadV1,
+  authorId: string,
+  participantIds: string[]
+): Promise<EncryptedSendError | null> {
+  const keyUserIds = payload.keys.map((key) => key.userId)
+  if (
+    participantIds.length !== 2 ||
+    keyUserIds.length !== 2 ||
+    new Set(keyUserIds).size !== 2 ||
+    !participantIds.every((id) => keyUserIds.includes(id))
+  ) {
+    return 'invalidEncryptedMessage'
+  }
+  const identities = await prisma.e2eIdentity.groupBy({
+    by: ['userId'],
+    where: { userId: { in: participantIds } },
+    _max: { version: true },
+  })
+  const latest = new Map(identities.map((row) => [row.userId, row._max.version ?? 0]))
+  if (participantIds.some((id) => !latest.get(id))) return 'e2eRecipientHasNoKey'
+  if (latest.get(authorId) !== payload.senderKeyVersion) return 'e2eKeyVersionStale'
+  if (payload.keys.some((key) => latest.get(key.userId) !== key.keyVersion)) return 'e2eKeyVersionStale'
+  return null
+}
 
 type LatestConversationMessage = {
   id: string
@@ -69,15 +117,17 @@ type LatestConversationMessage = {
   authorId: string
   content: string | null
   attachmentUrl: string | null
+  kind: string
   createdAt: Date
   encryption: string
+  encryptedPayload: unknown
 }
 
 async function latestConversationMessages(conversationIds: string[]): Promise<LatestConversationMessage[]> {
   if (conversationIds.length === 0) return []
   return prisma.$queryRaw<LatestConversationMessage[]>`
     SELECT DISTINCT ON ("conversationId")
-      "id", "conversationId", "authorId", "content", "attachmentUrl", "createdAt", "encryption"
+      "id", "conversationId", "authorId", "content", "attachmentUrl", "kind", "createdAt", "encryption", "encryptedPayload"
     FROM "ChatMessage"
     WHERE "conversationId" IN (${Prisma.join(conversationIds)})
     ORDER BY "conversationId", "createdAt" DESC, "id" DESC
@@ -172,13 +222,17 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
               id: last.id,
               authorId: last.authorId,
               content: plaintext ? last.content : null,
-              hasAttachment: plaintext && !!last.attachmentUrl,
+              hasAttachment: (plaintext || last.encryption === 'v1') && !!last.attachmentUrl,
+              kind: last.kind,
               createdAt: last.createdAt,
               encryption: last.encryption,
+              ...(plaintext ? {} : { encryptedPayload: last.encryptedPayload }),
             }
           : null,
         unreadCount: unreadCounts.get(conversation.id) ?? 0,
         updatedAt: conversation.updatedAt,
+        encryptionDisabledAt: privateConversation?.encryptionDisabledAt ?? null,
+        encryptionDisabledById: privateConversation?.encryptionDisabledById ?? null,
       }
     })
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || a.id.localeCompare(b.id))
@@ -331,9 +385,33 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         }
       }
 
+      const encrypted = body.encryption === 'v1'
+      if (encrypted) {
+        if (conversation.kind !== PRIVATE_CHAT_KIND) {
+          return reply.status(400).send({ error: t('errors.chatEncryptionNotSupported') })
+        }
+        const problem = await checkEncryptedEnvelope(
+          body.encryptedPayload,
+          request.user!.id,
+          conversation.participants.map((participant) => participant.userId)
+        )
+        if (problem) {
+          return reply.status(ENCRYPTED_SEND_STATUS[problem]).send({ error: t(`errors.${problem}`) })
+        }
+      }
+
       let message
       try {
         message = await prisma.$transaction(async (tx) => {
+          // An encrypted message carries an encrypted blob; a plaintext one
+          // never may (and its path can't be .bin, see types.ts).
+          if (body.attachmentUrl) {
+            const kind = await tx.upload.findUnique({
+              where: { assetKey: uploadAssetKey(body.attachmentUrl) },
+              select: { mediaKind: true },
+            })
+            if ((kind?.mediaKind === 'encrypted') !== encrypted) throw new InvalidConversationAttachmentError()
+          }
           if (conversation.kind === PRIVATE_CHAT_KIND && body.attachmentUrl) {
             const claimed = await claimConversationAttachment(
               body.attachmentUrl,
@@ -356,8 +434,10 @@ export default async function chatRoutes(fastify: FastifyInstance) {
               groupId: conversation.groupId,
               authorId: request.user!.id,
               kind: 'USER',
-              content: body.content?.trim(),
+              content: 'content' in body ? body.content?.trim() : null,
               attachmentUrl: body.attachmentUrl,
+              encryption: encrypted ? 'v1' : 'none',
+              ...(encrypted ? { encryptedPayload: body.encryptedPayload } : {}),
               replyToMessageId: body.replyToMessageId,
             },
             include: chatMessageInclude,
@@ -400,6 +480,57 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         }
       }
       return shapeConversationChatMessage(message)
+    }
+  )
+
+  // Opt a private conversation out of / back into end-to-end encryption. The
+  // server accepts both message kinds regardless; this flag + the system
+  // message make the choice visible to both participants (never silent).
+  fastify.put(
+    '/conversations/:conversationId/encryption',
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const t = getT(request)
+      const { conversationId } = request.params as { conversationId: string }
+      const body = setConversationEncryptionBodySchema.parse(request.body)
+      const conversation = await findAccessibleConversation(conversationId, request.user!.id)
+      if (!conversation) {
+        return reply.status(404).send({ error: t('errors.chatConversationNotFound') })
+      }
+      if (conversation.kind !== PRIVATE_CHAT_KIND) {
+        return reply.status(400).send({ error: t('errors.chatEncryptionNotSupported') })
+      }
+
+      const userId = request.user!.id
+      const result = await prisma.$transaction(async (tx) => {
+        // Lock the row so two concurrent toggles can't both write a message.
+        await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${conversationId} FOR UPDATE`
+        const current = await tx.chatConversation.findUniqueOrThrow({
+          where: { id: conversationId },
+          select: { encryptionDisabledAt: true, encryptionDisabledById: true },
+        })
+        if (!!current.encryptionDisabledAt === !body.enabled) return current
+        const now = new Date()
+        await tx.chatMessage.create({
+          data: {
+            conversationId,
+            authorId: userId,
+            kind: body.enabled ? 'SYSTEM_ENCRYPTION_ENABLED' : 'SYSTEM_ENCRYPTION_DISABLED',
+            createdAt: now,
+          },
+        })
+        return tx.chatConversation.update({
+          where: { id: conversationId },
+          data: body.enabled
+            ? { encryptionDisabledAt: null, encryptionDisabledById: null, updatedAt: now }
+            : { encryptionDisabledAt: now, encryptionDisabledById: userId, updatedAt: now },
+          select: { encryptionDisabledAt: true, encryptionDisabledById: true },
+        })
+      })
+      return {
+        encryptionDisabledAt: result.encryptionDisabledAt,
+        encryptionDisabledById: result.encryptionDisabledById,
+      }
     }
   )
 

@@ -245,6 +245,8 @@ describe('POST /api/auth/setup/restore', () => {
         kind: 'PRIVATE',
         participantKey: [admin.id, member.id].sort().join(':'),
         createdById: admin.id,
+        encryptionDisabledAt: new Date('2026-01-02T03:04:05.000Z'),
+        encryptionDisabledById: member.id,
         participants: { create: [{ userId: admin.id }, { userId: member.id }] },
       },
     })
@@ -256,6 +258,23 @@ describe('POST /api/auth/setup/restore', () => {
         content: 'opaque encrypted placeholder',
         encryption: 'future-cipher',
         encryptedPayload: { ciphertext: 'preserve-this' },
+      },
+    })
+    await prisma.e2eIdentity.create({
+      data: {
+        userId: admin.id,
+        version: 1,
+        signPublicKey: Buffer.alloc(32, 1).toString('base64'),
+        boxPublicKey: Buffer.alloc(32, 2).toString('base64'),
+        recoveryBackup: { v: 1, salt: 'c2FsdA==', nonce: 'bm9uY2U=', ct: 'Y2lwaGVy' },
+      },
+    })
+    await prisma.e2eIdentity.create({
+      data: {
+        userId: admin.id,
+        version: 2,
+        signPublicKey: Buffer.alloc(32, 3).toString('base64'),
+        boxPublicKey: Buffer.alloc(32, 4).toString('base64'),
       },
     })
     await prisma.chatRead.create({
@@ -414,6 +433,7 @@ describe('POST /api/auth/setup/restore', () => {
       chatConversationParticipants: await prisma.chatConversationParticipant.findMany({ orderBy: { id: 'asc' } }),
       chatMessages: await prisma.chatMessage.findMany({ orderBy: { id: 'asc' } }),
       chatReads: await prisma.chatRead.findMany({ orderBy: { id: 'asc' } }),
+      e2eIdentities: await prisma.e2eIdentity.findMany({ orderBy: { id: 'asc' } }),
       mediaAlbumLinks: await prisma.mediaAlbumLink.findMany({ orderBy: { id: 'asc' } }),
       mediaPersonLinks: await prisma.mediaPersonLink.findMany({ orderBy: { id: 'asc' } }),
       // The live story's Upload row is left out of the export with its photo.
@@ -470,6 +490,7 @@ describe('POST /api/auth/setup/restore', () => {
       chatConversationParticipants: 2,
       chatMessages: 4,
       chatReads: 2,
+      e2eIdentities: 2,
       mediaAlbumLinks: 1,
       mediaPersonLinks: 1,
       uploads: 5,

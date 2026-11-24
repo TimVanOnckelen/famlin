@@ -63,7 +63,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   ])
   const groupIds = memberships.map((m) => m.groupId)
 
-  const [groups, posts, self, devices, diagnosticReports] = await Promise.all([
+  const [groups, posts, self, devices, diagnosticReports, e2eIdentities] = await Promise.all([
     prisma.group.findMany({
       where: { id: { in: groupIds } },
       select: {
@@ -115,6 +115,19 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
       where: { userId },
       orderBy: { createdAt: 'asc' },
       select: { id: true, kind: true, platform: true, appVersion: true, text: true, data: true, createdAt: true },
+    }),
+    // The member's own end-to-end key identities (public keys + their
+    // password-wrapped recovery backup, which is ciphertext).
+    prisma.e2eIdentity.findMany({
+      where: { userId },
+      orderBy: { version: 'asc' },
+      select: {
+        version: true,
+        signPublicKey: true,
+        boxPublicKey: true,
+        recoveryBackup: true,
+        createdAt: true,
+      },
     }),
   ])
 
@@ -197,6 +210,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
     users,
     devices,
     diagnosticReports,
+    e2eIdentities,
     groups,
     // A gift list's exclusions are the starter's configuration (and hint at
     // pairings), so they're stripped exactly as the app strips them.
@@ -269,6 +283,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
       users: users.length,
       devices: devices.length,
       diagnosticReports: diagnosticReports.length,
+      e2eIdentities: e2eIdentities.length,
       groups: groups.length,
       posts: posts.length,
       comments: comments.length,
@@ -290,6 +305,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   archive.append(serialized.users, { name: 'data/users.json' })
   archive.append(serialized.devices, { name: 'data/devices.json' })
   archive.append(serialized.diagnosticReports, { name: 'data/diagnostic-reports.json' })
+  archive.append(serialized.e2eIdentities, { name: 'data/e2e-identities.json' })
   archive.append(serialized.groups, { name: 'data/groups.json' })
   archive.append(serialized.posts, { name: 'data/posts.json' })
   archive.append(serialized.comments, { name: 'data/comments.json' })

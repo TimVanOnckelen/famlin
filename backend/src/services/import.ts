@@ -253,6 +253,19 @@ const chatConversationRow = z.object({
   createdById: nullableString,
   createdAt: date,
   updatedAt: date,
+  // Absent from archives exported before end-to-end encrypted DMs.
+  encryptionDisabledAt: nullableDate.optional(),
+  encryptionDisabledById: nullableString.optional(),
+})
+
+const e2eIdentityRow = z.object({
+  id,
+  userId: id,
+  version: z.number().int().min(1),
+  signPublicKey: z.string(),
+  boxPublicKey: z.string(),
+  recoveryBackup: nullableJson.optional(),
+  createdAt: date,
 })
 
 const chatConversationParticipantRow = z.object({
@@ -348,7 +361,7 @@ const uploadRow = z.object({
   sourceFilename: nullableString,
   uploadSessionId: nullableString,
   livePhotoIdentifier: nullableString,
-  mediaKind: z.enum(['image', 'video', 'livePhoto']).optional(),
+  mediaKind: z.enum(['image', 'video', 'livePhoto', 'encrypted']).optional(),
   motionAssetKey: nullableString,
   mediaUrl: nullableString,
   thumbnailUrl: nullableString,
@@ -455,6 +468,7 @@ const DATA_FILES = {
   },
   chatMessages: { file: 'data/chat-messages.json', schema: z.array(chatMessageRow), required: false },
   chatReads: { file: 'data/chat-reads.json', schema: z.array(chatReadRow), required: false },
+  e2eIdentities: { file: 'data/e2e-identities.json', schema: z.array(e2eIdentityRow), required: false },
   mediaAlbumLinks: { file: 'data/media-album-links.json', schema: z.array(mediaAlbumLinkRow), required: false },
   mediaPersonLinks: { file: 'data/media-person-links.json', schema: z.array(mediaPersonLinkRow), required: false },
   uploads: { file: 'data/uploads.json', schema: z.array(uploadRow), required: false },
@@ -787,6 +801,7 @@ async function insertAll(
 
   await tx.group.createMany({ data: data.groups.map(({ members: _members, ...g }) => g) })
   await tx.groupMember.createMany({ data: groupMembers })
+  await tx.e2eIdentity.createMany({ data: data.e2eIdentities })
   await tx.chatConversation.createMany({ data: restoredChatConversations })
   await tx.chatConversationParticipant.createMany({ data: data.chatConversationParticipants })
   await tx.circle.createMany({ data: data.circles.map(({ members: _members, ...c }) => c) })
@@ -999,6 +1014,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<RestoreResul
     chatConversationParticipants: data.chatConversationParticipants.length,
     chatMessages: data.chatMessages.length,
     chatReads: data.chatReads.length,
+    e2eIdentities: data.e2eIdentities.length,
     mediaAlbumLinks: data.mediaAlbumLinks.length,
     mediaPersonLinks: data.mediaPersonLinks.length,
     uploads: data.uploads.length,

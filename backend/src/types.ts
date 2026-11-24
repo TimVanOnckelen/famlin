@@ -214,6 +214,72 @@ export function normalizeCommentAttachments(body: { attachmentUrl?: string; atta
 // POST /api/chat/groups/:groupId/messages — mirrors createCommentBodySchema's
 // "at least one of content/attachmentUrl" shape (a chat message can be
 // photo/video-only too).
+// Encrypted direct-message blob: `/uploads/<uuid>.bin`. Accepted ONLY by the
+// encrypted DM attachment field below — every other upload field uses
+// uploadPathSchema, which never matches `.bin`.
+export const encryptedUploadPathSchema = z
+  .string()
+  .regex(
+    /^\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.bin$/,
+    'Must be an encrypted upload path'
+  )
+
+const base64 = (max: number) =>
+  z
+    .string()
+    .min(1)
+    .max(max)
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/, 'Must be base64')
+const base64Key32 = z
+  .string()
+  .regex(/^[A-Za-z0-9+/]+={0,2}$/, 'Must be base64')
+  .refine((value) => Buffer.from(value, 'base64').length === 32, 'Must decode to 32 bytes')
+
+export const recoveryBackupSchema = z
+  .object({ v: z.literal(1), salt: base64(64), nonce: base64(64), ct: base64(4096) })
+  .strict()
+export const transferPayloadSchema = z
+  .object({ v: z.literal(1), epk: base64(64), nonce: base64(64), ct: base64(4096) })
+  .strict()
+export const encryptedMessagePayloadV1Schema = z
+  .object({
+    v: z.literal(1),
+    senderKeyVersion: z.number().int().min(1),
+    nonce: base64(64),
+    ct: base64(65536),
+    keys: z
+      .array(
+        z
+          .object({
+            userId: z.string().min(1).max(64),
+            keyVersion: z.number().int().min(1),
+            epk: base64(64),
+            nonce: base64(64),
+            wk: base64(128),
+          })
+          .strict()
+      )
+      .min(1)
+      .max(4),
+    sig: base64(128),
+  })
+  .strict()
+
+export type EncryptedMessagePayloadV1 = z.infer<typeof encryptedMessagePayloadV1Schema>
+
+export const createE2eIdentityBodySchema = z
+  .object({
+    version: z.number().int().min(1),
+    signPublicKey: base64Key32,
+    boxPublicKey: base64Key32,
+    recoveryBackup: recoveryBackupSchema.optional(),
+  })
+  .strict()
+export const updateE2eRecoveryBodySchema = z.object({ recoveryBackup: recoveryBackupSchema.nullable() }).strict()
+export const e2eTransferParamsSchema = z.object({ sessionId: z.string().regex(/^[A-Za-z0-9_-]{16,64}$/) })
+export const putE2eTransferBodySchema = z.object({ payload: transferPayloadSchema }).strict()
+export const setConversationEncryptionBodySchema = z.object({ enabled: z.boolean() }).strict()
+
 const chatMessageContentShape = {
   content: z.string().max(2000).optional(),
   attachmentUrl: uploadPathSchema.optional(),
@@ -233,12 +299,33 @@ export const createConversationBodySchema = z.object({
   participantIds: z.array(z.string()).length(1),
 })
 
-export const createConversationMessageBodySchema = z
-  .object({ ...chatMessageContentShape, replyToMessageId: z.string().min(1).optional() })
+const plaintextConversationMessageBodySchema = z
+  .object({
+    ...chatMessageContentShape,
+    encryption: z.literal('none').optional(),
+    replyToMessageId: z.string().min(1).optional(),
+  })
   .refine(requireChatMessageContent, {
     message: 'content or attachmentUrl is required',
     path: ['content'],
   })
+
+const encryptedConversationMessageBodySchema = z
+  .object({
+    encryption: z.literal('v1'),
+    encryptedPayload: encryptedMessagePayloadV1Schema,
+    attachmentUrl: encryptedUploadPathSchema.optional(),
+    replyToMessageId: z.string().min(1).optional(),
+  })
+  .strict()
+
+// A plaintext message (encryption omitted or 'none') or an end-to-end
+// encrypted one ('v1', content absent). Plaintext attachments can't be `.bin`
+// (uploadPathSchema), so the two shapes never overlap.
+export const createConversationMessageBodySchema = z.union([
+  plaintextConversationMessageBodySchema,
+  encryptedConversationMessageBodySchema,
+])
 
 export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'])
 

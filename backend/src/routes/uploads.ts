@@ -207,6 +207,63 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
     }
   )
 
+  // End-to-end encrypted direct-message attachments (issue #506): the client
+  // encrypts the photo/video before upload, so the bytes are opaque to the
+  // server. Stored verbatim as uploads/<uuid>.bin — no decoding, resizing,
+  // thumbnail, poster, HEIC or original-copy processing, ever — with an
+  // Upload row of mediaKind 'encrypted' that a v1 message then claims. A
+  // plaintext message can't use it (and vice versa), see routes/chat.ts.
+  fastify.post(
+    '/encrypted',
+    { preHandler: [fastify.authenticate], config: { rateLimit: { max: 60, timeWindow: '10 minutes' } } },
+    async (request, reply) => {
+      const t = getT(request)
+      const { maxUploadSizeMb } = await getAllSettings()
+      const parts = request.parts({ limits: { fileSize: maxUploadSizeMb * 1024 * 1024, files: 1 } })
+      const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'famlin-upload-'))
+      const storage = getStorage()
+      let storedKey: string | null = null
+      try {
+        for await (const part of parts) {
+          if (part.type !== 'file') continue
+          if (storedKey) {
+            part.file.resume()
+            continue
+          }
+          const uuid = randomUUID()
+          const sourcePath = path.join(scratch, `${uuid}.bin`)
+          const handle = await fs.open(sourcePath, 'w')
+          await pipeline(part.file, handle.createWriteStream())
+          if (part.file.truncated) {
+            return reply.status(413).send({ error: t('errors.fileTooLarge', { max: maxUploadSizeMb }) })
+          }
+          storedKey = `${uuid}.bin`
+          await storage.put(storedKey, { filePath: sourcePath })
+        }
+        if (!storedKey) return reply.status(400).send({ error: t('errors.noFileUploaded') })
+        const url = `/uploads/${storedKey}`
+        try {
+          await prisma.upload.create({
+            data: {
+              assetKey: uploadAssetKey(url),
+              uploaderId: request.user!.id,
+              mediaUrl: url,
+              mediaKind: 'encrypted',
+              processingStatus: 'ready',
+            },
+          })
+        } catch (error) {
+          await storage.delete(storedKey)
+          throw error
+        }
+        invalidateUploadCache([uploadAssetKey(url)])
+        return reply.status(201).send({ url })
+      } finally {
+        await fs.rm(scratch, { recursive: true, force: true })
+      }
+    }
+  )
+
   // Authenticated: issues a short-lived, narrow-scope token that lets the
   // client read /uploads/* without embedding the full session token in every
   // image/video URL (see the onRequest hook in app.ts).

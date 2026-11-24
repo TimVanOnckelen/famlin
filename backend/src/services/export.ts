@@ -107,6 +107,7 @@ export async function buildExportArchive(
     wikiPages,
     mediaMirrorTargets,
     mediaMirrors,
+    e2eIdentities,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -179,6 +180,7 @@ export async function buildExportArchive(
     // server from ever removing album assets it didn't put there.
     prisma.mediaMirrorTarget.findMany(),
     prisma.mediaMirror.findMany(),
+    prisma.e2eIdentity.findMany(),
   ])
   // Per-family branding is family identity, not server config: its Setting
   // rows travel with the archive (the logo files ride along in
@@ -234,6 +236,7 @@ export async function buildExportArchive(
       wikiPages: wikiPages.length,
       mediaMirrorTargets: mediaMirrorTargets.length,
       mediaMirrors: mediaMirrors.length,
+      e2eIdentities: e2eIdentities.length,
       branding: branding.length,
       settings: settings.length,
     },
@@ -253,6 +256,8 @@ export async function buildExportArchive(
   })
   archive.append(JSON.stringify(chatMessages, null, 2), { name: 'data/chat-messages.json' })
   archive.append(JSON.stringify(chatReads, null, 2), { name: 'data/chat-reads.json' })
+  // Public keys + password-wrapped recovery backups: ciphertext only.
+  archive.append(JSON.stringify(e2eIdentities, null, 2), { name: 'data/e2e-identities.json' })
   archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' })
   archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' })
   archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' })
