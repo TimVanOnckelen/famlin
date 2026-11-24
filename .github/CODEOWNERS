@@ -1,1 +1,7 @@
 * @TimVanOnckelen
+
+# End-to-end encryption for direct messages (#506): a small, plausible-looking
+# change here can make messages permanently unreadable or silently weaken
+# them without any test failing. Always needs the maintainer.
+/packages/api-client/src/e2e/ @TimVanOnckelen
+/packages/api-client/src/__tests__/fixtures/e2e-*.json @TimVanOnckelen

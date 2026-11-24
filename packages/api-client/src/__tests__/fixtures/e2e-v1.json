@@ -1,0 +1,71 @@
+{
+  "mom": {
+    "userId": "user-mom",
+    "version": 1,
+    "signPublicKey": "62glblktRuwtMRYkI1PEG8qgvyWSz1UilFt35tdtCRQ=",
+    "boxPublicKey": "GLCsekNTWUe2JSa60onuZ5sS0fP+eY6zUlZiMg5VUnE=",
+    "signPrivateKey": "sewi5icacchluQIVfPL+FDXZ8xUywEwUoZxh452dawI=",
+    "boxPrivateKey": "nv7Px5bPhhZLyEyH0lSGpgGvk6XK017XndMbwp+2G1Y="
+  },
+  "tim": {
+    "userId": "user-tim",
+    "version": 3,
+    "signPublicKey": "TNx5ZRhWDxvD+Kmay7fX9bicSGZnI21jzCz80Kds+tU=",
+    "boxPublicKey": "K6Qk8LABMmtKJEOLtjob5zMmj3jE2SkRy5rIdkjqjjs=",
+    "signPrivateKey": "EnYeaakHD377pEma5+e11tb5bfLT0AFi5zHgR3TPR6M=",
+    "boxPrivateKey": "CLXhB6hewmKY0hqIC8coD/DEokZMlbI7yVDbMUszECk="
+  },
+  "conversationId": "conv-vector",
+  "authorId": "user-mom",
+  "message": {
+    "v": 1,
+    "senderKeyVersion": 1,
+    "nonce": "BOBQ6Or56ts21MwQtV4YamI/vH1fv92f",
+    "ct": "l7OPcxzYrRH1muPmxLTcQB+c0n9/yzIbBsNE9tKX8RML6uQK0UhlxC9pr2JS8wWbNT4GYIZS8SQLrbFnuhQN276DD9zZyyA11cK6ew4izAg7XLUWZ+/+/Q8GlQO6ik0xx2McmukYpovjKJ6ItIrdvYaydeaUTKxZUI7cdhAN2qq8GeUP7tOZe/9K0+DMlx4T03j7FOiUDL0c8G72Usf3e5mmUdMRRdF0ULTUrze54BXYOb15+NuBrCTN24sw3Yv80xMyTdFAoHFZwJAbnTjdM7pa1O/+yWMLCqC9ZuMX+xtasMT457PpfA==",
+    "keys": [
+      {
+        "userId": "user-mom",
+        "keyVersion": 1,
+        "epk": "yCS0v+4sXqtrpHsmjh/P3oVCvbqeqIbtW+Tf6MrhMyk=",
+        "nonce": "53QhjCrXu8X3Z4zDfEiz54IdisU5TLvY",
+        "wk": "HO6oAImRjkuxh8OxTVpjIJKd4KiaDRSaV5c2dHJNpjl43BAPpbLDv2MT95o5J9Q/"
+      },
+      {
+        "userId": "user-tim",
+        "keyVersion": 3,
+        "epk": "ZkVJWdj+e8HCRBPuXvPgmu98U1Mb6ABnJCtrg7VdEjQ=",
+        "nonce": "9UjyE5rSZInwz/mBc4PEpoLNIHc3E21f",
+        "wk": "nzIf2cmpcsO9oxLSw6P67N/hl2IEmrr/3zX4jNhZL78c1XW4YDLYOikCmpw582+r"
+      }
+    ],
+    "sig": "uhPBj+dPyPWt0eaE7ppx9bn+PCtOKRNovPdj6uFC1WSm3028RoCslN/C/mniAC2hTbszpwEn/alVFmrfeP4iCw=="
+  },
+  "recovery": {
+    "code": "F9VN-D7CP-KPBP-XT6J-NHZ9-C7A1-VYFP-NZM1",
+    "backup": {
+      "v": 1,
+      "salt": "Kz7LvltR89IW2/JbkbMkRA==",
+      "nonce": "jxggLt36FEdJE7mQef2H2cNQCp8teILG",
+      "ct": "HP3wj4Y5SWO2SVpUFIZlqow2jK7MJS7iq2ILvaMkTubgw4YAC43qChvSwO2TRxhvrK2ALHmjdxENgGB2f3hhrjlFmBigxPGXQ3cngGdVDWFEkdqA1Lh1X7ejIvzXbzuZTDh5QdUcrjV2pjv8iAJ0Ayy3kPAAE/Kgp7p90pXu53pyVZBCnQIZM9GdxcEohm/dgcjHEsVsFsD10Eq7x37lVsOI/LTJT4xU8rII4apkZ3s="
+    }
+  },
+  "transfer": {
+    "request": {
+      "sessionId": "puP1PV_nNsVQ5VYAJtsmeSr9",
+      "privateKey": "WHEf4FitRGShNLnnr0xwP4YGgBXa4uhtq9xE5O1qgtY="
+    },
+    "payload": {
+      "v": 1,
+      "epk": "CcPmhjNOjznPP5/1O4oAKSxzFjt9Bqy+NWezVEEDD0s=",
+      "nonce": "KMhCU//lNOgcxakfIYyz1DMfSMrVeQFw",
+      "ct": "kJpA4SXdY85HvJqZGleh8rzzuKNN2Jq6gz++X/FLJwKhH+0w2G8WHZSoOGUz9iCaOEYULkFfMspGj3t4PeYBX9HfroCuMq5ty6yeYB5+Iyi9DGnBh33cjvODGUAie7kHTBBvWn3sCLWULiBYfIVdI8vyMC9JVwjQzPfUiWzX+I6wTg9DszZfnjMx0xA8vRHXvPxhsOYO41kJv2BFy3YrZCJ3lzHvlIlyThTzzISdjZM="
+    }
+  },
+  "attachment": {
+    "data": "QTpZ8JVHraqlH3dgGNPqm+eEnZ6HOufqPnwpiL4=",
+    "key": "yFrLVblmNJboTVNaSNSKqs6PHw3L0usjb/rK4KsghOs=",
+    "nonce": "wVQBbXtiJL+jk4YgSGHyq6APGC4/bmo3",
+    "plaintext": "attachment-v1"
+  },
+  "safetyCode": "78077 09817 58409 33336 89917 25851 25173 38094 22434 24950 75218 30771"
+}
