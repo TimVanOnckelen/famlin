@@ -62,7 +62,6 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
   const requestedConversationId = params.get('conversation')
   const requestedGroupId = params.get('group')
   const hasExplicitSelection = requestedConversationId !== null || requestedGroupId !== null
-  const showInboxOnly = (location.state as { showInboxOnly?: boolean } | null)?.showInboxOnly === true
   const selected = conversations.isSuccess
     ? hasExplicitSelection
       ? (items.find((item) =>
@@ -70,9 +69,7 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
             ? item.id === requestedConversationId
             : item.kind === 'FAMILY' && item.group?.id === requestedGroupId
         ) ?? null)
-      : showInboxOnly
-        ? null
-        : (family[0] ?? direct[0] ?? null)
+      : null
     : null
   const selectedId = selected?.id ?? null
   const explicitSelectionUnavailable = conversations.isSuccess && hasExplicitSelection && !selected
