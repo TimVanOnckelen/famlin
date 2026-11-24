@@ -96,17 +96,26 @@ export function registerNotificationSubscriber(): void {
           ? t('chat.systemMilestoneMessage', { author: event.authorName, milestoneTag: label })
           : t('chat.systemMilestoneMessageGeneric', { author: event.authorName })
 
-        await prisma.chatMessage.createMany({
-          data: event.posts
+        const messages = await Promise.all(
+          event.posts
             .filter((post) => chitchatGroupIds.has(post.groupId))
-            .map((post) => ({
-              groupId: post.groupId,
-              authorId: event.authorId,
-              kind: 'SYSTEM_MILESTONE',
-              content,
-              refPostId: post.postId,
-            })),
-        })
+            .map(async (post) => {
+              const conversation = await prisma.chatConversation.upsert({
+                where: { groupId: post.groupId },
+                update: { updatedAt: new Date() },
+                create: { kind: 'FAMILY', groupId: post.groupId },
+              })
+              return {
+                conversationId: conversation.id,
+                groupId: post.groupId,
+                authorId: event.authorId,
+                kind: 'SYSTEM_MILESTONE',
+                content,
+                refPostId: post.postId,
+              }
+            })
+        )
+        await prisma.chatMessage.createMany({ data: messages })
       }
     }
   })
@@ -454,6 +463,18 @@ export function registerNotificationSubscriber(): void {
     // messages — but the guard stays here too as a second line of defense
     // against ever double-notifying a milestone post.
     if (event.kind !== 'USER') return
+
+    if (event.conversationKind === 'PRIVATE') {
+      await notifyUsers({
+        type: 'new_direct_message',
+        userIds: event.participantIds,
+        senderId: event.authorId,
+        chatConversationId: event.conversationId,
+        params: { author: event.authorName },
+      })
+      return
+    }
+    if (!event.groupId || !event.groupName) return
 
     await notifyGroup({
       type: 'new_chat_message',

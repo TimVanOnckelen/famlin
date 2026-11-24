@@ -5,6 +5,7 @@ import { withStorageKeys } from './storage/locks.js'
 import { uploadSourceKey, uploadLifecycleKey } from './uploadSources.js'
 import { isCircleMember } from './circles.js'
 import { DERIVED_DIR_NAME } from './uploadVariants.js'
+import { canReadChatConversationUpload } from './chatConversations.js'
 
 // Authorization for /uploads/* — see the Upload model in schema.prisma for
 // why a reverse index table is the only practical way to answer "who is
@@ -37,6 +38,8 @@ type UploadRow = {
   bound: boolean
   groupIds: string[]
   serverWide: boolean
+  chatConversationId: string | null
+  participantUserIds: string[]
   livePhoto?: { assetKey: string } | null
 }
 
@@ -82,6 +85,8 @@ async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
       bound: true,
       groupIds: true,
       serverWide: true,
+      chatConversationId: true,
+      participantUserIds: true,
       livePhoto: { select: { assetKey: true } },
     },
   })
@@ -113,6 +118,7 @@ export async function canReadUpload(pathOrFilename: string, userId: string): Pro
   if (row.livePhoto) return canReadUpload(`/uploads/${row.livePhoto.assetKey}.jpg`, userId)
   return isUploadRowReadable(row, userId, {
     inCircle: (circleId) => isCircleMember(circleId, userId),
+    inChatConversation: (conversationId) => canReadChatConversationUpload(conversationId, userId),
     inAnyGroup: async (groupIds) =>
       !!(await prisma.groupMember.findFirst({
         where: { userId, groupId: { in: groupIds } },
@@ -121,7 +127,10 @@ export async function canReadUpload(pathOrFilename: string, userId: string): Pro
   })
 }
 
-export type UploadScopeRow = Pick<UploadRow, 'uploaderId' | 'circleId' | 'bound' | 'groupIds' | 'serverWide'>
+export type UploadScopeRow = Pick<
+  UploadRow,
+  'uploaderId' | 'circleId' | 'bound' | 'groupIds' | 'serverWide' | 'chatConversationId' | 'participantUserIds'
+>
 
 // THE readability rule for one Upload row (see canReadUpload above), with
 // the membership lookups left to the caller: canReadUpload checks them live
@@ -132,9 +141,14 @@ export async function isUploadRowReadable(
   userId: string,
   viewer: {
     inCircle: (circleId: string) => boolean | Promise<boolean>
+    inChatConversation?: (conversationId: string) => boolean | Promise<boolean>
     inAnyGroup: (groupIds: string[]) => boolean | Promise<boolean>
   }
 ): Promise<boolean> {
+  if (row.chatConversationId) {
+    return (await viewer.inChatConversation?.(row.chatConversationId)) ?? false
+  }
+  if (row.participantUserIds.length > 0) return false
   if (row.circleId) return viewer.inCircle(row.circleId)
   if (!row.bound) return row.uploaderId === userId
   if (row.serverWide) return true
@@ -198,7 +212,13 @@ export async function bindAssetsToScope(
   }
 
   await tx.upload.updateMany({
-    where: { assetKey: { in: assetKeys }, uploaderId, bound: false },
+    where: {
+      assetKey: { in: assetKeys },
+      uploaderId,
+      bound: false,
+      chatConversationId: null,
+      participantUserIds: { isEmpty: true },
+    },
     data: scopeData(scope),
   })
 
@@ -213,6 +233,8 @@ export async function bindAssetsToScope(
           bound: true,
           circleId: null,
           serverWide: false,
+          chatConversationId: null,
+          participantUserIds: { isEmpty: true },
           NOT: [{ groupIds: { isEmpty: true } }, { groupIds: { has: groupId } }],
         },
         data: { groupIds: { push: groupId } },
@@ -224,14 +246,101 @@ export async function bindAssetsToScope(
 
 function scopeData(scope: UploadScope) {
   return scope === SERVER_WIDE
-    ? { bound: true, uploadSessionId: null, serverWide: true, circleId: null, groupIds: [] }
+    ? {
+        bound: true,
+        uploadSessionId: null,
+        serverWide: true,
+        circleId: null,
+        groupIds: [],
+        chatConversationId: null,
+        participantUserIds: [],
+      }
     : {
         bound: true,
         uploadSessionId: null,
         serverWide: false,
         circleId: scope.circleId ?? null,
         groupIds: [...new Set(scope.groupIds)],
+        chatConversationId: null,
+        participantUserIds: [],
       }
+}
+
+export async function claimConversationAttachment(
+  assetPath: string,
+  uploaderId: string,
+  conversationId: string,
+  participantUserIds: string[],
+  tx: {
+    upload: {
+      updateMany: typeof prisma.upload.updateMany
+      findUnique: typeof prisma.upload.findUnique
+    }
+  }
+): Promise<boolean> {
+  const assetKey = uploadAssetKey(assetPath)
+  const conversationScope = {
+    bound: true,
+    uploadSessionId: null,
+    serverWide: false,
+    circleId: null,
+    groupIds: [],
+    chatConversationId: conversationId,
+    participantUserIds: [...new Set(participantUserIds)].sort(),
+  }
+  const { count } = await tx.upload.updateMany({
+    where: { assetKey, uploaderId, bound: false, chatConversationId: null },
+    data: conversationScope,
+  })
+  if (count !== 1) return false
+
+  const photo = await tx.upload.findUnique({
+    where: { assetKey },
+    select: { motionAssetKey: true },
+  })
+  if (photo?.motionAssetKey) {
+    await tx.upload.updateMany({
+      where: { assetKey: photo.motionAssetKey, uploaderId, bound: false, chatConversationId: null },
+      data: conversationScope,
+    })
+    invalidateUploadCache([photo.motionAssetKey])
+  }
+  invalidateUploadCache([assetKey])
+  return true
+}
+
+export async function canBindOwnedUploadToFamily(
+  assetPath: string,
+  uploaderId: string,
+  tx: { upload: { findUnique: typeof prisma.upload.findUnique } }
+): Promise<boolean> {
+  const row = await tx.upload.findUnique({
+    where: { assetKey: uploadAssetKey(assetPath) },
+    select: {
+      uploaderId: true,
+      bound: true,
+      circleId: true,
+      groupIds: true,
+      serverWide: true,
+      chatConversationId: true,
+      participantUserIds: true,
+    },
+  })
+  if (!row || row.uploaderId !== uploaderId) return false
+  if (row.participantUserIds.length > 0) return false
+  if (!row.bound) return true
+  return !row.circleId && !row.chatConversationId
+}
+
+export async function isPrivateConversationUpload(
+  assetPath: string,
+  tx: { upload: { findUnique: typeof prisma.upload.findUnique } }
+): Promise<boolean> {
+  const row = await tx.upload.findUnique({
+    where: { assetKey: uploadAssetKey(assetPath) },
+    select: { chatConversationId: true, participantUserIds: true },
+  })
+  return !!row && (!!row.chatConversationId || row.participantUserIds.length > 0)
 }
 
 // Gives a file the server wrote itself (a cross-posted linked-album asset

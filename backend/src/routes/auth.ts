@@ -39,6 +39,7 @@ import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
 import { calendarFeedUrls, generateCalendarFeedToken } from '../services/calendarFeed.js'
+import { deleteUserWithPrivateConversations } from '../services/accountDeletion.js'
 import { getPublicOrigin } from '../utils/publicOrigin.js'
 import {
   appleLoginBodySchema,
@@ -1061,7 +1062,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     // delete them (media included) first.
     await deleteStoriesWithMedia({ authorId: userId })
     const giftLists = await giftListsOfUser(userId)
-    await prisma.user.delete({ where: { id: userId } })
+    await deleteUserWithPrivateConversations(userId)
     invalidateSessionCache(userId)
     await afterGiftListParticipantsRemoved(giftLists, userId)
     return { success: true }

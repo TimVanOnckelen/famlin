@@ -246,6 +246,34 @@ describe('Immich upload mirror', () => {
     await prisma.giftListItem.create({
       data: { postId: giftPost.id, ownerId: member.id, title: 'Bike', photoUrl: wishPhoto.url, position: 0 },
     })
+    // A direct-message photo referenced by a family post stays private.
+    const peer = await createUser()
+    await addMember(group.id, peer.id)
+    const conversation = await prisma.chatConversation.create({
+      data: {
+        kind: 'PRIVATE',
+        participantKey: [member.id, peer.id].sort().join(':'),
+        createdById: member.id,
+        participants: { create: [{ userId: member.id }, { userId: peer.id }] },
+      },
+    })
+    const directPhoto = await storeUpload(member.id, { groupIds: [group.id] })
+    await prisma.upload.update({
+      where: { assetKey: directPhoto.assetKey },
+      data: {
+        chatConversationId: conversation.id,
+        participantUserIds: [member.id, peer.id].sort(),
+        groupIds: [],
+      },
+    })
+    await prisma.chatMessage.create({
+      data: {
+        conversationId: conversation.id,
+        authorId: member.id,
+        attachmentUrl: directPhoto.url,
+      },
+    })
+    await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [directPhoto.url] })
 
     const result = await runMediaMirrorJob()
 
@@ -253,6 +281,43 @@ describe('Immich upload mirror', () => {
     expect(immich.albumFiles(albumId)).toEqual([])
     expect(immich.assets.size).toBe(0)
     expect(await prisma.mediaMirror.count()).toBe(0)
+  })
+
+  it('removes a previously mirrored upload when it becomes direct-message media', async () => {
+    const { member, group, albumId } = await setup()
+    const peer = await createUser()
+    await addMember(group.id, peer.id)
+    const photo = await storeUpload(member.id, { groupIds: [group.id] })
+    await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [photo.url] })
+    expect((await runMediaMirrorJob()).uploaded).toBe(1)
+    expect(immich.albumFiles(albumId)).toHaveLength(1)
+
+    const conversation = await prisma.chatConversation.create({
+      data: {
+        kind: 'PRIVATE',
+        participantKey: [member.id, peer.id].sort().join(':'),
+        createdById: member.id,
+        participants: { create: [{ userId: member.id }, { userId: peer.id }] },
+      },
+    })
+    await prisma.chatMessage.create({
+      data: {
+        conversationId: conversation.id,
+        authorId: member.id,
+        attachmentUrl: photo.url,
+      },
+    })
+    await prisma.upload.update({
+      where: { assetKey: photo.assetKey },
+      data: {
+        chatConversationId: conversation.id,
+        participantUserIds: [member.id, peer.id].sort(),
+        groupIds: [],
+      },
+    })
+
+    expect(await runMediaMirrorJob()).toMatchObject({ removed: 1 })
+    expect(immich.albumFiles(albumId)).toEqual([])
   })
 
   it('skips ordinary comment attachments, server copies, legacy rows and content before mirrorSince', async () => {

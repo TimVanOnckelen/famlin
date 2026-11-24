@@ -7,62 +7,65 @@ datasource db {
 }
 
 model User {
-  id                String            @id @default(cuid())
-  email             String            @unique
-  name              String
-  avatarUrl         String?
-  passwordHash      String?
-  createdAt         DateTime          @default(now())
-  isAdmin           Boolean           @default(false)
+  id                           String                        @id @default(cuid())
+  email                        String                        @unique
+  name                         String
+  avatarUrl                    String?
+  passwordHash                 String?
+  createdAt                    DateTime                      @default(now())
+  isAdmin                      Boolean                       @default(false)
   // Bumped on password change/reset so previously issued JWTs (which embed
   // the version they were signed with) stop being accepted immediately,
   // instead of remaining valid for the rest of their 30-day lifetime.
-  tokenVersion      Int               @default(0)
-  emailOnNewPost    Boolean           @default(true)
-  emailOnNewComment Boolean           @default(true)
-  emailOnNewLike    Boolean           @default(true)
-  pushOnNewPost     Boolean           @default(true)
-  pushOnNewComment  Boolean           @default(true)
-  pushOnNewLike     Boolean           @default(true)
-  pushTokens        PushToken[]
-  devices           Device[]
-  diagnosticReports DiagnosticReport[]
-  groupMemberships  GroupMember[]
-  posts             Post[]
-  comments          Comment[]
-  likes             Like[]
-  favorites         Favorite[]
-  notifications     Notification[]
-  createdInvites    Invite[]          @relation("InviteCreatedBy")
-  usedInvites       Invite[]          @relation("InviteUsedBy")
-  apiTokens         ApiToken[]
-  calendarFeedToken CalendarFeedToken?
-  mediaPersonLinks  MediaPersonLink[]
-  postInteractions  PostInteraction[]
-  triggeredPushLogs PushDeliveryLog[]
-  pushOnChitchat    Boolean           @default(true)
-  chatMessages      ChatMessage[]
-  chatReads         ChatRead[]
-  circleMemberships CircleMember[]
-  createdCircles    Circle[]          @relation("CircleCreatedBy")
-  uploads           Upload[]
+  tokenVersion                 Int                           @default(0)
+  emailOnNewPost               Boolean                       @default(true)
+  emailOnNewComment            Boolean                       @default(true)
+  emailOnNewLike               Boolean                       @default(true)
+  pushOnNewPost                Boolean                       @default(true)
+  pushOnNewComment             Boolean                       @default(true)
+  pushOnNewLike                Boolean                       @default(true)
+  pushTokens                   PushToken[]
+  devices                      Device[]
+  diagnosticReports            DiagnosticReport[]
+  groupMemberships             GroupMember[]
+  posts                        Post[]
+  comments                     Comment[]
+  likes                        Like[]
+  favorites                    Favorite[]
+  notifications                Notification[]
+  createdInvites               Invite[]                      @relation("InviteCreatedBy")
+  usedInvites                  Invite[]                      @relation("InviteUsedBy")
+  apiTokens                    ApiToken[]
+  calendarFeedToken            CalendarFeedToken?
+  mediaPersonLinks             MediaPersonLink[]
+  postInteractions             PostInteraction[]
+  triggeredPushLogs            PushDeliveryLog[]
+  pushOnChitchat               Boolean                       @default(true)
+  pushOnDirectMessage          Boolean                       @default(true)
+  chatMessages                 ChatMessage[]
+  chatReads                    ChatRead[]
+  createdChatConversations     ChatConversation[]            @relation("ChatConversationCreatedBy")
+  chatConversationParticipants ChatConversationParticipant[]
+  circleMemberships            CircleMember[]
+  createdCircles               Circle[]                      @relation("CircleCreatedBy")
+  uploads                      Upload[]
   // Opt-in (default off) push for a new story from another member — at most
   // one push per author per group per day (see the story.created handler in
   // src/subscribers/notifications.ts). Push-only, no email counterpart.
-  pushOnStory       Boolean           @default(false)
+  pushOnStory                  Boolean                       @default(false)
   // Push for gift lists (issue #307): being added to one, the Secret Santa
   // draw happening, and the person you're buying for adding wishes.
-  pushOnGiftList    Boolean           @default(true)
-  giftListItems     GiftListItem[]
-  giftsToGive       GiftDrawAssignment[] @relation("GiftDrawGiver")
-  giftsToReceive    GiftDrawAssignment[] @relation("GiftDrawRecipient")
-  giftListGuests    GiftListGuest[]
-  stories           Story[]
-  storyViews        StoryView[]
-  storyReactions    StoryReaction[]
-  storyReplies      StoryReply[]
-  createdWikiPages  WikiPage[]        @relation("WikiPageCreatedBy")
-  updatedWikiPages  WikiPage[]        @relation("WikiPageUpdatedBy")
+  pushOnGiftList               Boolean                       @default(true)
+  giftListItems                GiftListItem[]
+  giftsToGive                  GiftDrawAssignment[]          @relation("GiftDrawGiver")
+  giftsToReceive               GiftDrawAssignment[]          @relation("GiftDrawRecipient")
+  giftListGuests               GiftListGuest[]
+  stories                      Story[]
+  storyViews                   StoryView[]
+  storyReactions               StoryReaction[]
+  storyReplies                 StoryReply[]
+  createdWikiPages             WikiPage[]                    @relation("WikiPageCreatedBy")
+  updatedWikiPages             WikiPage[]                    @relation("WikiPageUpdatedBy")
 }
 
 // A personal access token a member creates to call the API from their own
@@ -113,9 +116,9 @@ model CalendarFeedToken {
 }
 
 model Group {
-  id               String           @id @default(cuid())
-  name             String
-  description      String?
+  id                String             @id @default(cuid())
+  name              String
+  description       String?
   // Post types members may create in this group, by PostTypeHandler id
   // (services/postTypes/registry.ts). Empty = all registered types allowed
   // (same convention as the allowedEmails setting) — member-facing responses
@@ -123,27 +126,28 @@ model Group {
   // empty list; only admin responses expose the raw stored array. Enforced
   // at creation time only: existing posts of a later-disallowed type stay
   // visible.
-  allowedPostTypes String[]         @default([])
+  allowedPostTypes  String[]           @default([])
   // Whether this group's single central chat ("chitchat") is turned on —
   // off by default, an admin opt-in per group (see routes/admin.ts group
   // create/update). Member-facing chat routes 403 with
   // errors.chitchatDisabled while this is false.
-  chitchatEnabled  Boolean          @default(false)
+  chitchatEnabled   Boolean            @default(false)
   // Whether members may post Stories in this group — ON by default (unlike
   // chitchat), admin-controlled per group. Member-facing story routes 403
   // with errors.storiesDisabled while this is false, and a disabled group's
   // stories and highlights are hidden from members.
-  storiesEnabled   Boolean          @default(true)
-  createdAt        DateTime         @default(now())
-  members          GroupMember[]
-  posts            Post[]
-  invites          Invite[]
-  mediaAlbumLinks  MediaAlbumLink[]
-  chatMessages     ChatMessage[]
-  chatReads        ChatRead[]
-  circles          Circle[]
-  stories          Story[]
-  wikiPages        WikiPage[]
+  storiesEnabled    Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  members           GroupMember[]
+  posts             Post[]
+  invites           Invite[]
+  mediaAlbumLinks   MediaAlbumLink[]
+  chatMessages      ChatMessage[]
+  chatReads         ChatRead[]
+  chatConversation  ChatConversation?
+  circles           Circle[]
+  stories           Story[]
+  wikiPages         WikiPage[]
   mediaMirrorTarget MediaMirrorTarget?
 }
 
@@ -160,11 +164,11 @@ model GroupMember {
 }
 
 model Post {
-  id                String            @id @default(cuid())
-  authorId          String
-  author            User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  groupId           String
-  group             Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(cuid())
+  authorId            String
+  author              User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  groupId             String
+  group               Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
   // Narrows this post's audience from the whole group to one Circle within
   // it (see the Circle model below). null = visible to every group member,
   // which is every post that existed before Circles and every post whose
@@ -176,51 +180,51 @@ model Post {
   // soft delete and no "promote to whole family" path, because silently
   // widening an audience is the exact failure this feature exists to
   // prevent. The admin delete endpoint reports the affected post count first.
-  circleId          String?
-  circle            Circle?           @relation(fields: [circleId], references: [id], onDelete: Cascade)
-  content           String?
+  circleId            String?
+  circle              Circle?              @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  content             String?
   // Open string discriminator (was the closed PostType enum: UPDATE /
   // MILESTONE) so new post types (POLL, and whatever comes after it) can be
   // added without a migration — see services/postTypes/registry.ts, the
   // PostTypeHandler registry that owns per-type validation. Never renamed
   // once a deployment has posts of that type.
-  type              String            @default("UPDATE")
+  type                String               @default("UPDATE")
   // Handler-owned, type-specific config (e.g. a poll's options/closesAt) —
   // null for UPDATE/MILESTONE. Validated/transformed by the type's
   // PostTypeHandler at create time, immutable afterward. `content` stays the
   // universal human-readable field (a poll's question), so search,
   // notification previews, and old clients keep working unmodified.
-  typeData          Json?
-  milestoneTag      String?
-  uploadedAssetUrls String[]
-  createdAt         DateTime          @default(now())
-  editedAt          DateTime?
-  latitude          Float?
-  longitude         Float?
-  locationName      String?
-  comments          Comment[]
-  likes             Like[]
-  favorites         Favorite[]
-  notifications     Notification[]
-  giftListItems     GiftListItem[]
+  typeData            Json?
+  milestoneTag        String?
+  uploadedAssetUrls   String[]
+  createdAt           DateTime             @default(now())
+  editedAt            DateTime?
+  latitude            Float?
+  longitude           Float?
+  locationName        String?
+  comments            Comment[]
+  likes               Like[]
+  favorites           Favorite[]
+  notifications       Notification[]
+  giftListItems       GiftListItem[]
   giftDrawAssignments GiftDrawAssignment[]
-  giftListGuests    GiftListGuest[]
+  giftListGuests      GiftListGuest[]
   // System chat messages (kind: SYSTEM_MILESTONE) that deep-link back to this
   // post — see ChatMessage.refPostId below.
-  chatMessages      ChatMessage[]
+  chatMessages        ChatMessage[]
   // Shared by every sibling row of one cross-post (see the "cross-posting"
   // feature: one Post row per target group, all created together with this
   // same id) — null for an ordinary single-group post. Never exposed in any
   // API response (see shapePost in services/posts.ts): a non-author must
   // never be able to tell a post was cross-posted.
-  crossPostId       String?
+  crossPostId         String?
   // Per-user state for this post's type (poll votes today; RSVPs, etc.
   // later) — a generic, handler-owned table rather than one column per
   // feature. Never included in postInclude (routes/posts.ts) or serialized
   // directly; each PostTypeHandler owns reading/writing its own `key`
   // namespace (see services/postTypes/poll.ts).
-  interactions      PostInteraction[]
-  pushDeliveryLogs  PushDeliveryLog[]
+  interactions        PostInteraction[]
+  pushDeliveryLogs    PushDeliveryLog[]
 
   @@index([groupId, createdAt])
   @@index([crossPostId])
@@ -288,46 +292,85 @@ model Comment {
   @@index([postId, createdAt])
 }
 
-// A message in a group's single central chat ("chitchat"). USER messages are
-// authored directly; SYSTEM_MILESTONE messages are auto-generated when a
-// milestone post is created in a group with chitchatEnabled — authorId is the
-// milestone post's author, refPostId links back to it so the client can
-// deep-link. kind is an open string discriminator, same convention as
-// Post.type — never rename a persisted value.
+model ChatConversation {
+  id             String                        @id @default(cuid())
+  kind           String
+  groupId        String?                       @unique
+  group          Group?                        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participantKey String?                       @unique
+  title          String?
+  createdById    String?
+  createdBy      User?                         @relation("ChatConversationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @default(now())
+  participants   ChatConversationParticipant[]
+  messages       ChatMessage[]
+  reads          ChatRead[]
+  uploads        Upload[]
+  notifications  Notification[]
+
+  @@index([kind, updatedAt])
+}
+
+model ChatConversationParticipant {
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime         @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+// A message in a family conversation or private direct conversation. USER
+// messages are authored directly; SYSTEM_MILESTONE messages only belong to
+// family conversations. kind is an open string discriminator, same convention
+// as Post.type — never rename a persisted value.
 model ChatMessage {
-  id               String        @id @default(cuid())
-  groupId          String
-  group            Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  id               String           @id @default(cuid())
+  conversationId   String
+  conversation     ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  groupId          String?
+  group            Group?           @relation(fields: [groupId], references: [id], onDelete: Cascade)
   authorId         String
-  author           User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  kind             String        @default("USER")
+  author           User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind             String           @default("USER")
   content          String?
   attachmentUrl    String?
+  encryption       String           @default("none")
+  encryptedPayload Json?
   refPostId        String?
-  refPost          Post?         @relation(fields: [refPostId], references: [id], onDelete: SetNull)
+  refPost          Post?            @relation(fields: [refPostId], references: [id], onDelete: SetNull)
   replyToMessageId String?
-  replyToMessage   ChatMessage?  @relation("ChatMessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
-  replies          ChatMessage[] @relation("ChatMessageReplies")
-  createdAt        DateTime      @default(now())
+  replyToMessage   ChatMessage?     @relation("ChatMessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies          ChatMessage[]    @relation("ChatMessageReplies")
+  createdAt        DateTime         @default(now())
   editedAt         DateTime?
 
   @@index([groupId, createdAt])
+  @@index([conversationId, createdAt])
   @@index([replyToMessageId])
+  @@index([authorId])
 }
 
-// One row per (group, user) — the timestamp of that user's last chat read.
+// One row per (conversation, user) — the timestamp of that user's last read.
 // Read-by / unread-count are computed from this rather than a per-message
 // receipt table: a message is "read by" every member whose lastReadAt is
 // >= that message's createdAt.
 model ChatRead {
-  id         String   @id @default(cuid())
-  groupId    String
-  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lastReadAt DateTime @default(now())
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  groupId        String?
+  group          Group?           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime         @default(now())
 
-  @@unique([groupId, userId])
+  @@unique([conversationId, userId])
+  @@index([groupId, userId])
 }
 
 // Reacts to a post or a comment (exactly one of postId/commentId is set).
@@ -425,20 +468,22 @@ model DiagnosticReport {
 }
 
 model Notification {
-  id             String    @id @default(cuid())
-  userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type           String
-  relatedPostId  String?
-  post           Post?     @relation(fields: [relatedPostId], references: [id], onDelete: SetNull)
+  id                        String            @id @default(cuid())
+  userId                    String
+  user                      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type                      String
+  relatedPostId             String?
+  post                      Post?             @relation(fields: [relatedPostId], references: [id], onDelete: SetNull)
   // Set for story notifications (new_story/story_reply/story_reaction)
   // instead of relatedPostId. SetNull: the history row outlives the story's
   // 24h expiry, it just stops deep-linking anywhere.
-  relatedStoryId String?
-  story          Story?    @relation(fields: [relatedStoryId], references: [id], onDelete: SetNull)
-  message        String
-  readAt         DateTime?
-  createdAt      DateTime  @default(now())
+  relatedStoryId            String?
+  story                     Story?            @relation(fields: [relatedStoryId], references: [id], onDelete: SetNull)
+  relatedChatConversationId String?
+  chatConversation          ChatConversation? @relation(fields: [relatedChatConversationId], references: [id], onDelete: SetNull)
+  message                   String
+  readAt                    DateTime?
+  createdAt                 DateTime          @default(now())
 
   @@index([userId, createdAt])
   @@index([userId, readAt])
@@ -694,39 +739,43 @@ model CircleMember {
 // keeps the asset unreadable by everyone, which is the correct fail-closed
 // direction for a privacy boundary.
 model Upload {
-  id         String   @id @default(cuid())
-  assetKey   String   @unique
-  uploaderId String?
-  uploader   User?    @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
-  circleId   String?
+  id                  String            @id @default(cuid())
+  assetKey            String            @unique
+  uploaderId          String?
+  uploader            User?             @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+  circleId            String?
   // Set once the upload is attached to a post, comment, chat message or
   // avatar. Until then only the uploader can read it.
-  bound      Boolean  @default(false)
+  bound               Boolean           @default(false)
   // The group(s) whose members may read a bound upload (cross-posted media
   // carries every target group). Like circleId, deliberately not a FK: a
   // deleted group's id dangles and matches nobody, so its media never
   // reverts to server-wide readable. Empty on a bound row = a legacy row
   // bound before group scoping existed (still readable by any signed-in
   // user until a backfill assigns its groups).
-  groupIds   String[] @default([])
+  groupIds            String[]          @default([])
   // Explicitly readable by any authenticated user — user avatars, which
   // appear across every group their owner belongs to.
-  serverWide Boolean  @default(false)
-  processingStatus String @default("ready")
-  sourceFilename String?
-  uploadSessionId String?
+  serverWide          Boolean           @default(false)
+  chatConversationId  String?
+  chatConversation    ChatConversation? @relation(fields: [chatConversationId], references: [id], onDelete: SetNull)
+  participantUserIds  String[]          @default([])
+  processingStatus    String            @default("ready")
+  sourceFilename      String?
+  uploadSessionId     String?
   livePhotoIdentifier String?
-  mediaKind String @default("image")
-  motionAssetKey String? @unique
-  motionUpload Upload? @relation("LivePhotoMotion", fields: [motionAssetKey], references: [assetKey], onDelete: SetNull)
-  livePhoto Upload? @relation("LivePhotoMotion")
-  mediaUrl String?
-  thumbnailUrl String?
+  mediaKind           String            @default("image")
+  motionAssetKey      String?           @unique
+  motionUpload        Upload?           @relation("LivePhotoMotion", fields: [motionAssetKey], references: [assetKey], onDelete: SetNull)
+  livePhoto           Upload?           @relation("LivePhotoMotion")
+  mediaUrl            String?
+  thumbnailUrl        String?
   processingStartedAt DateTime?
-  processingError String?
-  createdAt  DateTime @default(now())
+  processingError     String?
+  createdAt           DateTime          @default(now())
 
   @@index([circleId])
+  @@index([chatConversationId])
   @@index([uploaderId])
   @@index([processingStatus])
   @@index([uploaderId, uploadSessionId, bound])
@@ -845,26 +894,28 @@ model SystemAlert {
 
 // Operational journal. Deliberately excluded from portable family exports.
 model StorageMigration {
-  id          String @id @default(uuid())
+  id          String                 @id @default(uuid())
   source      String
   destination String
-  status      String @default("running")
+  status      String                 @default("running")
   error       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
   items       StorageMigrationItem[]
+
   @@unique([source, destination])
 }
 
 model StorageMigrationItem {
   migrationId String
   key         String
-  size        BigInt @default(0)
+  size        BigInt           @default(0)
   sha256      String?
   status      String
   error       String?
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime         @updatedAt
   migration   StorageMigration @relation(fields: [migrationId], references: [id], onDelete: Cascade)
+
   @@id([migrationId, key])
 }
 
@@ -873,11 +924,11 @@ model StorageMigrationItem {
 // There is deliberately no "claimed"/"bought" state: the Secret Santa draw
 // prevents duplicate gifts instead.
 model GiftListItem {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
   ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner     User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   title     String
   note      String?
   // http(s) only, validated in routes/giftLists.ts.
@@ -889,8 +940,8 @@ model GiftListItem {
   // e.g. a child); ownerId is then the participant who manages that guest.
   guestId   String?
   guest     GiftListGuest? @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   @@index([postId, ownerId, position])
   @@index([ownerId])

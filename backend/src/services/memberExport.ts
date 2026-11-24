@@ -96,6 +96,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
         pushOnNewComment: true,
         pushOnNewLike: true,
         pushOnChitchat: true,
+        pushOnDirectMessage: true,
       },
     }),
     prisma.device.findMany({
@@ -122,30 +123,69 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   const visiblePostIds = new Set(postIds)
   const chatGroupIds = groups.filter((g) => g.chitchatEnabled).map((g) => g.id)
   const otherUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))].filter((id) => id !== userId)
+  const sharedUserIds = new Set(otherUserIds)
+  const conversationCandidates = await prisma.chatConversation.findMany({
+    where: {
+      OR: [
+        { kind: 'FAMILY', groupId: { in: chatGroupIds } },
+        { kind: 'PRIVATE', participants: { some: { userId } } },
+      ],
+    },
+    include: { participants: true },
+  })
+  const visibleConversations = conversationCandidates.filter((conversation) => {
+    if (conversation.kind === 'FAMILY') return true
+    return (
+      conversation.participants.length === 2 &&
+      conversation.participants.some((participant) => participant.userId === userId) &&
+      conversation.participants.some(
+        (participant) => participant.userId !== userId && sharedUserIds.has(participant.userId)
+      )
+    )
+  })
+  const visibleConversationIds = visibleConversations.map((conversation) => conversation.id)
+  const chatConversationParticipants = visibleConversations.flatMap((conversation) => conversation.participants)
+  const chatConversations = visibleConversations.map(({ participants: _participants, ...conversation }) => conversation)
 
-  const [comments, favorites, chatMessages, otherUsers, giftListItems, giftListGuests, giftDrawAssignments, wikiPages] =
-    await Promise.all([
-      prisma.comment.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
-      prisma.favorite.findMany({ where: { userId, postId: { in: postIds } } }),
-      // Only groups with chat switched on — a disabled group's chat is
-      // unreadable in the app (403 errors.chitchatDisabled), so it's unreadable
-      // here too. A SYSTEM_MILESTONE message about a circle post the caller
-      // can't see is dropped below.
-      prisma.chatMessage.findMany({ where: { groupId: { in: chatGroupIds } }, orderBy: { createdAt: 'asc' } }),
-      prisma.user.findMany({
-        where: { id: { in: otherUserIds } },
-        select: { id: true, email: true, name: true, avatarUrl: true },
-      }),
-      // Every wishlist on the gift lists the caller can see (posts above are
-      // already narrowed to their hidden circles) — as in the app.
-      prisma.giftListItem.findMany({ where: { postId: { in: postIds } }, orderBy: { position: 'asc' } }),
-      // ...and the wishlists kept there for people without an account.
-      prisma.giftListGuest.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
-      // Secret Santa: ONLY the caller's own assignment, never anyone else's.
-      prisma.giftDrawAssignment.findMany({ where: { giverId: userId, postId: { in: postIds } } }),
-      // Family Wiki pages the caller can read in the app — same circle rule.
-      prisma.wikiPage.findMany({ where: visibleWikiPagesWhere(groupIds, circleIds), orderBy: { createdAt: 'asc' } }),
-    ])
+  const [
+    comments,
+    favorites,
+    chatMessages,
+    chatReads,
+    otherUsers,
+    giftListItems,
+    giftListGuests,
+    giftDrawAssignments,
+    wikiPages,
+  ] = await Promise.all([
+    prisma.comment.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
+    prisma.favorite.findMany({ where: { userId, postId: { in: postIds } } }),
+    // Only groups with chat switched on — a disabled group's chat is
+    // unreadable in the app (403 errors.chitchatDisabled), so it's unreadable
+    // here too. A SYSTEM_MILESTONE message about a circle post the caller
+    // can't see is dropped below.
+    prisma.chatMessage.findMany({
+      where: { conversationId: { in: visibleConversationIds } },
+      orderBy: { createdAt: 'asc' },
+    }),
+    prisma.chatRead.findMany({
+      where: { conversationId: { in: visibleConversationIds }, userId },
+      orderBy: { lastReadAt: 'asc' },
+    }),
+    prisma.user.findMany({
+      where: { id: { in: otherUserIds } },
+      select: { id: true, email: true, name: true, avatarUrl: true },
+    }),
+    // Every wishlist on the gift lists the caller can see (posts above are
+    // already narrowed to their hidden circles) — as in the app.
+    prisma.giftListItem.findMany({ where: { postId: { in: postIds } }, orderBy: { position: 'asc' } }),
+    // ...and the wishlists kept there for people without an account.
+    prisma.giftListGuest.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
+    // Secret Santa: ONLY the caller's own assignment, never anyone else's.
+    prisma.giftDrawAssignment.findMany({ where: { giverId: userId, postId: { in: postIds } } }),
+    // Family Wiki pages the caller can read in the app — same circle rule.
+    prisma.wikiPage.findMany({ where: visibleWikiPagesWhere(groupIds, circleIds), orderBy: { createdAt: 'asc' } }),
+  ])
 
   const commentIds = comments.map((c) => c.id)
   const reactions = await prisma.like.findMany({
@@ -165,7 +205,10 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
     comments,
     reactions,
     favorites,
+    chatConversations,
+    chatConversationParticipants,
     chatMessages: visibleChat,
+    chatReads,
     giftListItems,
     giftListGuests,
     giftDrawAssignments,
@@ -181,15 +224,25 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   // own post or comment — each is filtered through the same rule /uploads/*
   // enforces (isUploadRowReadable), against memberships loaded above.
   const referencedKeys = collectUploadKeys(Object.values(serialized).join('\n'))
-  const scope = { uploaderId: true, circleId: true, bound: true, groupIds: true, serverWide: true } as const
+  const scope = {
+    uploaderId: true,
+    circleId: true,
+    bound: true,
+    groupIds: true,
+    serverWide: true,
+    chatConversationId: true,
+    participantUserIds: true,
+  } as const
   const uploadRows = await prisma.upload.findMany({
     where: { assetKey: { in: [...referencedKeys] } },
     select: { assetKey: true, motionAssetKey: true, ...scope, livePhoto: { select: scope } },
   })
   const myGroups = new Set(groupIds)
   const myCircles = new Set(circleIds)
+  const myConversations = new Set(visibleConversationIds)
   const viewer = {
     inCircle: (circleId: string) => myCircles.has(circleId),
+    inChatConversation: (conversationId: string) => myConversations.has(conversationId),
     inAnyGroup: (ids: string[]) => ids.some((id) => myGroups.has(id)),
   }
   for (const row of uploadRows) {
@@ -222,7 +275,10 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
       comments: comments.length,
       reactions: reactions.length,
       favorites: favorites.length,
+      chatConversations: chatConversations.length,
+      chatConversationParticipants: chatConversationParticipants.length,
       chatMessages: visibleChat.length,
+      chatReads: chatReads.length,
       giftListItems: giftListItems.length,
       giftListGuests: giftListGuests.length,
       giftDrawAssignments: giftDrawAssignments.length,
@@ -240,7 +296,10 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   archive.append(serialized.comments, { name: 'data/comments.json' })
   archive.append(serialized.reactions, { name: 'data/reactions.json' })
   archive.append(serialized.favorites, { name: 'data/favorites.json' })
+  archive.append(serialized.chatConversations, { name: 'data/chat-conversations.json' })
+  archive.append(serialized.chatConversationParticipants, { name: 'data/chat-conversation-participants.json' })
   archive.append(serialized.chatMessages, { name: 'data/chat-messages.json' })
+  archive.append(serialized.chatReads, { name: 'data/chat-reads.json' })
   archive.append(serialized.giftListItems, { name: 'data/gift-list-items.json' })
   archive.append(serialized.giftListGuests, { name: 'data/gift-list-guests.json' })
   archive.append(serialized.giftDrawAssignments, { name: 'data/gift-draw-assignments.json' })

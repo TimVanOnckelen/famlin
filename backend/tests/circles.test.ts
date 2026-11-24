@@ -483,6 +483,15 @@ describe('admin push surfaces respect the circle boundary', () => {
         failureCount: 0,
       },
     })
+    await prisma.pushDeliveryLog.create({
+      data: {
+        notifyType: 'new_direct_message',
+        recipientCount: 1,
+        tokenCount: 1,
+        successCount: 1,
+        failureCount: 0,
+      },
+    })
 
     const res = await app.inject({ method: 'GET', url: '/api/admin/push-log', headers: authHeader(admin) })
     expect(res.statusCode).toBe(200)
@@ -491,6 +500,7 @@ describe('admin push surfaces respect the circle boundary', () => {
     // The post's content must not come back through the log's join.
     expect(body).not.toContain('Secret circle news')
     expect(body).toContain('Everyone can see this')
+    expect(body).not.toContain('new_direct_message')
   })
 
   it('refuses to resend a circle post push for an admin outside the circle', async () => {

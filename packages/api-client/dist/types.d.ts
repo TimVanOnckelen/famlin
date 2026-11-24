@@ -196,6 +196,8 @@ export interface User {
     pushOnNewPost: boolean;
     pushOnNewComment: boolean;
     pushOnNewLike: boolean;
+    pushOnChitchat?: boolean;
+    pushOnDirectMessage?: boolean;
     pushOnStory?: boolean;
     pushOnGiftList?: boolean;
 }

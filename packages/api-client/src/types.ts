@@ -282,6 +282,10 @@ export interface User {
   pushOnNewPost: boolean
   pushOnNewComment: boolean
   pushOnNewLike: boolean
+  // Family-chat push preference. Missing = older server.
+  pushOnChitchat?: boolean
+  // Push for direct messages. Missing = older server.
+  pushOnDirectMessage?: boolean
   // Opt-in push for other members' new stories. Missing = older server.
   pushOnStory?: boolean
   // Push for gift lists (added, draw, recipient's new wishes). Missing = older server.

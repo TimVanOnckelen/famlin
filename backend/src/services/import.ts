@@ -159,6 +159,7 @@ const userRow = z.object({
   pushOnNewComment: optionalBool,
   pushOnNewLike: optionalBool,
   pushOnChitchat: optionalBool,
+  pushOnDirectMessage: optionalBool,
   pushOnStory: optionalBool,
   pushOnGiftList: optionalBool,
 })
@@ -244,20 +245,47 @@ const reactionRow = z.object({
 
 const favoriteRow = z.object({ id, postId: id, userId: id, createdAt: date })
 
+const chatConversationRow = z.object({
+  id,
+  kind: z.string(),
+  groupId: nullableString,
+  participantKey: nullableString,
+  title: nullableString,
+  createdById: nullableString,
+  createdAt: date,
+  updatedAt: date,
+})
+
+const chatConversationParticipantRow = z.object({
+  id,
+  conversationId: id,
+  userId: id,
+  joinedAt: date,
+})
+
 const chatMessageRow = z.object({
   id,
-  groupId: id,
+  conversationId: id.optional(),
+  groupId: nullableString,
   authorId: id,
   kind: z.string().optional(),
   content: nullableString,
   attachmentUrl: nullableString,
+  encryption: z.string().optional(),
+  encryptedPayload: nullableJson.optional(),
   refPostId: nullableString,
   replyToMessageId: nullableString,
   createdAt: date,
   editedAt: nullableDate,
 })
 
-const chatReadRow = z.object({ id, groupId: id, userId: id, lastReadAt: date })
+const chatReadRow = z.object({
+  id,
+  conversationId: id.optional(),
+  groupId: nullableString,
+  userId: id,
+  lastReadAt: date,
+})
 
 const mediaAlbumLinkRow = z.object({
   id,
@@ -315,6 +343,8 @@ const uploadRow = z.object({
   // row restores as a legacy bound row, exactly the state it was in.
   groupIds: z.array(z.string()).default([]),
   serverWide: z.boolean().default(false),
+  chatConversationId: nullableString,
+  participantUserIds: z.array(z.string()).default([]),
   processingStatus: z.enum(['ready', 'queued', 'processing', 'failed']).optional(),
   sourceFilename: nullableString,
   uploadSessionId: nullableString,
@@ -418,6 +448,12 @@ const DATA_FILES = {
   comments: { file: 'data/comments.json', schema: z.array(commentRow), required: false },
   reactions: { file: 'data/reactions.json', schema: z.array(reactionRow), required: false },
   favorites: { file: 'data/favorites.json', schema: z.array(favoriteRow), required: false },
+  chatConversations: { file: 'data/chat-conversations.json', schema: z.array(chatConversationRow), required: false },
+  chatConversationParticipants: {
+    file: 'data/chat-conversation-participants.json',
+    schema: z.array(chatConversationParticipantRow),
+    required: false,
+  },
   chatMessages: { file: 'data/chat-messages.json', schema: z.array(chatMessageRow), required: false },
   chatReads: { file: 'data/chat-reads.json', schema: z.array(chatReadRow), required: false },
   mediaAlbumLinks: { file: 'data/media-album-links.json', schema: z.array(mediaAlbumLinkRow), required: false },
@@ -663,6 +699,60 @@ async function insertAll(
 ): Promise<{ adminUserId: string | null }> {
   const groupMembers = data.groups.flatMap((g) => g.members)
   const circleMembers = data.circles.flatMap((c) => c.members)
+  const chatConversations = [...data.chatConversations]
+  const archivedConversationIds = new Set(chatConversations.map((conversation) => conversation.id))
+  const familyConversationByGroupId = new Map(
+    chatConversations
+      .filter((conversation) => conversation.groupId)
+      .map((conversation) => [conversation.groupId!, conversation.id])
+  )
+  for (const group of data.groups) {
+    if (familyConversationByGroupId.has(group.id)) continue
+    const conversationId = `family_${group.id}`
+    chatConversations.push({
+      id: conversationId,
+      kind: 'FAMILY',
+      groupId: group.id,
+      participantKey: null,
+      title: null,
+      createdById: null,
+      createdAt: group.createdAt,
+      updatedAt: group.createdAt,
+    })
+    familyConversationByGroupId.set(group.id, conversationId)
+  }
+  const chatMessages = data.chatMessages.map((message) => ({
+    ...message,
+    conversationId:
+      message.conversationId ?? (message.groupId ? familyConversationByGroupId.get(message.groupId) : undefined),
+  }))
+  const chatReads = data.chatReads.map((read) => ({
+    ...read,
+    conversationId: read.conversationId ?? (read.groupId ? familyConversationByGroupId.get(read.groupId) : undefined),
+  }))
+  if (chatMessages.some((message) => !message.conversationId) || chatReads.some((read) => !read.conversationId)) {
+    throw new RestoreError('invalidArchive', 'chat row has no conversation')
+  }
+  const latestMessageAt = new Map<string, Date>()
+  for (const message of chatMessages) {
+    const previous = message.conversationId ? latestMessageAt.get(message.conversationId) : undefined
+    if (message.conversationId && (!previous || message.createdAt > previous)) {
+      latestMessageAt.set(message.conversationId, message.createdAt)
+    }
+  }
+  const restoredChatConversations = chatConversations.map((conversation) => {
+    if (archivedConversationIds.has(conversation.id)) return conversation
+    const latest = latestMessageAt.get(conversation.id)
+    return {
+      ...conversation,
+      updatedAt: latest && latest > conversation.updatedAt ? latest : conversation.updatedAt,
+    }
+  })
+  const chatMessagesForInsert = chatMessages.map((message) => ({
+    ...message,
+    conversationId: message.conversationId!,
+  }))
+  const chatReadsForInsert = chatReads.map((read) => ({ ...read, conversationId: read.conversationId! }))
 
   // Insertion order follows the foreign keys: users and groups first, then
   // everything that references them.
@@ -698,6 +788,8 @@ async function insertAll(
 
   await tx.group.createMany({ data: data.groups.map(({ members: _members, ...g }) => g) })
   await tx.groupMember.createMany({ data: groupMembers })
+  await tx.chatConversation.createMany({ data: restoredChatConversations })
+  await tx.chatConversationParticipant.createMany({ data: data.chatConversationParticipants })
   await tx.circle.createMany({ data: data.circles.map(({ members: _members, ...c }) => c) })
   await tx.circleMember.createMany({ data: circleMembers })
   await tx.mediaAlbumLink.createMany({ data: data.mediaAlbumLinks })
@@ -707,8 +799,8 @@ async function insertAll(
   await tx.comment.createMany({ data: parentsFirst(data.comments, (c) => c.parentId) })
   await tx.like.createMany({ data: data.reactions })
   await tx.favorite.createMany({ data: data.favorites })
-  await tx.chatMessage.createMany({ data: parentsFirst(data.chatMessages, (m) => m.replyToMessageId) })
-  await tx.chatRead.createMany({ data: data.chatReads })
+  await tx.chatMessage.createMany({ data: parentsFirst(chatMessagesForInsert, (m) => m.replyToMessageId) })
+  await tx.chatRead.createMany({ data: chatReadsForInsert })
   // Motion rows may follow their photos in the archive. Restore the links
   // only after all referenced asset keys exist.
   await tx.upload.createMany({
@@ -901,6 +993,11 @@ export async function restoreArchive(opts: RestoreOptions): Promise<RestoreResul
     comments: data.comments.length,
     reactions: data.reactions.length,
     favorites: data.favorites.length,
+    chatConversations:
+      data.chatConversations.length +
+      data.groups.filter((group) => !data.chatConversations.some((conversation) => conversation.groupId === group.id))
+        .length,
+    chatConversationParticipants: data.chatConversationParticipants.length,
     chatMessages: data.chatMessages.length,
     chatReads: data.chatReads.length,
     mediaAlbumLinks: data.mediaAlbumLinks.length,
