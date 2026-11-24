@@ -1,4 +1,4 @@
-export type ChatMessageKind = 'USER' | 'SYSTEM_MILESTONE';
+export type ChatMessageKind = 'USER' | 'SYSTEM_MILESTONE' | 'SYSTEM_ENCRYPTION_DISABLED' | 'SYSTEM_ENCRYPTION_ENABLED';
 export interface ChatMessageReply {
     id: string;
     authorId: string;
@@ -6,6 +6,8 @@ export interface ChatMessageReply {
     kind: ChatMessageKind;
     content: string | null;
     attachmentUrl: string | null;
+    /** Set when the quoted message is encrypted: content/attachmentUrl are then null and the client resolves the quote itself. */
+    encryption?: string;
 }
 export declare const chatConversationsQueryKey: () => readonly ['chat-conversations'];
 export declare const chatPeopleQueryKey: () => readonly ['chat-people'];
@@ -52,10 +54,14 @@ export type ChatConversationParticipant = ChatEligiblePerson;
 export interface ChatConversationLastMessage {
     id: string;
     authorId: string;
+    /** Lets the inbox recognise SYSTEM_ENCRYPTION_* rows (servers before e2eDirectMessages omit it). */
+    kind?: ChatMessageKind;
     content: string | null;
     hasAttachment: boolean;
     createdAt: string;
     encryption: string;
+    /** The ciphertext when encryption !== 'none' (content is then null). */
+    encryptedPayload?: unknown;
 }
 export interface ChatConversation {
     id: string;
@@ -68,6 +74,9 @@ export interface ChatConversation {
     lastMessage: ChatConversationLastMessage | null;
     unreadCount: number;
     updatedAt: string;
+    /** Private conversations: when a participant opted out of encryption (null = encryption on). */
+    encryptionDisabledAt?: string | null;
+    encryptionDisabledById?: string | null;
 }
 export type ChatConversationInboxItem = ChatConversation;
 export interface ChatConversationsPage {

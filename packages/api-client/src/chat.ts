@@ -1,6 +1,11 @@
 import { api } from './client'
 
-export type ChatMessageKind = 'USER' | 'SYSTEM_MILESTONE'
+export type ChatMessageKind =
+  | 'USER'
+  | 'SYSTEM_MILESTONE'
+  // A participant opted a private conversation out of / back into encryption.
+  | 'SYSTEM_ENCRYPTION_DISABLED'
+  | 'SYSTEM_ENCRYPTION_ENABLED'
 
 export interface ChatMessageReply {
   id: string
@@ -9,6 +14,8 @@ export interface ChatMessageReply {
   kind: ChatMessageKind
   content: string | null
   attachmentUrl: string | null
+  /** Set when the quoted message is encrypted: content/attachmentUrl are then null and the client resolves the quote itself. */
+  encryption?: string
 }
 
 export const chatConversationsQueryKey = () => ['chat-conversations'] as const
@@ -65,10 +72,14 @@ export type ChatConversationParticipant = ChatEligiblePerson
 export interface ChatConversationLastMessage {
   id: string
   authorId: string
+  /** Lets the inbox recognise SYSTEM_ENCRYPTION_* rows (servers before e2eDirectMessages omit it). */
+  kind?: ChatMessageKind
   content: string | null
   hasAttachment: boolean
   createdAt: string
   encryption: string
+  /** The ciphertext when encryption !== 'none' (content is then null). */
+  encryptedPayload?: unknown
 }
 
 export interface ChatConversation {
@@ -82,6 +93,9 @@ export interface ChatConversation {
   lastMessage: ChatConversationLastMessage | null
   unreadCount: number
   updatedAt: string
+  /** Private conversations: when a participant opted out of encryption (null = encryption on). */
+  encryptionDisabledAt?: string | null
+  encryptionDisabledById?: string | null
 }
 
 export type ChatConversationInboxItem = ChatConversation
