@@ -356,6 +356,8 @@
     "encryptionDisabledNotice": "{{name}} a désactivé le chiffrement de cette conversation",
     "encryptionEnabledNotice": "{{name}} a réactivé le chiffrement",
     "webEncryptionNotice": "Les messages envoyés depuis le web ne sont pas chiffrés de bout en bout. Utilisez l'application Famlin pour les messages chiffrés.",
+    "encryptionOffByAdmin": "Le chiffrement est désactivé par l'administrateur de ce serveur.",
+    "privateInApp": "Les messages privés sont disponibles dans l'application Famlin.",
     "newMessage": "Nouveau message",
     "searchPeople": "Rechercher des personnes",
     "peopleLoadFailed": "Impossible de charger les personnes.",

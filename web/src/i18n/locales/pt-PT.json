@@ -356,6 +356,8 @@
     "encryptionDisabledNotice": "{{name}} desativou a encriptação desta conversa",
     "encryptionEnabledNotice": "{{name}} voltou a ativar a encriptação",
     "webEncryptionNotice": "As mensagens enviadas a partir da web não estão encriptadas ponta a ponta. Use a aplicação Famlin para mensagens encriptadas.",
+    "encryptionOffByAdmin": "A encriptação foi desativada pelo administrador deste servidor.",
+    "privateInApp": "As mensagens privadas estão disponíveis na app Famlin.",
     "newMessage": "Nova mensagem",
     "searchPeople": "Pesquisar pessoas",
     "peopleLoadFailed": "Não foi possível carregar as pessoas.",

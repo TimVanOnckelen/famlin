@@ -356,6 +356,8 @@
     "encryptionDisabledNotice": "{{name}} desactivó el cifrado de esta conversación",
     "encryptionEnabledNotice": "{{name}} volvió a activar el cifrado",
     "webEncryptionNotice": "Los mensajes enviados desde la web no están cifrados de extremo a extremo. Usa la app de Famlin para mensajes cifrados.",
+    "encryptionOffByAdmin": "El administrador de este servidor ha desactivado el cifrado.",
+    "privateInApp": "Los mensajes privados están disponibles en la app de Famlin.",
     "newMessage": "Nuevo mensaje",
     "searchPeople": "Buscar personas",
     "peopleLoadFailed": "No se pudieron cargar las personas.",

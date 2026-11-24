@@ -44,7 +44,18 @@ type ChatPageProps = {
   onLogout: () => void
 }
 
-export function DirectMessagesChatPage(props: ChatPageProps) {
+type DirectMessagesChatPageProps = ChatPageProps & {
+  /** The admin lets the web app offer private messages (default true). */
+  privateMessagesInWeb?: boolean
+  /** The admin turned encryption off for the whole server. */
+  encryptionOffByAdmin?: boolean
+}
+
+export function DirectMessagesChatPage({
+  privateMessagesInWeb = true,
+  encryptionOffByAdmin = false,
+  ...props
+}: DirectMessagesChatPageProps) {
   const { t, i18n } = useTranslation()
   const client = useQueryClient()
   const location = useLocation()
@@ -54,12 +65,19 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
     queryKey: ['chat-conversations'],
     queryFn: fetchChatConversations,
   })
-  const items = conversations.data?.items ?? []
+  const allItems = conversations.data?.items ?? []
+  // Private messages hidden on the web: family chats only, as if the others didn't exist.
+  const items = privateMessagesInWeb ? allItems : allItems.filter((item) => item.kind === 'FAMILY')
   const sortedItems = [...items].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   const family = sortedItems.filter((item) => item.kind === 'FAMILY')
   const direct = sortedItems.filter((item) => item.kind === 'PRIVATE')
   const params = new URLSearchParams(location.search)
-  const requestedConversationId = params.get('conversation')
+  const rawRequestedConversationId = params.get('conversation')
+  // A link to a hidden private conversation quietly falls back to the inbox.
+  const requestedConversationId =
+    !privateMessagesInWeb && allItems.some((item) => item.id === rawRequestedConversationId && item.kind === 'PRIVATE')
+      ? null
+      : rawRequestedConversationId
   const requestedGroupId = params.get('group')
   const hasExplicitSelection = requestedConversationId !== null || requestedGroupId !== null
   const showInboxOnly = (location.state as { showInboxOnly?: boolean } | null)?.showInboxOnly === true
@@ -142,10 +160,12 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
       <div className="chat-column">
         <div className="chat-page-heading">
           <ScreenHeader title={t('chat.title')} />
-          <button type="button" className="btn btn-primary chat-new-message" onClick={() => setPickerOpen(true)}>
-            <Icon name="plus" size={17} />
-            <span>{t('chat.newMessage')}</span>
-          </button>
+          {privateMessagesInWeb && (
+            <button type="button" className="btn btn-primary chat-new-message" onClick={() => setPickerOpen(true)}>
+              <Icon name="plus" size={17} />
+              <span>{t('chat.newMessage')}</span>
+            </button>
+          )}
         </div>
         {conversations.isError && (
           <div className="chat-hint">
@@ -168,14 +188,18 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
                 onSelect={selectConversation}
                 selectedId={selectedId}
               />
-              <InboxSection
-                title={t('chat.directMessages')}
-                items={direct}
-                user={props.user}
-                locale={i18n.language}
-                onSelect={selectConversation}
-                selectedId={selectedId}
-              />
+              {privateMessagesInWeb ? (
+                <InboxSection
+                  title={t('chat.directMessages')}
+                  items={direct}
+                  user={props.user}
+                  locale={i18n.language}
+                  onSelect={selectConversation}
+                  selectedId={selectedId}
+                />
+              ) : (
+                <p className="chat-hint chat-private-in-app">{t('chat.privateInApp')}</p>
+              )}
             </aside>
           )}
           {selected ? (
@@ -187,6 +211,7 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
               locale={i18n.language}
               onBack={openInbox}
               user={props.user}
+              encryptionOffByAdmin={encryptionOffByAdmin}
             />
           ) : (
             <ConversationPlaceholder
@@ -387,7 +412,9 @@ function ConversationShell({
   locale,
   onBack,
   user,
+  encryptionOffByAdmin = false,
 }: {
+  encryptionOffByAdmin?: boolean
   conversation: ChatConversation | null
   messages: ChatConversationMessagesPage['items']
   messagesQuery: ReturnType<typeof useInfiniteQuery<ChatConversationMessagesPage>>
@@ -641,7 +668,11 @@ function ConversationShell({
           })
         )}
       </div>
-      {conversation?.kind === 'PRIVATE' && <p className="chat-encryption-notice">{t('chat.webEncryptionNotice')}</p>}
+      {conversation?.kind === 'PRIVATE' && (
+        <p className="chat-encryption-notice">
+          {t(encryptionOffByAdmin ? 'chat.encryptionOffByAdmin' : 'chat.webEncryptionNotice')}
+        </p>
+      )}
       {conversation && (
         <form
           className="chat-composer-form"

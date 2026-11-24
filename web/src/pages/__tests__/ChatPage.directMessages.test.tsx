@@ -1004,3 +1004,48 @@ it('shows the web encryption notice above the composer only in private conversat
     )
   ).toBeInTheDocument()
 })
+
+describe('server direct-message policy', () => {
+  const serverInfo = (directMessages: { enabled: boolean; web: boolean; encryption: boolean }, features: string[]) =>
+    vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', features, directMessages })
+
+  it('shows only the family chat, without a new-message button, when direct messages are disabled', async () => {
+    serverInfo({ enabled: false, web: true, encryption: false }, [])
+    renderPage('/chat')
+
+    expect(await screen.findByText('De Vries family')).toBeInTheDocument()
+    await waitFor(() => expect(fetchChatMessages).toHaveBeenCalledWith('group-1', undefined))
+    expect(fetchChatConversations).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'New message' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Sophie')).not.toBeInTheDocument()
+  })
+
+  it('hides private messages on the web when the admin keeps them to the app, and says where they are', async () => {
+    serverInfo({ enabled: true, web: false, encryption: true }, ['directMessages'])
+    renderPage('/chat?conversation=private-1')
+
+    expect(await screen.findByText('Private messages are available in the Famlin app.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New message' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Sophie/ })).not.toBeInTheDocument()
+    // The link to the hidden conversation falls back to the inbox quietly.
+    expect(screen.queryByRole('heading', { name: 'This conversation is unavailable.' })).not.toBeInTheDocument()
+    expect(screen.getAllByText('De Vries family').length).toBeGreaterThan(0)
+  })
+
+  it('keeps private messages but replaces the web notice when the admin turned encryption off', async () => {
+    serverInfo({ enabled: true, web: true, encryption: false }, ['directMessages'])
+    vi.mocked(fetchChatConversationMessages).mockResolvedValue({ items: [privateMessage()], nextCursor: null })
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+
+    expect(await screen.findByText("Encryption is turned off by this server's administrator.")).toBeInTheDocument()
+    expect(screen.queryByText(/Messages sent from the web are not end-to-end encrypted/)).not.toBeInTheDocument()
+  })
+
+  it('treats a server without the policy field as before', async () => {
+    vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', features: ['directMessages'] })
+    renderPage()
+    expect(await screen.findByRole('button', { name: 'New message' })).toBeInTheDocument()
+  })
+})

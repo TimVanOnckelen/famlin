@@ -356,6 +356,8 @@
     "encryptionDisabledNotice": "{{name}} turned off encryption for this conversation",
     "encryptionEnabledNotice": "{{name}} turned encryption back on",
     "webEncryptionNotice": "Messages sent from the web are not end-to-end encrypted. Use the Famlin app for encrypted messages.",
+    "encryptionOffByAdmin": "Encryption is turned off by this server's administrator.",
+    "privateInApp": "Private messages are available in the Famlin app.",
     "newMessage": "New message",
     "searchPeople": "Search people",
     "peopleLoadFailed": "People couldn't be loaded.",
