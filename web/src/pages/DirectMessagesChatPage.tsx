@@ -262,8 +262,8 @@ function RecipientPicker({
         ref={dialogRef}
       >
         <div className="modal-header">
-          <h2 id="chat-recipient-title">{t('chat.newMessage')}</h2>
-          <button type="button" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+          <h2 id="chat-recipient-title" className="modal-title">{t('chat.newMessage')}</h2>
+          <button type="button" className="post-detail-modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={20} />
           </button>
         </div>
@@ -303,6 +303,11 @@ function RecipientPicker({
             </button>
           ))}
           {create.isError && <p className="chat-hint">{t('chat.conversationCreateFailed')}</p>}
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose} aria-label={t('common.close')}>
+            {t('common.close')}
+          </button>
         </div>
       </div>
     </div>
