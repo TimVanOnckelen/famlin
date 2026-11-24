@@ -536,7 +536,15 @@
     "maxVideoDurationSeconds": "Vídeo mais longo (segundos)",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} segundos. As apps verificam isto antes de carregar; versões antigas da app mantêm o limite de 2 minutos.",
     "maxUploadSizeMb": "Carregamento máximo (MB)",
-    "maxUploadSizeMbHint": "Por ficheiro, {{min}}–{{max}} MB. Um proxy inverso à frente do Famlin pode permitir menos: o plano gratuito da Cloudflare, por exemplo, interrompe carregamentos nos 100 MB."
+    "maxUploadSizeMbHint": "Por ficheiro, {{min}}–{{max}} MB. Um proxy inverso à frente do Famlin pode permitir menos: o plano gratuito da Cloudflare, por exemplo, interrompe carregamentos nos 100 MB.",
+    "directMessages": "Mensagens diretas",
+    "directMessagesDesc": "Mensagens privadas entre dois membros.",
+    "directMessagesEnabled": "Permitir mensagens diretas",
+    "directMessagesEnabledHint": "Permite que os membros enviem mensagens privadas entre si. Se desativar, as conversas privadas existentes ficam ocultas sem serem apagadas; o chat da família não é afetado.",
+    "directMessagesOnWeb": "Oferecer mensagens diretas na aplicação web",
+    "directMessagesOnWebHint": "A aplicação web não consegue ler mensagens encriptadas de ponta a ponta. Mantenha desativado para oferecer mensagens privadas apenas na aplicação móvel.",
+    "e2eDirectMessagesEnabled": "Encriptar mensagens diretas de ponta a ponta",
+    "e2eDirectMessagesEnabledHint": "As mensagens são encriptadas nos telemóveis dos membros, pelo que ninguém mais — incluindo você como administrador — as pode ler. Se desativar, as novas mensagens privadas podem ser lidas pelo administrador do servidor e os membros veem um aviso em cada conversa privada. As mensagens já encriptadas permanecem encriptadas."
   },
   "media": {
     "peopleMapping": {

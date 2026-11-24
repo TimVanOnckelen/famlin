@@ -43,3 +43,16 @@ export const SERVER_FEATURES = [
 ] as const
 
 export type ServerFeature = (typeof SERVER_FEATURES)[number]
+
+// Features an admin can switch off with a server setting (direct messages).
+// Everything else in SERVER_FEATURES is unconditional.
+export function activeServerFeatures(settings: {
+  directMessagesEnabled: boolean
+  e2eDirectMessagesEnabled: boolean
+}): ServerFeature[] {
+  return SERVER_FEATURES.filter((id) => {
+    if (id === 'directMessages') return settings.directMessagesEnabled
+    if (id === 'e2eDirectMessages') return settings.directMessagesEnabled && settings.e2eDirectMessagesEnabled
+    return true
+  })
+}

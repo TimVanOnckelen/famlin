@@ -200,6 +200,35 @@ export function ServerSettingsPage() {
               </SettingsCard>
             )}
 
+            {activeSection === 'general' && (
+              <SettingsCard
+                icon="message-circle"
+                title={t('serverSettings.directMessages')}
+                desc={t('serverSettings.directMessagesDesc')}
+              >
+                <SettingToggle
+                  title={t('serverSettings.directMessagesEnabled')}
+                  hint={t('serverSettings.directMessagesEnabledHint')}
+                  checked={form.directMessagesEnabled}
+                  onCheckedChange={(checked) => updateField('directMessagesEnabled', checked)}
+                />
+                <SettingToggle
+                  title={t('serverSettings.directMessagesOnWeb')}
+                  hint={t('serverSettings.directMessagesOnWebHint')}
+                  checked={form.directMessagesOnWeb}
+                  disabled={!form.directMessagesEnabled}
+                  onCheckedChange={(checked) => updateField('directMessagesOnWeb', checked)}
+                />
+                <SettingToggle
+                  title={t('serverSettings.e2eDirectMessagesEnabled')}
+                  hint={t('serverSettings.e2eDirectMessagesEnabledHint')}
+                  checked={form.e2eDirectMessagesEnabled}
+                  disabled={!form.directMessagesEnabled}
+                  onCheckedChange={(checked) => updateField('e2eDirectMessagesEnabled', checked)}
+                />
+              </SettingsCard>
+            )}
+
             {activeSection === 'access' && (
               <SettingsCard icon="shield" title={t('serverSettings.accessControl')}>
                 <label>

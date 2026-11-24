@@ -81,6 +81,9 @@ export interface ServerSettings {
   immichMirrorApiKeySet: boolean
   localMediaPath: string
   updateCheckEnabled: boolean
+  directMessagesEnabled: boolean
+  directMessagesOnWeb: boolean
+  e2eDirectMessagesEnabled: boolean
   // Upload limits (issue #436), sent to the apps via /server-info.
   maxAttachments: number
   maxVideoDurationSeconds: number

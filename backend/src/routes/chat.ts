@@ -14,6 +14,7 @@ import { requireGroupMember } from '../plugins/auth.js'
 import { paginationArgs, paginate } from '../services/pagination.js'
 import { shapeChatMessagesWithReadBy, shapeConversationChatMessage } from '../services/chat.js'
 import { getT } from '../i18n/index.js'
+import { getAllSettings } from '../services/settings.js'
 import {
   uploadAssetKey,
   bindAssetsToScope,
@@ -151,6 +152,7 @@ async function unreadConversationCounts(conversationIds: string[], userId: strin
 }
 
 async function accessibleConversationSummaries(userId: string): Promise<ConversationSummary[]> {
+  const dmEnabled = (await getAllSettings()).directMessagesEnabled
   const [familyGroups, privateCandidates] = await Promise.all([
     prisma.group.findMany({
       where: { members: { some: { userId } }, chitchatEnabled: true },
@@ -165,6 +167,8 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
       where: {
         kind: PRIVATE_CHAT_KIND,
         participants: { some: { userId } },
+        // Disabled DMs are hidden, never deleted.
+        ...(dmEnabled ? {} : { id: { in: [] } }),
       },
       include: {
         participants: {
@@ -238,8 +242,14 @@ async function accessibleConversationSummaries(userId: string): Promise<Conversa
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || a.id.localeCompare(b.id))
 }
 
+async function directMessagesAllowed(): Promise<boolean> {
+  return (await getAllSettings()).directMessagesEnabled
+}
+
 export default async function chatRoutes(fastify: FastifyInstance) {
-  fastify.get('/people', { preHandler: [fastify.authenticate] }, async (request) => {
+  fastify.get('/people', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    if (!(await directMessagesAllowed()))
+      return reply.status(403).send({ error: getT(request)('errors.directMessagesDisabled') })
     const userId = request.user!.id
     const memberships = await prisma.groupMember.findMany({
       where: { userId },
@@ -266,6 +276,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     const body = createConversationBodySchema.parse(request.body)
     const [participantId] = body.participantIds
     const userId = request.user!.id
+    if (!(await directMessagesAllowed())) return reply.status(403).send({ error: t('errors.directMessagesDisabled') })
 
     if (participantId === userId) {
       return reply.status(400).send({ error: t('errors.cannotMessageYourself') })
@@ -338,6 +349,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       if (!conversation) {
         return reply.status(404).send({ error: t('errors.chatConversationNotFound') })
       }
+      if (conversation.kind === PRIVATE_CHAT_KIND && !(await directMessagesAllowed())) {
+        return reply.status(403).send({ error: t('errors.directMessagesDisabled') })
+      }
 
       const messages = await prisma.chatMessage.findMany({
         where: { conversationId },
@@ -375,6 +389,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       if (!conversation) {
         return reply.status(404).send({ error: t('errors.chatConversationNotFound') })
       }
+      if (conversation.kind === PRIVATE_CHAT_KIND && !(await directMessagesAllowed())) {
+        return reply.status(403).send({ error: t('errors.directMessagesDisabled') })
+      }
       if (body.replyToMessageId) {
         const replyToMessage = await prisma.chatMessage.findFirst({
           where: { id: body.replyToMessageId, conversationId },
@@ -389,6 +406,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       if (encrypted) {
         if (conversation.kind !== PRIVATE_CHAT_KIND) {
           return reply.status(400).send({ error: t('errors.chatEncryptionNotSupported') })
+        }
+        if (!(await getAllSettings()).e2eDirectMessagesEnabled) {
+          return reply.status(403).send({ error: t('errors.e2eDirectMessagesDisabled') })
         }
         const problem = await checkEncryptedEnvelope(
           body.encryptedPayload,
@@ -497,6 +517,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       if (!conversation) {
         return reply.status(404).send({ error: t('errors.chatConversationNotFound') })
       }
+      if (conversation.kind === PRIVATE_CHAT_KIND && !(await directMessagesAllowed())) {
+        return reply.status(403).send({ error: t('errors.directMessagesDisabled') })
+      }
       if (conversation.kind !== PRIVATE_CHAT_KIND) {
         return reply.status(400).send({ error: t('errors.chatEncryptionNotSupported') })
       }
@@ -543,6 +566,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const conversation = await findAccessibleConversation(conversationId, request.user!.id)
       if (!conversation) {
         return reply.status(404).send({ error: t('errors.chatConversationNotFound') })
+      }
+      if (conversation.kind === PRIVATE_CHAT_KIND && !(await directMessagesAllowed())) {
+        return reply.status(403).send({ error: t('errors.directMessagesDisabled') })
       }
 
       await prisma.chatRead.upsert({
@@ -661,6 +687,11 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     if (!message) return reply.status(404).send({ error: t('errors.chatMessageNotFound') })
 
     if (message.conversation.kind === PRIVATE_CHAT_KIND) {
+      // Deleting inside a hidden private conversation is blocked for everyone
+      // (admins can't delete others' private messages anyway).
+      if (!(await directMessagesAllowed())) {
+        return reply.status(403).send({ error: t('errors.directMessagesDisabled') })
+      }
       const conversation = await findAccessibleConversation(message.conversationId, request.user!.id)
       if (!conversation) return reply.status(404).send({ error: t('errors.chatMessageNotFound') })
       if (message.authorId !== request.user!.id) {

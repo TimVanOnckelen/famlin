@@ -52,6 +52,11 @@ export interface ServerSettings {
   // Daily GitHub release check behind the admin "update available" notice
   // (services/updateCheck.ts). Nothing about the instance is sent.
   updateCheckEnabled: boolean
+  // Direct messages (private 1:1 chat). `directMessagesOnWeb` is a client UX hint
+  // only; the server never enforces it.
+  directMessagesEnabled: boolean
+  directMessagesOnWeb: boolean
+  e2eDirectMessagesEnabled: boolean
   // Scheduled backups (services/backup/) — opt-in, off by default.
   backupIncludeMedia: boolean
   backupEnabled: boolean
@@ -110,6 +115,9 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'immichMirrorApiKey',
   'localMediaPath',
   'updateCheckEnabled',
+  'directMessagesEnabled',
+  'directMessagesOnWeb',
+  'e2eDirectMessagesEnabled',
   'backupIncludeMedia',
   'backupEnabled',
   'backupSchedule',
@@ -154,10 +162,16 @@ function parseValue(key: keyof ServerSettings, value: string): ServerSettings[ke
     const n = parseInt(value, 10)
     return isNaN(n) ? 587 : n
   }
-  if (key === 'pushNotificationsEnabled' || key === 'emailNotificationsEnabled' || key === 'updateCheckEnabled') {
+  if (
+    key === 'pushNotificationsEnabled' ||
+    key === 'emailNotificationsEnabled' ||
+    key === 'updateCheckEnabled' ||
+    key === 'directMessagesEnabled' ||
+    key === 'e2eDirectMessagesEnabled'
+  ) {
     return value !== 'false'
   }
-  if (key === 'backupEnabled' || key === 'backupIncludeMedia') {
+  if (key === 'backupEnabled' || key === 'backupIncludeMedia' || key === 'directMessagesOnWeb') {
     return value === 'true'
   }
   if (key === 'backupSchedule') {
@@ -224,6 +238,9 @@ async function loadAllSettings(): Promise<ServerSettings> {
     immichMirrorApiKey: parseValue('immichMirrorApiKey', map.get('immichMirrorApiKey') || ''),
     localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
     updateCheckEnabled: parseValue('updateCheckEnabled', map.get('updateCheckEnabled') ?? 'true'),
+    directMessagesEnabled: parseValue('directMessagesEnabled', map.get('directMessagesEnabled') ?? 'true'),
+    directMessagesOnWeb: parseValue('directMessagesOnWeb', map.get('directMessagesOnWeb') || 'false'),
+    e2eDirectMessagesEnabled: parseValue('e2eDirectMessagesEnabled', map.get('e2eDirectMessagesEnabled') ?? 'true'),
     backupIncludeMedia: parseValue('backupIncludeMedia', map.get('backupIncludeMedia') ?? 'true'),
     backupEnabled: parseValue('backupEnabled', map.get('backupEnabled') || 'false'),
     backupSchedule: parseValue('backupSchedule', map.get('backupSchedule') || 'daily'),

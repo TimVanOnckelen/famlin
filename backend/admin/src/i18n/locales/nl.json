@@ -536,7 +536,15 @@
     "maxVideoDurationSeconds": "Langste video (seconden)",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} seconden. De apps controleren dit vóór het uploaden; oudere app-versies houden hun limiet van 2 minuten.",
     "maxUploadSizeMb": "Grootste upload (MB)",
-    "maxUploadSizeMbHint": "Per bestand, {{min}}–{{max}} MB. Een reverse proxy vóór Famlin kan minder toestaan: het gratis abonnement van Cloudflare stopt uploads bijvoorbeeld bij 100 MB."
+    "maxUploadSizeMbHint": "Per bestand, {{min}}–{{max}} MB. Een reverse proxy vóór Famlin kan minder toestaan: het gratis abonnement van Cloudflare stopt uploads bijvoorbeeld bij 100 MB.",
+    "directMessages": "Privéberichten",
+    "directMessagesDesc": "Privéberichten tussen twee leden.",
+    "directMessagesEnabled": "Privéberichten toestaan",
+    "directMessagesEnabledHint": "Laat leden privéberichten naar elkaar sturen. Als je dit uitzet, worden bestaande privégesprekken verborgen maar niet verwijderd; de familiechat blijft werken.",
+    "directMessagesOnWeb": "Privéberichten aanbieden in de webapp",
+    "directMessagesOnWebHint": "De webapp kan end-to-end versleutelde berichten niet lezen. Laat dit uit om privéberichten alleen in de mobiele app aan te bieden.",
+    "e2eDirectMessagesEnabled": "Privéberichten end-to-end versleutelen",
+    "e2eDirectMessagesEnabledHint": "Berichten worden op de telefoon van de leden versleuteld, zodat niemand anders — ook jij als beheerder niet — ze kan lezen. Als je dit uitzet, kan de beheerder van de server nieuwe privéberichten lezen en zien leden daar in elk privégesprek een melding van. Berichten die al versleuteld zijn, blijven versleuteld."
   },
   "media": {
     "peopleMapping": {

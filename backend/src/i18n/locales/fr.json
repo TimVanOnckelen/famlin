@@ -163,7 +163,9 @@
     "backupKitNotSaved": "Confirmez que vous avez conservé le kit de secours en dehors de ce serveur avant d'activer le chiffrement",
     "backupKeyMissing": "Générez d'abord une clé de chiffrement des sauvegardes",
     "mediaMirrorAlbumLinkedElsewhere": "Cet album est lié à une autre famille. Y copier les envois y montrerait les photos de cette famille — choisissez ou créez un autre album.",
-    "mediaAlbumMirroredElsewhere": "Une autre famille copie ses envois dans cet album. Le lier ici montrerait les photos de cette famille — choisissez un autre album."
+    "mediaAlbumMirroredElsewhere": "Une autre famille copie ses envois dans cet album. Le lier ici montrerait les photos de cette famille — choisissez un autre album.",
+    "directMessagesDisabled": "Les messages privés sont désactivés sur ce serveur",
+    "e2eDirectMessagesDisabled": "Les messages privés chiffrés de bout en bout sont désactivés sur ce serveur"
   },
   "notifications": {
     "newPost": "{{author}} a publié dans {{group}} : « {{excerpt}} »",

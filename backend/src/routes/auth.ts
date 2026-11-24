@@ -37,7 +37,7 @@ import { decryptForRestore, keepRestoreKey, resolveRestoreKey } from '../service
 import { SETUP_ADVISORY_LOCK_KEY } from '../services/setupLock.js'
 import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
-import { SERVER_FEATURES } from '../serverFeatures.js'
+import { activeServerFeatures } from '../serverFeatures.js'
 import { calendarFeedUrls, generateCalendarFeedToken } from '../services/calendarFeed.js'
 import { deleteUserWithPrivateConversations } from '../services/accountDeletion.js'
 import { getPublicOrigin } from '../utils/publicOrigin.js'
@@ -1099,7 +1099,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
       branding: await getBranding(),
       // Named capabilities (issue #380) — see serverFeatures.ts. Additive:
       // clients treat a missing array as their implicit baseline.
-      features: [...SERVER_FEATURES],
+      features: activeServerFeatures(settings),
+      // Direct-message policy. `web` is a client UX hint only: the server
+      // cannot tell its clients apart, so it is advertised, never enforced.
+      directMessages: {
+        enabled: settings.directMessagesEnabled,
+        web: settings.directMessagesEnabled && settings.directMessagesOnWeb,
+        encryption: settings.directMessagesEnabled && settings.e2eDirectMessagesEnabled,
+      },
       // Admin-configured upload limits (issue #436). Additive: clients fall
       // back to their built-in defaults when it's missing.
       limits: {

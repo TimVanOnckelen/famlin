@@ -596,6 +596,9 @@ export const updateServerSettingsBodySchema = z.object({
   // string = not configured.
   localMediaPath: z.union([z.literal(''), z.string().regex(/^\//, 'Must be an absolute path').max(500)]).optional(),
   updateCheckEnabled: z.boolean().optional(),
+  directMessagesEnabled: z.boolean().optional(),
+  directMessagesOnWeb: z.boolean().optional(),
+  e2eDirectMessagesEnabled: z.boolean().optional(),
   backupEnabled: z.boolean().optional(),
   backupSchedule: z.enum(['daily', 'weekly']).optional(),
   backupHour: z.number().int().min(0).max(23).optional(),

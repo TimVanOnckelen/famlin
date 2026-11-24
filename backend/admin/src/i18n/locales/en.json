@@ -536,7 +536,15 @@
     "maxVideoDurationSeconds": "Longest video (seconds)",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} seconds. The apps check this before uploading; older app versions keep their 2-minute limit.",
     "maxUploadSizeMb": "Largest upload (MB)",
-    "maxUploadSizeMbHint": "Per file, {{min}}–{{max}} MB. A reverse proxy in front of Famlin may allow less: Cloudflare's free plan, for example, stops uploads at 100 MB."
+    "maxUploadSizeMbHint": "Per file, {{min}}–{{max}} MB. A reverse proxy in front of Famlin may allow less: Cloudflare's free plan, for example, stops uploads at 100 MB.",
+    "directMessages": "Direct messages",
+    "directMessagesDesc": "Private one-to-one messages between members.",
+    "directMessagesEnabled": "Allow direct messages",
+    "directMessagesEnabledHint": "Lets members send private one-to-one messages. Turning this off hides existing private conversations without deleting them; family chat is not affected.",
+    "directMessagesOnWeb": "Offer direct messages on the web app",
+    "directMessagesOnWebHint": "The web app can't read end-to-end encrypted messages. Keep this off to offer private messages only in the mobile app.",
+    "e2eDirectMessagesEnabled": "End-to-end encrypt direct messages",
+    "e2eDirectMessagesEnabledHint": "Messages are encrypted on members' phones so nobody else — including you as administrator — can read them. If you turn this off, new private messages are readable by the server's administrator, and members see a notice saying so in every private conversation. Messages that are already encrypted stay encrypted."
   },
   "media": {
     "peopleMapping": {

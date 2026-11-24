@@ -163,7 +163,9 @@
     "backupKitNotSaved": "开启加密前，请确认已将应急工具包保存在此服务器之外",
     "backupKeyMissing": "请先生成备份加密密钥",
     "mediaMirrorAlbumLinkedElsewhere": "此相册已关联到另一个家庭。同步到此相册会让对方看到此家庭的照片——请选择或创建其他相册。",
-    "mediaAlbumMirroredElsewhere": "另一个家庭正将上传内容同步到此相册。在此关联会显示该家庭的照片——请选择其他相册。"
+    "mediaAlbumMirroredElsewhere": "另一个家庭正将上传内容同步到此相册。在此关联会显示该家庭的照片——请选择其他相册。",
+    "directMessagesDisabled": "此服务器已关闭私信功能",
+    "e2eDirectMessagesDisabled": "此服务器已关闭端到端加密私信"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",

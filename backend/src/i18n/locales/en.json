@@ -163,7 +163,9 @@
     "backupKitNotSaved": "Confirm that you stored the emergency kit outside this server before turning on encryption",
     "backupKeyMissing": "Generate a backup encryption key first",
     "mediaMirrorAlbumLinkedElsewhere": "This album is linked to another family. Mirroring into it would show this family's photos there — choose or create another album.",
-    "mediaAlbumMirroredElsewhere": "Another family mirrors its uploads into this album. Linking it here would show that family's photos — choose another album."
+    "mediaAlbumMirroredElsewhere": "Another family mirrors its uploads into this album. Linking it here would show that family's photos — choose another album.",
+    "directMessagesDisabled": "Direct messages are turned off on this server",
+    "e2eDirectMessagesDisabled": "End-to-end encrypted direct messages are turned off on this server"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

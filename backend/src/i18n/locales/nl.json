@@ -163,7 +163,9 @@
     "backupKitNotSaved": "Bevestig dat je de noodkit buiten deze server hebt bewaard voordat je versleuteling aanzet",
     "backupKeyMissing": "Maak eerst een sleutel voor back-upversleuteling aan",
     "mediaMirrorAlbumLinkedElsewhere": "Dit album is gekoppeld aan een andere familie. Ernaartoe spiegelen zou de foto's van deze familie daar tonen — kies of maak een ander album.",
-    "mediaAlbumMirroredElsewhere": "Een andere familie spiegelt haar uploads naar dit album. Het hier koppelen zou de foto's van die familie tonen — kies een ander album."
+    "mediaAlbumMirroredElsewhere": "Een andere familie spiegelt haar uploads naar dit album. Het hier koppelen zou de foto's van die familie tonen — kies een ander album.",
+    "directMessagesDisabled": "Privéberichten zijn uitgeschakeld op deze server",
+    "e2eDirectMessagesDisabled": "End-to-end versleutelde privéberichten zijn uitgeschakeld op deze server"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

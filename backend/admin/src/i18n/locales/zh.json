@@ -536,7 +536,15 @@
     "maxVideoDurationSeconds": "最长视频（秒）",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} 秒。应用会在上传前检查；旧版应用仍使用 2 分钟的限制。",
     "maxUploadSizeMb": "最大上传（MB）",
-    "maxUploadSizeMbHint": "每个文件 {{min}}–{{max}} MB。Famlin 前面的反向代理可能允许的更少：例如 Cloudflare 免费套餐会在 100 MB 时中止上传。"
+    "maxUploadSizeMbHint": "每个文件 {{min}}–{{max}} MB。Famlin 前面的反向代理可能允许的更少：例如 Cloudflare 免费套餐会在 100 MB 时中止上传。",
+    "directMessages": "私信",
+    "directMessagesDesc": "成员之间的一对一私人消息。",
+    "directMessagesEnabled": "允许私信",
+    "directMessagesEnabledHint": "允许成员互相发送一对一私人消息。关闭后，现有的私人对话会被隐藏但不会被删除；家庭聊天不受影响。",
+    "directMessagesOnWeb": "在网页应用中提供私信",
+    "directMessagesOnWebHint": "网页应用无法读取端到端加密的消息。保持关闭可仅在手机应用中提供私信。",
+    "e2eDirectMessagesEnabled": "对私信进行端到端加密",
+    "e2eDirectMessagesEnabledHint": "消息在成员的手机上加密，因此任何其他人（包括身为管理员的您）都无法读取。如果关闭，服务器管理员可以读取新的私信，并且成员会在每个私人对话中看到相关提示。已加密的消息仍保持加密。"
   },
   "media": {
     "peopleMapping": {

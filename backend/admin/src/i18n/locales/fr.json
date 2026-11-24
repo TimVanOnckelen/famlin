@@ -536,7 +536,15 @@
     "maxVideoDurationSeconds": "Vidéo la plus longue (secondes)",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} secondes. Les applications le vérifient avant l'envoi ; les anciennes versions gardent leur limite de 2 minutes.",
     "maxUploadSizeMb": "Envoi le plus lourd (Mo)",
-    "maxUploadSizeMbHint": "Par fichier, {{min}}–{{max}} Mo. Un proxy inverse devant Famlin peut autoriser moins : l'offre gratuite de Cloudflare, par exemple, bloque les envois au-delà de 100 Mo."
+    "maxUploadSizeMbHint": "Par fichier, {{min}}–{{max}} Mo. Un proxy inverse devant Famlin peut autoriser moins : l'offre gratuite de Cloudflare, par exemple, bloque les envois au-delà de 100 Mo.",
+    "directMessages": "Messages privés",
+    "directMessagesDesc": "Messages privés entre deux membres.",
+    "directMessagesEnabled": "Autoriser les messages privés",
+    "directMessagesEnabledHint": "Permet aux membres de s'envoyer des messages privés en tête-à-tête. Si vous désactivez cette option, les conversations privées existantes sont masquées sans être supprimées ; le chat familial n'est pas affecté.",
+    "directMessagesOnWeb": "Proposer les messages privés dans l'application web",
+    "directMessagesOnWebHint": "L'application web ne peut pas lire les messages chiffrés de bout en bout. Laissez cette option désactivée pour ne proposer les messages privés que dans l'application mobile.",
+    "e2eDirectMessagesEnabled": "Chiffrer les messages privés de bout en bout",
+    "e2eDirectMessagesEnabledHint": "Les messages sont chiffrés sur les téléphones des membres : personne d'autre, y compris vous en tant qu'administrateur, ne peut les lire. Si vous désactivez cette option, les nouveaux messages privés sont lisibles par l'administrateur du serveur, et les membres en sont informés dans chaque conversation privée. Les messages déjà chiffrés le restent."
   },
   "media": {
     "peopleMapping": {

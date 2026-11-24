@@ -163,7 +163,9 @@
     "backupKitNotSaved": "Confirma que has guardado el kit de emergencia fuera de este servidor antes de activar el cifrado",
     "backupKeyMissing": "Genera primero una clave de cifrado de copias de seguridad",
     "mediaMirrorAlbumLinkedElsewhere": "Este álbum está vinculado a otra familia. Reflejar en él mostraría allí las fotos de esta familia: elige o crea otro álbum.",
-    "mediaAlbumMirroredElsewhere": "Otra familia refleja sus subidas en este álbum. Vincularlo aquí mostraría las fotos de esa familia: elige otro álbum."
+    "mediaAlbumMirroredElsewhere": "Otra familia refleja sus subidas en este álbum. Vincularlo aquí mostraría las fotos de esa familia: elige otro álbum.",
+    "directMessagesDisabled": "Los mensajes directos están desactivados en este servidor",
+    "e2eDirectMessagesDisabled": "Los mensajes directos cifrados de extremo a extremo están desactivados en este servidor"
   },
   "notifications": {
     "newPost": "{{author}} ha publicado en {{group}}: \"{{excerpt}}\"",
