@@ -347,6 +347,7 @@
     "directMessage": "Message direct",
     "familyChat": "Discussion familiale",
     "unavailable": "Cette discussion n'est pas disponible.",
+    "noConversationSelected": "Aucune conversation sélectionnée.",
     "encryptedMessage": "Message chiffré",
     "newMessage": "Nouveau message",
     "searchPeople": "Rechercher des personnes",
