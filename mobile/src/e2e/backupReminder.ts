@@ -10,3 +10,20 @@ export function shouldShowBackupReminder(input: { meta: E2eMeta; hasBackup: bool
   const dismissed = input.meta.backupReminderDismissedAt
   return dismissed === undefined || (input.now ?? Date.now()) - dismissed >= BACKUP_REMINDER_SNOOZE_MS
 }
+
+/**
+ * Keys follow the person automatically through iCloud Keychain / Google's
+ * backup, so a recovery code is only worth nagging about on Android when
+ * Block Store can't hold them end-to-end encrypted. iOS can't tell whether
+ * iCloud Keychain is on, so it never nags.
+ */
+export function needsRecoveryCodeBackup(input: {
+  platform: string
+  sync: { available: boolean; endToEndEncrypted: boolean | null } | undefined
+  hasRecoveryCode: boolean
+}): boolean {
+  if (input.hasRecoveryCode || input.platform !== 'android') return false
+  // Still checking: don't flash a reminder.
+  if (!input.sync) return false
+  return !(input.sync.available && input.sync.endToEndEncrypted === true)
+}

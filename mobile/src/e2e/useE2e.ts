@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useServerFeatureSupport } from '@/hooks/useServerInfo'
 import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { useE2eKeysStore } from '@/e2e/keysStore'
+import { mirrorOnce, restoreFromSyncOnce } from '@/e2e/syncRestore'
 import { computeE2eStatus, type E2eStatus } from '@/e2e/status'
 
 const FEATURE = 'e2eDirectMessages' as const
@@ -37,7 +38,7 @@ export function useE2e(): E2eState {
   const userId = useAuthStore((state) => state.user?.id)
   const serverUrl = useAuthStore((state) => state.serverUrl)
   const support = useServerFeatureSupport(FEATURE)
-  const { keys, loaded, recovery, loadForScope } = useE2eKeysStore()
+  const { keys, loaded, recovery, loadForScope, syncCheckedVersion } = useE2eKeysStore()
 
   useEffect(() => {
     if (userId && serverUrl) void loadForScope({ serverUrl, userId })
@@ -57,8 +58,28 @@ export function useE2e(): E2eState {
     keysLoaded: loaded,
     serverIdentities: query.data,
     localKeys: keys,
+    syncChecked: syncCheckedVersion !== null && syncCheckedVersion === query.data?.[0]?.version,
   })
   const latestServerVersion = query.data?.[0]?.version
+  const latestIdentity = query.data?.[0]
+
+  // Keys missing for the latest identity: look in the synced store first, so a
+  // new phone just works. Once keys are here, keep the synced copy current.
+  useEffect(() => {
+    if (!loaded || !userId || !serverUrl || !latestIdentity) return
+    if (support === 'unsupported') return
+    const scope = { serverUrl, userId }
+    const hasLatest = keys.some((candidate) => candidate.version === latestIdentity.version)
+    if (hasLatest) {
+      const current = keys.find((candidate) => candidate.version === latestIdentity.version)!
+      void mirrorOnce(scope, current)
+      return
+    }
+    if (syncCheckedVersion === latestIdentity.version) return
+    void restoreFromSyncOnce(scope, latestIdentity).then(() =>
+      useE2eKeysStore.getState().markSyncChecked(latestIdentity.version)
+    )
+  }, [loaded, userId, serverUrl, latestIdentity, keys, support, syncCheckedVersion])
   const latestKeys = useMemo(
     () => keys.find((candidate) => candidate.version === latestServerVersion),
     [keys, latestServerVersion]

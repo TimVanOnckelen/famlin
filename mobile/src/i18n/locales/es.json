@@ -935,7 +935,7 @@
         "needsRestore": "Este teléfono aún no tiene tus claves, así que no puede leer ni enviar mensajes cifrados.",
         "ready": "Activado. Tus mensajes privados están cifrados."
       },
-      "reminder": "Tus mensajes cifrados aún no tienen copia. Haz una para leerlos en un teléfono nuevo.",
+      "reminder": "Puede que tus claves no tengan una copia segura. Crea un código de recuperación para leer tus mensajes en un teléfono nuevo.",
       "showCode": "Mostrar el código de recuperación",
       "showTitle": "¿Mostrar el código de recuperación?",
       "showMessage": "Cualquiera que vea este código puede leer tus mensajes privados. Asegúrate de que nadie esté mirando.",
@@ -951,12 +951,12 @@
       "reset": "Restablecer las claves",
       "resetTitle": "¿Restablecer tus claves?",
       "resetMessage": "Recibirás claves nuevas y un nuevo código de recuperación. Los mensajes enviados a tus claves antiguas solo se pueden leer en teléfonos que aún las tengan. Tus contactos verán que tu código de seguridad cambió.",
-      "backupNow": "Hacer una copia de tus mensajes cifrados",
+      "backupNow": "Seguridad extra: código de recuperación",
       "resetDone": "Claves nuevas creadas."
     },
     "backup": {
-      "title": "Haz una copia de tus mensajes cifrados",
-      "body": "Una copia te permite leer tus mensajes cifrados antiguos en un teléfono nuevo si ya no tienes este. Es opcional: los mensajes cifrados funcionan sin ella.",
+      "title": "Seguridad extra: código de recuperación",
+      "body": "Tus claves se guardan automáticamente, pero necesitas un código de recuperación si cambias entre iPhone y Android, o si tu copia de iCloud o Google está desactivada. Es opcional.",
       "start": "Crear un código de copia",
       "accountLabel": "Cuenta",
       "codeTitle": "Tu código de recuperación",
@@ -965,9 +965,14 @@
       "saved": "He guardado mi código de recuperación"
     },
     "reminder": {
-      "text": "Haz una copia de tus mensajes cifrados para poder leerlos en un teléfono nuevo.",
-      "action": "Hacer copia",
+      "text": "Crea un código de recuperación para poder leer tus mensajes cifrados en un teléfono nuevo.",
+      "action": "Crear código",
       "dismiss": "Ahora no"
+    },
+    "sync": {
+      "statusIos": "Se guarda automáticamente en tu llavero de iCloud, si está activado. También se restaura en un iPhone nuevo.",
+      "statusAndroid": "Se guarda automáticamente con tu copia de seguridad de Google.",
+      "statusAndroidNoLock": "Activa un bloqueo de pantalla para que tu copia de Google pueda guardarlas de forma segura."
     }
   }
 }

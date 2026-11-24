@@ -935,7 +935,7 @@
         "needsRestore": "Este telemóvel ainda não tem as suas chaves, por isso não pode ler nem enviar mensagens encriptadas.",
         "ready": "Ativado. As suas mensagens privadas estão encriptadas."
       },
-      "reminder": "As suas mensagens encriptadas ainda não têm cópia. Faça uma para as ler num telemóvel novo.",
+      "reminder": "As suas chaves podem não ter uma cópia segura. Crie um código de recuperação para ler as suas mensagens num telemóvel novo.",
       "showCode": "Mostrar o código de recuperação",
       "showTitle": "Mostrar o código de recuperação?",
       "showMessage": "Quem vir este código pode ler as suas mensagens privadas. Certifique-se de que ninguém está a olhar.",
@@ -951,12 +951,12 @@
       "reset": "Repor as chaves",
       "resetTitle": "Repor as suas chaves?",
       "resetMessage": "Vai receber chaves novas e um novo código de recuperação. As mensagens enviadas para as suas chaves antigas só podem ser lidas em telemóveis que ainda as tenham. Os seus contactos verão que o seu código de segurança mudou.",
-      "backupNow": "Fazer uma cópia das suas mensagens encriptadas",
+      "backupNow": "Segurança extra: código de recuperação",
       "resetDone": "Chaves novas criadas."
     },
     "backup": {
-      "title": "Faça uma cópia das suas mensagens encriptadas",
-      "body": "Uma cópia permite-lhe ler as suas mensagens encriptadas antigas num telemóvel novo se já não tiver este. É opcional: as mensagens encriptadas funcionam sem ela.",
+      "title": "Segurança extra: código de recuperação",
+      "body": "As suas chaves são guardadas automaticamente, mas precisa de um código de recuperação se mudar entre iPhone e Android, ou se a cópia do iCloud ou da Google estiver desativada. É opcional.",
       "start": "Criar um código de cópia",
       "accountLabel": "Conta",
       "codeTitle": "O seu código de recuperação",
@@ -965,9 +965,14 @@
       "saved": "Guardei o meu código de recuperação"
     },
     "reminder": {
-      "text": "Faça uma cópia das suas mensagens encriptadas para as poder ler num telemóvel novo.",
-      "action": "Fazer cópia",
+      "text": "Crie um código de recuperação para poder ler as suas mensagens encriptadas num telemóvel novo.",
+      "action": "Criar código",
       "dismiss": "Agora não"
+    },
+    "sync": {
+      "statusIos": "Guardadas automaticamente no seu Porta-chaves do iCloud, se estiver ativo. Também são restauradas num iPhone novo.",
+      "statusAndroid": "Guardadas automaticamente com a sua cópia de segurança da Google.",
+      "statusAndroidNoLock": "Ative um bloqueio de ecrã para que a sua cópia da Google as possa guardar em segurança."
     }
   }
 }

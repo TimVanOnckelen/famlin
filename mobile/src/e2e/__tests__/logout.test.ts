@@ -59,6 +59,17 @@ describe('end-to-end keys across sign-out', () => {
     expect(await keyStore.loadRecoveryCode(scope)).not.toBeNull()
   })
 
+  it('never deletes the synced copy: that would delete it on the other devices too', async () => {
+    const KeySync = jest.requireMock('../../../modules/famlin-key-sync') as Record<string, jest.Mock>
+    const { useAuthStore } = await signedInWithKeys()
+    await new Promise((resolve) => setImmediate(() => resolve(undefined)))
+    expect(KeySync.setItem).toHaveBeenCalled()
+
+    await useAuthStore.getState().logout()
+
+    expect(KeySync.deleteItem).not.toHaveBeenCalled()
+  })
+
   it('wipes keys, recovery code, pins and the in-memory copy on logout', async () => {
     const { useAuthStore, useE2eKeysStore, keyStore } = await signedInWithKeys()
     await useE2eKeysStore.getState().setContactPin('bob', { version: 1, signPublicKey: 'k', acknowledged: true })

@@ -935,7 +935,7 @@
         "needsRestore": "Ce téléphone n'a pas encore vos clés, il ne peut donc ni lire ni envoyer de messages chiffrés.",
         "ready": "Activé. Vos messages privés sont chiffrés."
       },
-      "reminder": "Vos messages chiffrés ne sont pas encore sauvegardés. Sauvegardez-les pour les lire sur un nouveau téléphone.",
+      "reminder": "Vos clés ne sont peut-être pas sauvegardées en sécurité. Créez un code de récupération pour lire vos messages sur un nouveau téléphone.",
       "showCode": "Afficher le code de récupération",
       "showTitle": "Afficher le code de récupération ?",
       "showMessage": "Toute personne qui voit ce code peut lire vos messages privés. Assurez-vous que personne ne regarde.",
@@ -951,12 +951,12 @@
       "reset": "Réinitialiser les clés",
       "resetTitle": "Réinitialiser vos clés ?",
       "resetMessage": "Vous recevrez de nouvelles clés et un nouveau code de récupération. Les messages envoyés à vos anciennes clés ne peuvent être lus que sur les téléphones qui les ont encore. Vos contacts verront que votre code de sécurité a changé.",
-      "backupNow": "Sauvegarder vos messages chiffrés",
+      "backupNow": "Sécurité en plus : code de récupération",
       "resetDone": "Nouvelles clés créées."
     },
     "backup": {
-      "title": "Sauvegarder vos messages chiffrés",
-      "body": "Une sauvegarde vous permet de lire vos anciens messages chiffrés sur un nouveau téléphone si vous n'avez plus celui-ci. Elle est facultative : les messages chiffrés fonctionnent sans.",
+      "title": "Sécurité en plus : code de récupération",
+      "body": "Vos clés sont enregistrées automatiquement, mais un code de récupération est nécessaire si vous passez d'un iPhone à Android (ou inversement), ou si votre sauvegarde iCloud ou Google est désactivée. C'est facultatif.",
       "start": "Créer un code de sauvegarde",
       "accountLabel": "Compte",
       "codeTitle": "Votre code de récupération",
@@ -965,9 +965,14 @@
       "saved": "J'ai conservé mon code de récupération"
     },
     "reminder": {
-      "text": "Sauvegardez vos messages chiffrés pour pouvoir les lire sur un nouveau téléphone.",
-      "action": "Sauvegarder",
+      "text": "Créez un code de récupération pour pouvoir lire vos messages chiffrés sur un nouveau téléphone.",
+      "action": "Créer un code",
       "dismiss": "Pas maintenant"
+    },
+    "sync": {
+      "statusIos": "Enregistré automatiquement dans votre trousseau iCloud, s'il est activé. Restauré aussi sur un nouvel iPhone.",
+      "statusAndroid": "Enregistré automatiquement avec votre sauvegarde Google.",
+      "statusAndroidNoLock": "Activez un verrouillage d'écran pour que votre sauvegarde Google puisse les stocker en sécurité."
     }
   }
 }

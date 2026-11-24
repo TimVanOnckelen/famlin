@@ -935,7 +935,7 @@
         "needsRestore": "This phone doesn't have your keys yet, so it can't read or send encrypted messages.",
         "ready": "On. Your private messages are encrypted."
       },
-      "reminder": "Your encrypted messages aren't backed up yet. Back up to read them on a new phone.",
+      "reminder": "Your keys may not be backed up securely. Make a recovery code to read your messages on a new phone.",
       "showCode": "Show recovery code",
       "showTitle": "Show recovery code?",
       "showMessage": "Anyone who sees this code can read your private messages. Make sure no one is looking.",
@@ -951,12 +951,12 @@
       "reset": "Reset keys",
       "resetTitle": "Reset your keys?",
       "resetMessage": "You get new keys and a new recovery code. Messages sent to your old keys can only be read on phones that still have them. Your contacts will see that your security code changed.",
-      "backupNow": "Back up your encrypted messages",
+      "backupNow": "Extra safety: recovery code",
       "resetDone": "New keys created."
     },
     "backup": {
-      "title": "Back up your encrypted messages",
-      "body": "A backup lets you read your old encrypted messages on a new phone if you no longer have this one. It's optional: encrypted messages work without it.",
+      "title": "Extra safety: recovery code",
+      "body": "Your keys are saved automatically, but a recovery code is needed when you switch between iPhone and Android, or when your iCloud or Google backup is off. It's optional.",
       "start": "Create a backup code",
       "accountLabel": "Account",
       "codeTitle": "Your recovery code",
@@ -965,9 +965,14 @@
       "saved": "I saved my recovery code"
     },
     "reminder": {
-      "text": "Back up your encrypted messages so you can read them on a new phone.",
-      "action": "Back up",
+      "text": "Make a recovery code so you can read your encrypted messages on a new phone.",
+      "action": "Make code",
       "dismiss": "Not now"
+    },
+    "sync": {
+      "statusIos": "Automatically saved in your iCloud Keychain, if it's turned on. It also restores on a new iPhone.",
+      "statusAndroid": "Automatically saved with your Google backup.",
+      "statusAndroidNoLock": "Turn on a screen lock so your Google backup can store it securely."
     }
   }
 }

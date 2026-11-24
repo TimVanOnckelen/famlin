@@ -43,3 +43,13 @@ jest.mock('expo-constants', () => ({
     manifest: {},
   },
 }))
+
+// The native key-sync module (iCloud Keychain / Block Store) doesn't exist under Jest.
+jest.mock('./modules/famlin-key-sync', () => ({
+  isAvailable: jest.fn().mockResolvedValue({ available: false, endToEndEncrypted: null }),
+  getItem: jest.fn().mockResolvedValue(null),
+  setItem: jest.fn().mockResolvedValue(undefined),
+  deleteItem: jest.fn().mockResolvedValue(undefined),
+  KEY_SYNC_MAX_ITEM_BYTES: 4096,
+  KeySyncError: class KeySyncError extends Error {},
+}))

@@ -23,6 +23,7 @@ import { toPublicIdentities, useE2e } from '@/e2e/useE2e'
 import { useSilentE2eSetup } from '@/e2e/useSilentSetup'
 import { useE2eKeysStore } from '@/e2e/keysStore'
 import { shouldShowBackupReminder } from '@/e2e/backupReminder'
+import { useNeedsRecoveryCode } from '@/e2e/useKeySync'
 import { E2eNotice } from '@/components/E2eNotice'
 import { formatRelativeDate } from '@/i18n/utils'
 import {
@@ -48,8 +49,8 @@ export function ChatInboxScreen() {
   useSilentE2eSetup()
   const meta = useE2eKeysStore((state) => state.meta)
   const dismissReminder = useE2eKeysStore((state) => state.dismissBackupReminder)
-  const showReminder =
-    e2e.status === 'ready' && shouldShowBackupReminder({ meta, hasBackup: !!e2e.serverIdentities?.[0]?.recoveryBackup })
+  const needsCode = useNeedsRecoveryCode(!!e2e.serverIdentities?.[0]?.recoveryBackup)
+  const showReminder = e2e.status === 'ready' && needsCode && shouldShowBackupReminder({ meta, hasBackup: false })
   const authorIds = [
     ...new Set(
       (data?.items ?? [])

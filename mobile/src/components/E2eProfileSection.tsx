@@ -8,6 +8,8 @@ import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
 import { profileSectionStyles } from '@/components/profileSectionStyles'
 import { useE2e } from '@/e2e/useE2e'
+import { useKeySyncAvailability, useNeedsRecoveryCode } from '@/e2e/useKeySync'
+import { Platform } from 'react-native'
 import { createBackup, createIdentity } from '@/e2e/actions'
 
 // "Encrypted messages" on the profile: whether this device can read and send
@@ -18,11 +20,12 @@ export function E2eProfileSection() {
   const navigation = useNavigation<any>()
   const queryClient = useQueryClient()
   const e2e = useE2e()
+  const sync = useKeySyncAvailability().data
+  const hasBackup = !!e2e.serverIdentities?.[0]?.recoveryBackup
+  const needsReminder = useNeedsRecoveryCode(hasBackup)
   if (e2e.status === 'unsupported') return null
 
   const ready = e2e.status === 'ready'
-  const hasBackup = !!e2e.serverIdentities?.[0]?.recoveryBackup
-  const needsReminder = ready && !hasBackup
 
   function showRecoveryCode() {
     Alert.alert(t('e2e.profile.showTitle'), t('e2e.profile.showMessage'), [
@@ -107,7 +110,18 @@ export function E2eProfileSection() {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{t('e2e.title')}</Text>
       <Text style={styles.sectionDescription}>{t(`e2e.profile.status.${e2e.status}`)}</Text>
-      {needsReminder && (
+      {ready && sync?.available !== false && (
+        <Text style={styles.sectionDescription}>
+          {t(
+            Platform.OS === 'ios'
+              ? 'e2e.sync.statusIos'
+              : sync?.endToEndEncrypted === false
+                ? 'e2e.sync.statusAndroidNoLock'
+                : 'e2e.sync.statusAndroid'
+          )}
+        </Text>
+      )}
+      {ready && needsReminder && (
         <View style={styles.reminder}>
           <Icon name="alert-circle" size={16} color={colors.textTitle} />
           <Text style={styles.reminderText}>{t('e2e.profile.reminder')}</Text>

@@ -1,0 +1,21 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.famlinkeysync'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.famlinkeysync"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  // Block Store: small secrets that Google backs up (end-to-end encrypted when
+  // the device has a screen lock) and restores onto a new Android phone.
+  implementation 'com.google.android.gms:play-services-auth-blockstore:16.4.0'
+}

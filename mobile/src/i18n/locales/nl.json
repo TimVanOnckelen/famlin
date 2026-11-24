@@ -935,7 +935,7 @@
         "needsRestore": "Deze telefoon heeft je sleutels nog niet en kan dus geen versleutelde berichten lezen of sturen.",
         "ready": "Aan. Je privéberichten zijn versleuteld."
       },
-      "reminder": "Je versleutelde berichten hebben nog geen back-up. Maak er een om ze op een nieuwe telefoon te lezen.",
+      "reminder": "Je sleutels hebben mogelijk geen veilige back-up. Maak een herstelcode om je berichten op een nieuwe telefoon te lezen.",
       "showCode": "Herstelcode tonen",
       "showTitle": "Herstelcode tonen?",
       "showMessage": "Wie deze code ziet, kan je privéberichten lezen. Zorg dat niemand meekijkt.",
@@ -951,12 +951,12 @@
       "reset": "Sleutels opnieuw instellen",
       "resetTitle": "Sleutels opnieuw instellen?",
       "resetMessage": "Je krijgt nieuwe sleutels en een nieuwe herstelcode. Berichten die naar je oude sleutels zijn gestuurd, kunnen alleen gelezen worden op telefoons die ze nog hebben. Je contacten zien dat je beveiligingscode is veranderd.",
-      "backupNow": "Back-up van je versleutelde berichten maken",
+      "backupNow": "Extra veiligheid: herstelcode",
       "resetDone": "Nieuwe sleutels gemaakt."
     },
     "backup": {
-      "title": "Maak een back-up van je versleutelde berichten",
-      "body": "Met een back-up kun je je oude versleutelde berichten lezen op een nieuwe telefoon als je deze niet meer hebt. Het is optioneel: versleutelde berichten werken ook zonder.",
+      "title": "Extra veiligheid: herstelcode",
+      "body": "Je sleutels worden automatisch bewaard, maar een herstelcode heb je nodig als je overstapt tussen iPhone en Android, of als je iCloud- of Google-back-up uit staat. Het is optioneel.",
       "start": "Back-upcode maken",
       "accountLabel": "Account",
       "codeTitle": "Je herstelcode",
@@ -965,9 +965,14 @@
       "saved": "Ik heb mijn herstelcode bewaard"
     },
     "reminder": {
-      "text": "Maak een back-up van je versleutelde berichten zodat je ze op een nieuwe telefoon kunt lezen.",
-      "action": "Back-up maken",
+      "text": "Maak een herstelcode zodat je je versleutelde berichten op een nieuwe telefoon kunt lezen.",
+      "action": "Code maken",
       "dismiss": "Niet nu"
+    },
+    "sync": {
+      "statusIos": "Automatisch bewaard in je iCloud-sleutelhanger, als die aan staat. Wordt ook teruggezet op een nieuwe iPhone.",
+      "statusAndroid": "Automatisch bewaard met je Google-back-up.",
+      "statusAndroidNoLock": "Zet een schermvergrendeling aan zodat je Google-back-up ze veilig kan bewaren."
     }
   }
 }
