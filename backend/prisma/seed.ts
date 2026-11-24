@@ -2,14 +2,32 @@ import 'dotenv/config'
 import { PrismaClient, type ReactionType } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import bcrypt from 'bcryptjs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { writeDemoPhotos } from './demoPhotos.js'
 import { DEMO_SCENES, photoUrl, seedDemoContent } from './demoContent.js'
 
-// Prisma 7 needs a driver adapter (see src/db.ts). Read DATABASE_URL directly
-// rather than importing src/config.ts, so the Dockerfile's standalone
-// `tsc prisma/seed.ts` compile for the demo image stays self-contained.
-const databaseUrl = process.env.DATABASE_URL
+// Prisma 7 needs a driver adapter (see src/db.ts). Keep this script
+// self-contained so the Dockerfile can compile it without importing src/.
+function deriveDatabaseUrl(): string | undefined {
+  let password = process.env.POSTGRES_PASSWORD
+  if (!password && process.env.POSTGRES_PASSWORD_FILE) {
+    try {
+      password = readFileSync(process.env.POSTGRES_PASSWORD_FILE, 'utf8').trim()
+    } catch {
+      return undefined
+    }
+  }
+  if (!password) return undefined
+
+  const host = process.env.POSTGRES_HOST || 'famlin-db'
+  const port = process.env.POSTGRES_PORT || '5432'
+  const user = encodeURIComponent(process.env.POSTGRES_USER || 'famlin')
+  const db = encodeURIComponent(process.env.POSTGRES_DB || 'famlin')
+  return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${db}?schema=public`
+}
+
+const databaseUrl = process.env.DATABASE_URL || deriveDatabaseUrl()
 if (!databaseUrl) {
   throw new Error('DATABASE_URL is required. Set it in backend/.env or the process environment.')
 }

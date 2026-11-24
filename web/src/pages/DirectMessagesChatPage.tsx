@@ -189,7 +189,10 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
               user={props.user}
             />
           ) : (
-            <ConversationPlaceholder unavailable={explicitSelectionUnavailable} />
+            <ConversationPlaceholder
+              unavailable={explicitSelectionUnavailable}
+              empty={conversations.isSuccess && items.length === 0 && !hasExplicitSelection}
+            />
           )}
           {pickerOpen && (
             <RecipientPicker
@@ -214,9 +217,9 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
   )
 }
 
-function ConversationPlaceholder({ unavailable }: { unavailable: boolean }) {
+function ConversationPlaceholder({ unavailable, empty }: { unavailable: boolean; empty: boolean }) {
   const { t } = useTranslation()
-  const title = unavailable ? t('chat.unavailable') : t('chat.noConversationSelected')
+  const title = unavailable ? t('chat.unavailable') : empty ? t('chat.emptyInbox') : t('chat.noConversationSelected')
 
   return (
     <section className="chat-panel chat-panel-placeholder">
