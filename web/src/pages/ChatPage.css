@@ -173,6 +173,10 @@
   padding: 0px 22px 14px 0;
 }
 
+.modal-header .post-detail-modal-close {
+  top: 27px;
+}
+
 .chat-recipient-search {
   display: flex;
   align-items: center;
@@ -786,16 +790,21 @@
     align-items: flex-start;
   }
 
-  .chat-new-message span {
+  .chat-new-message-label {
     display: none;
   }
 
-  .chat-new-message {
+  .btn.chat-new-message {
     width: 40px;
     height: 40px;
     justify-content: center;
     padding: 0;
     border-radius: 50%;
+  }
+
+  .btn.chat-new-message .chat-new-message-icon {
+    flex-shrink: 0;
+    /* transform: translate(0px, 0px); */
   }
 
   .chat-unified-layout {
