@@ -10,10 +10,13 @@ import type {
   ChatConversationUnreadCounts,
   ChatConversationsPage,
   ChatEligiblePerson,
+  ChatMessageReply,
   ChatPeoplePage,
   CreateChatConversationBody,
   CreateChatConversationMessageBody,
+  CreateChatMessageBody,
   FetchChatConversationMessagesParams,
+  SendChatMessageBody,
 } from '../index'
 
 type NamedConversationTypes = [
@@ -30,6 +33,9 @@ type NamedConversationTypes = [
   ChatConversationMessagesPage,
   FetchChatConversationMessagesParams,
   CreateChatConversationMessageBody,
+  CreateChatMessageBody,
+  SendChatMessageBody,
+  ChatMessageReply,
   ChatPeoplePage,
 ]
 

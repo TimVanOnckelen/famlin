@@ -2,6 +2,15 @@ import { api } from './client'
 
 export type ChatMessageKind = 'USER' | 'SYSTEM_MILESTONE'
 
+export interface ChatMessageReply {
+  id: string
+  authorId: string
+  authorName: string
+  kind: ChatMessageKind
+  content: string | null
+  attachmentUrl: string | null
+}
+
 export const chatConversationsQueryKey = () => ['chat-conversations'] as const
 export const chatPeopleQueryKey = () => ['chat-people'] as const
 export const chatMessagesQueryKey = (conversationId: string) => ['chat-messages', conversationId] as const
@@ -25,14 +34,7 @@ export interface ChatMessage {
   attachmentUrl: string | null
   refPostId: string | null
   replyToMessageId: string | null
-  replyTo: {
-    id: string
-    authorId: string
-    authorName: string
-    kind: ChatMessageKind
-    content: string | null
-    attachmentUrl: string | null
-  } | null
+  replyTo: ChatMessageReply | null
   createdAt: string
   editedAt: string | null
   readBy: {
@@ -131,14 +133,7 @@ export interface ChatConversationMessage {
   attachmentUrl: string | null
   refPostId: string | null
   replyToMessageId: string | null
-  replyTo: {
-    id: string
-    authorId: string
-    authorName: string
-    kind: ChatMessageKind
-    content: string | null
-    attachmentUrl: string | null
-  } | null
+  replyTo: ChatMessageReply | null
   createdAt: string
   editedAt: string | null
   encryption: string
@@ -169,28 +164,28 @@ export async function fetchChatConversationMessages(
   return response.data
 }
 
-export interface CreateChatMessageBody {
+export interface SendChatMessageBody {
   content?: string
   attachmentUrl?: string
   replyToMessageId?: string
 }
 
-export interface CreateChatConversationMessageBody {
-  content?: string
-  attachmentUrl?: string
-  replyToMessageId?: string
-}
+/** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
+export type CreateChatMessageBody = SendChatMessageBody
+
+/** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
+export type CreateChatConversationMessageBody = SendChatMessageBody
 
 export async function sendChatConversationMessage(
   conversationId: string,
-  data: CreateChatConversationMessageBody
+  data: SendChatMessageBody
 ): Promise<ChatConversationMessage> {
   // requires-feature: directMessages
   const response = await api.post<ChatConversationMessage>(`/chat/conversations/${conversationId}/messages`, data)
   return response.data
 }
 
-export async function sendChatMessage(groupId: string, data: CreateChatMessageBody): Promise<ChatMessage> {
+export async function sendChatMessage(groupId: string, data: SendChatMessageBody): Promise<ChatMessage> {
   const response = await api.post<ChatMessage>(`/chat/groups/${groupId}/messages`, data)
   return response.data
 }

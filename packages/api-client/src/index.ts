@@ -230,6 +230,8 @@ export type {
   ChatMessagesPage,
   CreateChatMessageBody,
   ChatMessageKind,
+  ChatMessageReply,
+  SendChatMessageBody,
   ChatEligiblePerson,
   ChatPeoplePage,
   ChatConversationKind,

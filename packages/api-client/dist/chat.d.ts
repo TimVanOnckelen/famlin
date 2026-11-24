@@ -1,4 +1,12 @@
 export type ChatMessageKind = 'USER' | 'SYSTEM_MILESTONE';
+export interface ChatMessageReply {
+    id: string;
+    authorId: string;
+    authorName: string;
+    kind: ChatMessageKind;
+    content: string | null;
+    attachmentUrl: string | null;
+}
 export declare const chatConversationsQueryKey: () => readonly ['chat-conversations'];
 export declare const chatPeopleQueryKey: () => readonly ['chat-people'];
 export declare const chatMessagesQueryKey: (conversationId: string) => readonly ['chat-messages', string];
@@ -18,14 +26,7 @@ export interface ChatMessage {
     attachmentUrl: string | null;
     refPostId: string | null;
     replyToMessageId: string | null;
-    replyTo: {
-        id: string;
-        authorId: string;
-        authorName: string;
-        kind: ChatMessageKind;
-        content: string | null;
-        attachmentUrl: string | null;
-    } | null;
+    replyTo: ChatMessageReply | null;
     createdAt: string;
     editedAt: string | null;
     readBy: {
@@ -92,14 +93,7 @@ export interface ChatConversationMessage {
     attachmentUrl: string | null;
     refPostId: string | null;
     replyToMessageId: string | null;
-    replyTo: {
-        id: string;
-        authorId: string;
-        authorName: string;
-        kind: ChatMessageKind;
-        content: string | null;
-        attachmentUrl: string | null;
-    } | null;
+    replyTo: ChatMessageReply | null;
     createdAt: string;
     editedAt: string | null;
     encryption: string;
@@ -114,18 +108,17 @@ export interface FetchChatConversationMessagesParams {
     take?: number;
 }
 export declare function fetchChatConversationMessages(conversationId: string, { cursor, take }?: FetchChatConversationMessagesParams): Promise<ChatConversationMessagesPage>;
-export interface CreateChatMessageBody {
+export interface SendChatMessageBody {
     content?: string;
     attachmentUrl?: string;
     replyToMessageId?: string;
 }
-export interface CreateChatConversationMessageBody {
-    content?: string;
-    attachmentUrl?: string;
-    replyToMessageId?: string;
-}
-export declare function sendChatConversationMessage(conversationId: string, data: CreateChatConversationMessageBody): Promise<ChatConversationMessage>;
-export declare function sendChatMessage(groupId: string, data: CreateChatMessageBody): Promise<ChatMessage>;
+/** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
+export type CreateChatMessageBody = SendChatMessageBody;
+/** @deprecated Use SendChatMessageBody. This alias may be removed in the next breaking release. */
+export type CreateChatConversationMessageBody = SendChatMessageBody;
+export declare function sendChatConversationMessage(conversationId: string, data: SendChatMessageBody): Promise<ChatConversationMessage>;
+export declare function sendChatMessage(groupId: string, data: SendChatMessageBody): Promise<ChatMessage>;
 export declare function deleteChatMessage(messageId: string): Promise<void>;
 export declare function markChatRead(groupId: string): Promise<void>;
 export declare function markChatConversationRead(conversationId: string): Promise<void>;
