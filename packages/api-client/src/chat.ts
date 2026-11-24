@@ -126,10 +126,19 @@ export interface ChatConversationMessage {
   groupId: string | null
   authorId: string
   author: ChatConversationParticipant
-  kind: string
+  kind: ChatMessageKind
   content: string | null
   attachmentUrl: string | null
   refPostId: string | null
+  replyToMessageId: string | null
+  replyTo: {
+    id: string
+    authorId: string
+    authorName: string
+    kind: ChatMessageKind
+    content: string | null
+    attachmentUrl: string | null
+  } | null
   createdAt: string
   editedAt: string | null
   encryption: string
@@ -169,6 +178,7 @@ export interface CreateChatMessageBody {
 export interface CreateChatConversationMessageBody {
   content?: string
   attachmentUrl?: string
+  replyToMessageId?: string
 }
 
 export async function sendChatConversationMessage(
