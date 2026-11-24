@@ -160,14 +160,20 @@ A member export includes that member's own latest device diagnostics and the dia
 
 Private one-to-one messages are encrypted on the sender's device and decrypted on the recipient's, so the server (and anyone with access to it, including its administrator and its backups) stores only ciphertext. Encryption is on by default for each private conversation, and either person can opt a conversation out; that choice is always shown in the conversation as a visible notice and never happens silently. Each message records whether it is encrypted.
 
-Each member has one key identity, shared between their own devices by scanning a QR code on a signed-in device or with a recovery code. The server stores the public keys and a copy of the private keys that is encrypted with the recovery code, which it cannot open. Photos and videos in encrypted messages are encrypted before upload and stored as opaque files.
+Each member has one key identity, created automatically the first time they open a direct message in the app. It reaches their other devices in three ways:
+
+- **Automatically through the phone's own keychain backup.** On iOS the app stores the keys as a synchronizable iCloud Keychain item; on Android in Google's Block Store, which is backed up with the device. Both are end-to-end encrypted by Apple or Google, so the Famlin server never sees them. A new phone signed in to the same Apple or Google account (and restored from its backup on Android) can read old messages without any action. This extends trust to that Apple or Google account and the device passcode that protects it. It does not work between an iPhone and an Android phone, or when iCloud Keychain or the Android backup is turned off.
+- **By scanning a QR code** with a device that is already set up.
+- **With an optional recovery code.** The server then stores a copy of the private keys encrypted with that code, which it cannot open. The code is generated, never chosen, so it can't be guessed.
+
+Photos in encrypted messages are encrypted on the phone before upload and stored as opaque files. Videos can't be sent in an encrypted conversation yet.
 
 What this does **not** protect:
 
 - **Metadata.** The server still knows who talks to whom, when, how often, and roughly how large each message or attachment is. Notifications only say that a new direct message arrived.
 - **A malicious app.** A tampered or compromised app build can read messages before encryption or after decryption, and a server operator who also controls the app code someone runs could swap keys. Compare safety codes with the other person in person to detect key substitution; until you have, treat the contact as unverified.
 - **Plaintext conversations.** Messages are not encrypted when someone has opted the conversation out, when a client without encryption support (for example the web app) sends them, or in family group chat, which is not end-to-end encrypted.
-- **Lost keys.** If you lose every signed-in device and have no recovery code, your encrypted message history cannot be read again, by you or by an administrator. Resetting your keys lets you start over but does not bring old messages back.
+- **Lost keys.** If you lose every signed-in device, your keychain backup doesn't reach the new phone, and you have no recovery code, your encrypted message history cannot be read again, by you or by an administrator. The other person still has the conversation. Resetting your keys lets you start over but does not bring old messages back.
 - **Backups and exports.** They contain the ciphertext and the encrypted recovery data exactly as stored, never plaintext.
 
 ### Public branding
