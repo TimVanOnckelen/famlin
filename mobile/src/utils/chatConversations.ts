@@ -1,5 +1,22 @@
 import { isChatEncryptionSupported, type ChatConversation, type ChatEligiblePerson } from '@famlin/api-client'
 
+export type ChatConversationSection = {
+  key: 'family' | 'private'
+  data: ChatConversation[]
+}
+
+export function chatConversationSections(conversations: ChatConversation[]): ChatConversationSection[] {
+  const byUpdatedAt = (a: ChatConversation, b: ChatConversation) =>
+    b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id)
+  const family = conversations.filter((conversation) => conversation.kind === 'FAMILY').sort(byUpdatedAt)
+  const privateMessages = conversations.filter((conversation) => conversation.kind === 'PRIVATE').sort(byUpdatedAt)
+
+  return [
+    ...(family.length > 0 ? [{ key: 'family' as const, data: family }] : []),
+    ...(privateMessages.length > 0 ? [{ key: 'private' as const, data: privateMessages }] : []),
+  ]
+}
+
 export function chatConversationTitle(conversation: ChatConversation, currentUserId?: string): string {
   if (conversation.kind === 'FAMILY') return conversation.group?.name ?? ''
   return conversation.participants.find((participant) => participant.id !== currentUserId)?.name ?? ''

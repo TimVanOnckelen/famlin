@@ -371,6 +371,8 @@
     "attachmentPhoto": "Photo",
     "attachmentVideo": "Vidéo",
     "inboxTitle": "Discussions",
+    "familyChats": "Discussions familiales",
+    "privateMessages": "Messages privés",
     "newMessage": "Nouveau message",
     "previewPhoto": "Photo ou vidéo",
     "previewEmpty": "Pas encore de message",

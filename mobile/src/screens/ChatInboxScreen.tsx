@@ -1,5 +1,5 @@
 import React from 'react'
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useQuery } from '@tanstack/react-query'
@@ -13,7 +13,12 @@ import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { useAuthStore } from '@/stores/authStore'
 import { formatRelativeDate } from '@/i18n/utils'
-import { chatConversationPreview, chatConversationTitle } from '@/utils/chatConversations'
+import {
+  chatConversationPreview,
+  chatConversationSections,
+  chatConversationTitle,
+  type ChatConversationSection,
+} from '@/utils/chatConversations'
 
 export function ChatInboxScreen() {
   const { t } = useTranslation()
@@ -23,9 +28,7 @@ export function ChatInboxScreen() {
     queryKey: chatConversationsQueryKey(),
     queryFn: fetchChatConversations,
   })
-  const conversations = [...(data?.items ?? [])].sort(
-    (a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id)
-  )
+  const sections = chatConversationSections(data?.items ?? [])
 
   function openConversation(conversation: ChatConversation) {
     if (conversation.kind === 'FAMILY' && conversation.group) {
@@ -52,12 +55,17 @@ export function ChatInboxScreen() {
           <ActivityIndicator color={colors.primary} />
         </View>
       ) : (
-        <FlatList
-          data={conversations}
+        <SectionList
+          sections={sections}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           refreshing={false}
           onRefresh={refetch}
+          renderSectionHeader={({ section }: { section: ChatConversationSection }) => (
+            <Text testID={`chat-${section.key}-section`} style={styles.sectionHeader}>
+              {t(section.key === 'family' ? 'chat.familyChats' : 'chat.privateMessages')}
+            </Text>
+          )}
           renderItem={({ item }) => {
             const title = chatConversationTitle(item, userId)
             const preview = chatConversationPreview(item)
@@ -128,11 +136,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { padding: 16, gap: 10, flexGrow: 1 },
+  list: { padding: 16, flexGrow: 1 },
+  sectionHeader: {
+    marginTop: 8,
+    marginBottom: 10,
+    color: colors.textMuted,
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   row: {
     flexDirection: 'row',
     gap: 12,
     alignItems: 'center',
+    marginBottom: 10,
     padding: 14,
     borderRadius: 16,
     backgroundColor: colors.white,

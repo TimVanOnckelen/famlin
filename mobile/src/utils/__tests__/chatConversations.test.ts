@@ -1,7 +1,47 @@
 import type { ChatConversation, ChatEligiblePerson } from '@famlin/api-client'
-import { chatConversationPreview, chatConversationTitle, eligibleChatPeople } from '../chatConversations'
+import {
+  chatConversationPreview,
+  chatConversationSections,
+  chatConversationTitle,
+  eligibleChatPeople,
+} from '../chatConversations'
 
 const person = (id: string, name: string): ChatEligiblePerson => ({ id, name, avatarUrl: null })
+
+function inboxConversation(id: string, kind: 'FAMILY' | 'PRIVATE', updatedAt: string): ChatConversation {
+  return {
+    id,
+    kind,
+    group: kind === 'FAMILY' ? { id: `g-${id}`, name: id } : null,
+    participants: [person('me', 'Gabriel'), person(`${id}-other`, id)],
+    lastMessage: null,
+    unreadCount: 0,
+    updatedAt,
+  }
+}
+
+it('groups family chats before private messages and sorts each section newest-first', () => {
+  const sections = chatConversationSections([
+    inboxConversation('private-old', 'PRIVATE', '2026-11-21T10:00:00.000Z'),
+    inboxConversation('family-old', 'FAMILY', '2026-11-20T10:00:00.000Z'),
+    inboxConversation('private-new', 'PRIVATE', '2026-11-24T10:00:00.000Z'),
+    inboxConversation('family-new', 'FAMILY', '2026-11-23T10:00:00.000Z'),
+  ])
+
+  expect(sections.map((section) => section.key)).toEqual(['family', 'private'])
+  expect(sections.map((section) => section.data.map((conversation) => conversation.id))).toEqual([
+    ['family-new', 'family-old'],
+    ['private-new', 'private-old'],
+  ])
+})
+
+it('omits an empty conversation section', () => {
+  expect(
+    chatConversationSections([inboxConversation('private', 'PRIVATE', '2026-11-24T10:00:00.000Z')]).map(
+      (section) => section.key
+    )
+  ).toEqual(['private'])
+})
 
 it('shows family and private inbox identities with safe plaintext previews', () => {
   const family: ChatConversation = {
