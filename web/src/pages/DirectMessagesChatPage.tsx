@@ -533,6 +533,20 @@ function ConversationShell({
         ) : (
           messages.map((message) => {
             const encrypted = !isChatEncryptionSupported(message.encryption)
+            if (message.kind === 'SYSTEM_ENCRYPTION_DISABLED' || message.kind === 'SYSTEM_ENCRYPTION_ENABLED') {
+              return (
+                <div key={message.id} className="chat-system-message">
+                  <span className="chat-system-pill chat-system-pill-info">
+                    {t(
+                      message.kind === 'SYSTEM_ENCRYPTION_DISABLED'
+                        ? 'chat.encryptionDisabledNotice'
+                        : 'chat.encryptionEnabledNotice',
+                      { name: message.author.name }
+                    )}
+                  </span>
+                </div>
+              )
+            }
             if (message.kind === 'SYSTEM_MILESTONE') {
               return (
                 <div key={message.id} className="chat-system-message">
@@ -553,12 +567,19 @@ function ConversationShell({
                   {!encrypted && message.replyTo && (
                     <blockquote className="chat-reply-quote">
                       <strong>{message.replyTo.authorName}</strong>
-                      <span>{message.replyTo.content ?? t('chat.attachmentPreview')}</span>
+                      <span>
+                        {!isChatEncryptionSupported(message.replyTo.encryption ?? 'none')
+                          ? t('chat.encryptedMessage')
+                          : (message.replyTo.content ?? t('chat.attachmentPreview'))}
+                      </span>
                     </blockquote>
                   )}
                   {encrypted ? (
-                    <div className={`chat-bubble${message.authorId === user.id ? ' chat-bubble-own' : ''}`}>
-                      {t('chat.encryptedMessage')}
+                    <div
+                      className={`chat-bubble chat-bubble-encrypted${message.authorId === user.id ? ' chat-bubble-own' : ''}`}
+                    >
+                      <Icon name="lock" size={14} />
+                      <span>{t('chat.encryptedBubble')}</span>
                     </div>
                   ) : message.attachmentUrl ? (
                     <button
@@ -586,6 +607,11 @@ function ConversationShell({
                   <time className="chat-message-time" dateTime={message.createdAt}>
                     {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                   </time>
+                  {conversation?.kind === 'PRIVATE' && message.kind === 'USER' && !encrypted && (
+                    <span className="chat-not-encrypted" title={t('chat.notEncryptedTooltip')}>
+                      {t('chat.notEncrypted')}
+                    </span>
+                  )}
                   {!encrypted && (
                     <button
                       type="button"
@@ -615,6 +641,7 @@ function ConversationShell({
           })
         )}
       </div>
+      {conversation?.kind === 'PRIVATE' && <p className="chat-encryption-notice">{t('chat.webEncryptionNotice')}</p>}
       {conversation && (
         <form
           className="chat-composer-form"

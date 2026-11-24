@@ -16,6 +16,7 @@ import {
   sendChatMessage,
   uploadFilesInSession,
 } from '@famlin/api-client'
+import type { ChatConversationMessage } from '@famlin/api-client'
 import { useLocation, useNavigate } from 'react-router'
 import { ChatPage } from '@/pages/ChatPage'
 import { makeUser, renderWithQueryClient } from '@/test/fixtures'
@@ -714,7 +715,9 @@ it('uses a privacy-safe placeholder for unsupported encrypted messages', async (
   renderPage()
   await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
 
-  expect(await screen.findByText('Encrypted message')).toBeInTheDocument()
+  expect(
+    await screen.findByText('Encrypted message — open this conversation in the Famlin app on your phone to read it.')
+  ).toBeInTheDocument()
   expect(screen.queryByText('secret plaintext')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'View attachment' })).not.toBeInTheDocument()
 })
@@ -868,3 +871,136 @@ it('polls only the active conversation while the document is visible', async () 
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
   }
 }, 15000)
+
+function privateMessage(overrides: Partial<ChatConversationMessage> = {}): ChatConversationMessage {
+  return {
+    id: 'private-message',
+    conversationId: 'private-1',
+    groupId: null,
+    authorId: 'user-2',
+    author: { id: 'user-2', name: 'Sophie', avatarUrl: null },
+    kind: 'USER',
+    content: 'Plain private message',
+    attachmentUrl: null,
+    refPostId: null,
+    replyToMessageId: null,
+    replyTo: null,
+    createdAt: '2026-11-23T10:00:00Z',
+    editedAt: null,
+    encryption: 'none',
+    encryptedPayload: null,
+    ...overrides,
+  }
+}
+
+it('shows a lock placeholder for end-to-end encrypted private messages', async () => {
+  vi.mocked(fetchChatConversationMessages).mockResolvedValue({
+    items: [
+      privateMessage({
+        id: 'e2e-message',
+        content: null,
+        encryption: 'v1',
+        encryptedPayload: { ciphertext: 'opaque' },
+      }),
+    ],
+    nextCursor: null,
+  })
+  renderPage()
+  await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+
+  expect(
+    await screen.findByText('Encrypted message — open this conversation in the Famlin app on your phone to read it.')
+  ).toBeInTheDocument()
+  expect(screen.queryByText('Not encrypted')).not.toBeInTheDocument()
+})
+
+it('marks plaintext private messages as not encrypted', async () => {
+  vi.mocked(fetchChatConversationMessages).mockResolvedValue({
+    items: [privateMessage()],
+    nextCursor: null,
+  })
+  renderPage()
+  await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+
+  expect(await screen.findByText('Plain private message')).toBeInTheDocument()
+  expect(screen.getByText('Not encrypted')).toHaveAttribute(
+    'title',
+    'Sent from the web, so this message is not end-to-end encrypted.'
+  )
+})
+
+it('renders encryption toggle events as centered system rows', async () => {
+  vi.mocked(fetchChatConversationMessages).mockResolvedValue({
+    items: [
+      privateMessage({
+        id: 'encryption-off',
+        kind: 'SYSTEM_ENCRYPTION_DISABLED',
+        authorId: 'user-1',
+        author: { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
+        content: null,
+      }),
+      privateMessage({
+        id: 'encryption-on',
+        kind: 'SYSTEM_ENCRYPTION_ENABLED',
+        content: null,
+      }),
+    ],
+    nextCursor: null,
+  })
+  renderPage()
+  await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+
+  expect(await screen.findByText('Grandpa John turned off encryption for this conversation')).toBeInTheDocument()
+  expect(screen.getByText('Sophie turned encryption back on')).toBeInTheDocument()
+  expect(screen.queryByText('Not encrypted')).not.toBeInTheDocument()
+})
+
+it('shows an encrypted placeholder in a reply quote whose original is encrypted', async () => {
+  vi.mocked(fetchChatConversationMessages).mockResolvedValue({
+    items: [
+      privateMessage({
+        id: 'reply-to-encrypted',
+        authorId: 'user-1',
+        author: { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
+        content: 'Thanks for that',
+        replyToMessageId: 'encrypted-original',
+        replyTo: {
+          id: 'encrypted-original',
+          authorId: 'user-2',
+          authorName: 'Sophie',
+          kind: 'USER',
+          content: null,
+          attachmentUrl: null,
+          encryption: 'v1',
+        },
+      }),
+    ],
+    nextCursor: null,
+  })
+  renderPage()
+  await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+
+  const quote = (await screen.findByText('Thanks for that')).closest('.chat-message-row')
+  expect(within(quote as HTMLElement).getByText('Encrypted message')).toBeInTheDocument()
+  expect(within(quote as HTMLElement).getByText('Sophie', { selector: 'strong' })).toBeInTheDocument()
+})
+
+it('shows the web encryption notice above the composer only in private conversations', async () => {
+  vi.mocked(fetchChatConversationMessages).mockResolvedValue({ items: [privateMessage()], nextCursor: null })
+  renderPage()
+
+  expect((await screen.findAllByText('De Vries family')).length).toBeGreaterThan(0)
+  expect(
+    screen.queryByText(
+      'Messages sent from the web are not end-to-end encrypted. Use the Famlin app for encrypted messages.'
+    )
+  ).not.toBeInTheDocument()
+
+  await userEvent.click(screen.getByRole('button', { name: /Sophie/ }))
+
+  expect(
+    await screen.findByText(
+      'Messages sent from the web are not end-to-end encrypted. Use the Famlin app for encrypted messages.'
+    )
+  ).toBeInTheDocument()
+})
