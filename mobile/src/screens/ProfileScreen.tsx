@@ -56,6 +56,7 @@ export function ProfileScreen() {
   // 404 instead (featureUnavailable).
   const giftListsSupport = useServerFeatureSupport('giftLists')
   const devicesSupport = useServerFeatureSupport('deviceDiagnostics')
+  const directMessagesSupport = useServerFeatureSupport('directMessages')
   const showExport = useServerFeatureSupport('memberExport') !== 'unsupported'
   const showAccountDeletion = useServerFeatureSupport('accountDeletion') !== 'unsupported'
   // "My gift lists" (issue #307): every gift list the user takes part in.
@@ -223,6 +224,9 @@ export function ProfileScreen() {
     { labelKey: 'profile.notifyNewPost', pushKey: 'pushOnNewPost', emailKey: 'emailOnNewPost' },
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
+    ...(directMessagesSupport === 'supported'
+      ? [{ labelKey: 'profile.notifyDirectMessage', pushKey: 'pushOnChitchat' as const }]
+      : []),
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
     { labelKey: 'profile.notifyGiftList', pushKey: 'pushOnGiftList' },
   ]
@@ -311,6 +315,7 @@ export function ProfileScreen() {
                   {showPush && (
                     <Switch
                       value={user?.[pushKey]}
+                      accessibilityLabel={t(labelKey)}
                       onValueChange={(value) => updatePrefs.mutate({ [pushKey]: value })}
                       trackColor={{ false: colors.border, true: colors.primary }}
                       thumbColor={colors.white}
@@ -320,6 +325,7 @@ export function ProfileScreen() {
                   {showEmail && emailKey && (
                     <Switch
                       value={user?.[emailKey]}
+                      accessibilityLabel={`${t(labelKey)} ${t('profile.email')}`}
                       onValueChange={(value) => updatePrefs.mutate({ [emailKey]: value })}
                       trackColor={{ false: colors.border, true: colors.primary }}
                       thumbColor={colors.white}
