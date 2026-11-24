@@ -1,1 +1,0 @@
-{"schema":{"type":"string","enum":["FAMILY","PRIVATE"],"description":"`FAMILY` is one existing family chat; `PRIVATE` is a canonical\none-to-one direct-message pair with explicit participants.\n","title":"ChatConversationKind"},"schemaType":"response"}

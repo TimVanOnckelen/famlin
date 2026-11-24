@@ -1,1 +1,0 @@
-{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["kind","participantIds"],"properties":{"kind":{"type":"string","enum":["PRIVATE"]},"participantIds":{"type":"array","minItems":1,"maxItems":1,"description":"Exactly one other user's id.","items":{"type":"string"}}}}}}}}
