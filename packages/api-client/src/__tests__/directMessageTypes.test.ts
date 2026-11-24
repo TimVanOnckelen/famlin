@@ -3,18 +3,18 @@ import type { NotificationPrefs, UpdateMeBody } from '../auth'
 import type { Notification, User } from '../types'
 
 describe('direct-message profile and notification types', () => {
-  it('keeps the direct-message preference and conversation link explicit', () => {
-    const userPreference: Pick<User, 'pushOnDirectMessage'> = { pushOnDirectMessage: true }
-    const notificationPrefs: NotificationPrefs = { pushOnDirectMessage: true }
-    const update: UpdateMeBody = { pushOnDirectMessage: false }
+  it('uses the chat preference and keeps the conversation link explicit', () => {
+    const userPreference: Pick<User, 'pushOnChitchat'> = { pushOnChitchat: true }
+    const notificationPrefs: NotificationPrefs = { pushOnChitchat: true }
+    const update: UpdateMeBody = { pushOnChitchat: false }
     const notification: Pick<Notification, 'relatedChatConversationId'> = {
       relatedChatConversationId: 'conversation-1',
     }
 
     expect({ userPreference, notificationPrefs, update, notification }).toEqual({
-      userPreference: { pushOnDirectMessage: true },
-      notificationPrefs: { pushOnDirectMessage: true },
-      update: { pushOnDirectMessage: false },
+      userPreference: { pushOnChitchat: true },
+      notificationPrefs: { pushOnChitchat: true },
+      update: { pushOnChitchat: false },
       notification: { relatedChatConversationId: 'conversation-1' },
     })
   })

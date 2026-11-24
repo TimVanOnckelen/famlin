@@ -105,7 +105,6 @@ const userSelect = {
   pushOnNewComment: true,
   pushOnNewLike: true,
   pushOnChitchat: true,
-  pushOnDirectMessage: true,
   pushOnStory: true,
   pushOnGiftList: true,
   createdAt: true,

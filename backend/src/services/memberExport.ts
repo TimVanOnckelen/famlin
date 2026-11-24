@@ -96,7 +96,6 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
         pushOnNewComment: true,
         pushOnNewLike: true,
         pushOnChitchat: true,
-        pushOnDirectMessage: true,
       },
     }),
     prisma.device.findMany({

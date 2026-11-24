@@ -372,7 +372,6 @@ export const notificationPrefsSchema = z.object({
   pushOnNewComment: z.boolean().optional(),
   pushOnNewLike: z.boolean().optional(),
   pushOnChitchat: z.boolean().optional(),
-  pushOnDirectMessage: z.boolean().optional(),
   pushOnStory: z.boolean().optional(),
   pushOnGiftList: z.boolean().optional(),
 })

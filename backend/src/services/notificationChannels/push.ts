@@ -18,13 +18,7 @@ export interface PushSendResult {
 // MVP-scale feature set.
 const PUSH_PREF_FIELD: Record<
   NotifyType,
-  | 'pushOnNewPost'
-  | 'pushOnNewComment'
-  | 'pushOnNewLike'
-  | 'pushOnChitchat'
-  | 'pushOnDirectMessage'
-  | 'pushOnStory'
-  | 'pushOnGiftList'
+  'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike' | 'pushOnChitchat' | 'pushOnStory' | 'pushOnGiftList'
 > = {
   new_post: 'pushOnNewPost',
   new_comment: 'pushOnNewComment',
@@ -34,7 +28,7 @@ const PUSH_PREF_FIELD: Record<
   on_this_day: 'pushOnNewPost',
   new_media_assets: 'pushOnNewPost',
   new_chat_message: 'pushOnChitchat',
-  new_direct_message: 'pushOnDirectMessage',
+  new_direct_message: 'pushOnChitchat',
   trip_checkin: 'pushOnNewPost',
   album_photo: 'pushOnNewPost',
   new_story: 'pushOnStory',
