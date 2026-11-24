@@ -591,29 +591,31 @@ function ConversationShell({
                   <time className="chat-message-time" dateTime={message.createdAt}>
                     {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                   </time>
-                  {!encrypted && (
-                    <button
-                      type="button"
-                      className="chat-message-reply"
-                      aria-label={t('chat.replyTo', { name: message.author.name })}
-                      onClick={() => setReplyTo(message)}
-                    >
-                      <Icon name="message-square" size={14} />
-                    </button>
-                  )}
-                  {(message.authorId === user.id || (conversation?.kind === 'FAMILY' && user.isAdmin)) && (
-                    <button
-                      type="button"
-                      className="chat-message-delete"
-                      aria-label={t('chat.deleteMessage')}
-                      disabled={removeMessage.isPending}
-                      onClick={() => {
-                        if (window.confirm(t('chat.deleteConfirm'))) removeMessage.mutate(message.id)
-                      }}
-                    >
-                      <Icon name="trash" size={14} />
-                    </button>
-                  )}
+                  <div className="chat-message-actions">
+                    {!encrypted && (
+                      <button
+                        type="button"
+                        className="chat-message-reply"
+                        aria-label={t('chat.replyTo', { name: message.author.name })}
+                        onClick={() => setReplyTo(message)}
+                      >
+                        <Icon name="message-square" size={14} />
+                      </button>
+                    )}
+                    {(message.authorId === user.id || (conversation?.kind === 'FAMILY' && user.isAdmin)) && (
+                      <button
+                        type="button"
+                        className="chat-message-delete"
+                        aria-label={t('chat.deleteMessage')}
+                        disabled={removeMessage.isPending}
+                        onClick={() => {
+                          if (window.confirm(t('chat.deleteConfirm'))) removeMessage.mutate(message.id)
+                        }}
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </article>
             )

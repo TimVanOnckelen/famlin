@@ -582,10 +582,22 @@
   color: var(--fam-primary);
 }
 
+.chat-message-actions {
+  position: absolute;
+  top: 19px;
+  right: -36px;
+  width: 30px;
+}
+
+.chat-message-row-own .chat-message-actions {
+  left: -31px;
+  top: 0px;
+}
+
 .chat-message-reply,
 .chat-message-delete {
-  position: absolute;
-  top: 18px;
+  /* position: relative; */
+  margin-top: 2px;
   width: 28px;
   height: 28px;
   display: inline-flex;
