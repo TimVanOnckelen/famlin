@@ -19,6 +19,7 @@ import {
 import { useLocation, useNavigate } from 'react-router'
 import { ChatPage } from '@/pages/ChatPage'
 import { makeUser, renderWithQueryClient } from '@/test/fixtures'
+import { useAppNavigation } from '@/utils/routes'
 
 vi.mock('@famlin/api-client', async (original) => ({
   ...(await original<typeof import('@famlin/api-client')>()),
@@ -67,6 +68,21 @@ function LocationProbe() {
         Browser back
       </button>
     </div>
+  )
+}
+
+function ChatNavigationHarness() {
+  const nav = useAppNavigation()
+  return (
+    <>
+      <button type="button" onClick={nav.toChat}>
+        Open chat
+      </button>
+      <button type="button" onClick={nav.toChatConversation}>
+        Open chat from notification callback
+      </button>
+      <LocationProbe />
+    </>
   )
 }
 
@@ -242,7 +258,21 @@ it('orders family chats first and selects the newest family without rewriting th
   expect(fetchChatMessages).not.toHaveBeenCalled()
 })
 
-it('falls back to the newest private conversation and shows no selection for an empty inbox', async () => {
+it('opens the chat tab without serializing the click event', async () => {
+  renderWithQueryClient(<ChatNavigationHarness />, { route: '/' })
+
+  await userEvent.click(screen.getByRole('button', { name: 'Open chat' }))
+
+  expect(screen.getByTestId('location')).toHaveTextContent('/chat')
+  expect(screen.getByTestId('location')).not.toHaveTextContent('conversation=')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Open chat from notification callback' }))
+
+  expect(screen.getByTestId('location')).toHaveTextContent('/chat')
+  expect(screen.getByTestId('location')).not.toHaveTextContent('conversation=')
+})
+
+it('falls back to the newest private conversation and prompts to start a conversation for an empty inbox', async () => {
   vi.mocked(fetchChatConversations)
     .mockResolvedValueOnce({
       items: [
@@ -283,7 +313,12 @@ it('falls back to the newest private conversation and shows no selection for an 
   vi.mocked(fetchChatConversations).mockResolvedValue({ items: [] })
   renderPage()
 
-  expect(await screen.findByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
+  expect(
+    await screen.findByRole('heading', {
+      name: 'No conversations yet. Use the New message button at the top right to start one.',
+    })
+  ).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'New message' })).toBeInTheDocument()
   expect(fetchChatConversationMessages).not.toHaveBeenCalled()
   expect(markChatConversationRead).not.toHaveBeenCalled()
 })
