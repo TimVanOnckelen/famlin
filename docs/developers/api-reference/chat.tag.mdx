@@ -7,19 +7,9 @@ custom_edit_url: null
 
 
 
-Family chats and private one-to-one direct messages. Family chat remains
-the original per-group feature (off by default, toggled by admins), and
-its legacy routes and response schemas stay available unchanged. Servers
-with the `directMessages` feature also expose generalized conversation
-routes for a combined inbox, direct-message creation, message history,
-unread counts, and read positions.
-
-A private conversation is visible only to its two participants while they
-currently share at least one family. That is a live authorization check,
-not a grant remembered when the conversation was created; losing the
-shared-family relationship hides the conversation and its uploads.
-Private conversation/message routes return `404` when the conversation is
-unknown or inaccessible, and server admins receive no special bypass.
+Per-group chat (off by default, toggled by admins). A single central chat
+per group — not 1-on-1 messaging. When a milestone post is created in a
+group with chat enabled, a system message is auto-posted in the chat.
 
 
 
