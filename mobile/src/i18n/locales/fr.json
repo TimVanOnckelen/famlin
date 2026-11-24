@@ -868,7 +868,8 @@
       "needsSetup": "Le chiffrement n'a pas pu être configuré pour le moment, les messages ne sont donc pas chiffrés.",
       "needsRestore": "Vos messages ne sont pas chiffrés car ce téléphone n'a pas encore vos clés.",
       "setUp": "Configurer les messages chiffrés",
-      "restore": "Restaurer vos messages chiffrés"
+      "restore": "Restaurer vos messages chiffrés",
+      "serverDisabled": "Le chiffrement est désactivé par l'administrateur de ce serveur. Il peut lire les nouveaux messages de cette conversation."
     },
     "error": {
       "noKeyForMe": "Ce message a été envoyé à votre ancien téléphone ou à vos anciennes clés, il ne peut pas être lu ici.",
@@ -933,7 +934,8 @@
         "loading": "Vérification…",
         "needsSetup": "Configuration…",
         "needsRestore": "Ce téléphone n'a pas encore vos clés, il ne peut donc ni lire ni envoyer de messages chiffrés.",
-        "ready": "Activé. Vos messages privés sont chiffrés."
+        "ready": "Activé. Vos messages privés sont chiffrés.",
+        "serverDisabled": "Désactivé par l'administrateur"
       },
       "reminder": "Vos clés ne sont peut-être pas sauvegardées en sécurité. Créez un code de récupération pour lire vos messages sur un nouveau téléphone.",
       "showCode": "Afficher le code de récupération",

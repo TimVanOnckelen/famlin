@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { useAuthStore } from '@/stores/authStore'
+import { useDirectMessagePolicy } from '@/hooks/useServerInfo'
 import { decryptChatPayload } from '@/e2e/decrypt'
 import { toPublicIdentities, useE2e } from '@/e2e/useE2e'
 import { useSilentE2eSetup } from '@/e2e/useSilentSetup'
@@ -41,7 +42,11 @@ export function ChatInboxScreen() {
     queryKey: chatConversationsQueryKey(),
     queryFn: fetchChatConversations,
   })
-  const sections = chatConversationSections(data?.items ?? [])
+  const dmPolicy = useDirectMessagePolicy()
+  // Private messages switched off by the administrator: family chats only.
+  const sections = chatConversationSections(data?.items ?? []).filter(
+    (section) => !dmPolicy.disabledByAdmin || section.key === 'family'
+  )
 
   // Previews of encrypted last messages are decrypted here, so the inbox needs
   // the identities of whoever wrote them.
@@ -63,7 +68,7 @@ export function ChatInboxScreen() {
       queryKey: e2eUserIdentitiesQueryKey(authorId),
       queryFn: () => fetchUserE2eIdentities(authorId),
       staleTime: 60 * 1000,
-      enabled: e2e.status !== 'unsupported',
+      enabled: (e2e.status !== 'unsupported' || e2e.serverEncryptionDisabled) && !dmPolicy.disabledByAdmin,
     })),
   })
   const identitiesByAuthor = new Map(authorIds.map((id, index) => [id, authorQueries[index]?.data]))
@@ -80,14 +85,16 @@ export function ChatInboxScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader title={t('chat.inboxTitle')} onBack={() => navigation.goBack()} centered />
-      <TouchableOpacity
-        style={styles.newMessage}
-        onPress={() => navigation.navigate('DmMemberPicker')}
-        accessibilityRole="button"
-        accessibilityLabel={t('chat.newMessage')}
-      >
-        <Icon name="edit" size={18} color={colors.white} />
-      </TouchableOpacity>
+      {!dmPolicy.disabledByAdmin && (
+        <TouchableOpacity
+          style={styles.newMessage}
+          onPress={() => navigation.navigate('DmMemberPicker')}
+          accessibilityRole="button"
+          accessibilityLabel={t('chat.newMessage')}
+        >
+          <Icon name="edit" size={18} color={colors.white} />
+        </TouchableOpacity>
+      )}
 
       {showReminder && (
         <E2eNotice

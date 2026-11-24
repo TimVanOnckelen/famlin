@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { useAuthStore } from '@/stores/authStore'
+import { useDirectMessagePolicy } from '@/hooks/useServerInfo'
 import { eligibleChatPeople } from '@/utils/chatConversations'
 
 export function DmMemberPickerScreen() {
@@ -25,6 +26,10 @@ export function DmMemberPickerScreen() {
   const queryClient = useQueryClient()
   const userId = useAuthStore((state) => state.user?.id)
   const [search, setSearch] = useState('')
+  const dmPolicy = useDirectMessagePolicy()
+  useEffect(() => {
+    if (dmPolicy.disabledByAdmin) navigation.replace('ChatInbox')
+  }, [dmPolicy.disabledByAdmin, navigation])
   const peopleQuery = useQuery({ queryKey: chatPeopleQueryKey(), queryFn: fetchChatPeople })
   const people = useMemo(
     () => eligibleChatPeople(peopleQuery.data?.items ?? [], userId, search),

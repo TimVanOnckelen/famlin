@@ -868,7 +868,8 @@
       "needsSetup": "Versleuteling kon nu niet worden ingesteld, dus berichten zijn niet versleuteld.",
       "needsRestore": "Je berichten zijn niet versleuteld omdat deze telefoon je sleutels nog niet heeft.",
       "setUp": "Versleutelde berichten instellen",
-      "restore": "Je versleutelde berichten terugzetten"
+      "restore": "Je versleutelde berichten terugzetten",
+      "serverDisabled": "Versleuteling is uitgezet door de beheerder van deze server. Die kan nieuwe berichten in dit gesprek lezen."
     },
     "error": {
       "noKeyForMe": "Dit bericht is naar je vorige telefoon of sleutels gestuurd en kan hier niet gelezen worden.",
@@ -933,7 +934,8 @@
         "loading": "Controleren…",
         "needsSetup": "Instellen…",
         "needsRestore": "Deze telefoon heeft je sleutels nog niet en kan dus geen versleutelde berichten lezen of sturen.",
-        "ready": "Aan. Je privéberichten zijn versleuteld."
+        "ready": "Aan. Je privéberichten zijn versleuteld.",
+        "serverDisabled": "Uitgezet door de beheerder"
       },
       "reminder": "Je sleutels hebben mogelijk geen veilige back-up. Maak een herstelcode om je berichten op een nieuwe telefoon te lezen.",
       "showCode": "Herstelcode tonen",

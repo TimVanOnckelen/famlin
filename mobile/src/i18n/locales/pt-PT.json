@@ -868,7 +868,8 @@
       "needsSetup": "Não foi possível configurar a encriptação agora, por isso as mensagens não são encriptadas.",
       "needsRestore": "As suas mensagens não são encriptadas porque este telemóvel ainda não tem as suas chaves.",
       "setUp": "Configurar mensagens encriptadas",
-      "restore": "Restaurar as suas mensagens encriptadas"
+      "restore": "Restaurar as suas mensagens encriptadas",
+      "serverDisabled": "A encriptação foi desativada pelo administrador deste servidor. Ele pode ler as mensagens novas desta conversa."
     },
     "error": {
       "noKeyForMe": "Esta mensagem foi enviada para o seu telemóvel ou chaves anteriores, por isso não pode ser lida aqui.",
@@ -933,7 +934,8 @@
         "loading": "A verificar…",
         "needsSetup": "A configurar…",
         "needsRestore": "Este telemóvel ainda não tem as suas chaves, por isso não pode ler nem enviar mensagens encriptadas.",
-        "ready": "Ativado. As suas mensagens privadas estão encriptadas."
+        "ready": "Ativado. As suas mensagens privadas estão encriptadas.",
+        "serverDisabled": "Desativada pelo administrador"
       },
       "reminder": "As suas chaves podem não ter uma cópia segura. Crie um código de recuperação para ler as suas mensagens num telemóvel novo.",
       "showCode": "Mostrar o código de recuperação",

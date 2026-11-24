@@ -1,6 +1,8 @@
 import type { E2eStatus } from '@/e2e/status'
 
 export type PlaintextReason =
+  /** The administrator turned encryption off for the whole server. */
+  | 'serverDisabled'
   /** A participant turned encryption off for this conversation. */
   | 'disabled'
   /** The other person hasn't published any identity yet. */
@@ -31,7 +33,10 @@ export function decideSend(input: {
   encryptionDisabledAt: string | null | undefined
   /** The automatic first-time setup failed (e.g. the server was unreachable). */
   setupFailed?: boolean
+  /** The server's policy says encryption is off (DMs stay on). Beats every other reason. */
+  serverEncryptionDisabled?: boolean
 }): SendDecision {
+  if (input.serverEncryptionDisabled) return { kind: 'plaintext', reason: 'serverDisabled' }
   if (input.status === 'unsupported') return { kind: 'plaintext', reason: 'unsupported' }
   if (input.status === 'loading') return { kind: 'wait' }
   if (input.encryptionDisabledAt) return { kind: 'plaintext', reason: 'disabled' }

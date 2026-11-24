@@ -17,7 +17,7 @@ import {
   fetchChatUnreadCounts,
   fetchGroups,
 } from '@famlin/api-client'
-import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { useDirectMessagesSupport } from '@/hooks/useServerInfo'
 import { chatEntryTarget, chatUnreadTotal } from '@/utils/chatNavigation'
 
 const Tab = createBottomTabNavigator()
@@ -53,7 +53,7 @@ export function MainTabs() {
   const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const [activeTab, setActiveTab] = useState('Feed')
-  const directMessagesSupport = useServerFeatureSupport('directMessages')
+  const directMessagesSupport = useDirectMessagesSupport()
 
   // Shares the ['groups']/['chat-unread'] cache FeedScreen already populates.
   const { data: groups } = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })

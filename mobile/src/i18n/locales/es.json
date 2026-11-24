@@ -868,7 +868,8 @@
       "needsSetup": "No se pudo configurar el cifrado ahora, así que los mensajes no están cifrados.",
       "needsRestore": "Tus mensajes no están cifrados porque este teléfono aún no tiene tus claves.",
       "setUp": "Configurar mensajes cifrados",
-      "restore": "Restaurar tus mensajes cifrados"
+      "restore": "Restaurar tus mensajes cifrados",
+      "serverDisabled": "El administrador de este servidor ha desactivado el cifrado. Puede leer los mensajes nuevos de esta conversación."
     },
     "error": {
       "noKeyForMe": "Este mensaje se envió a tu teléfono o claves anteriores, así que no se puede leer aquí.",
@@ -933,7 +934,8 @@
         "loading": "Comprobando…",
         "needsSetup": "Configurando…",
         "needsRestore": "Este teléfono aún no tiene tus claves, así que no puede leer ni enviar mensajes cifrados.",
-        "ready": "Activado. Tus mensajes privados están cifrados."
+        "ready": "Activado. Tus mensajes privados están cifrados.",
+        "serverDisabled": "Desactivado por el administrador"
       },
       "reminder": "Puede que tus claves no tengan una copia segura. Crea un código de recuperación para leer tus mensajes en un teléfono nuevo.",
       "showCode": "Mostrar el código de recuperación",

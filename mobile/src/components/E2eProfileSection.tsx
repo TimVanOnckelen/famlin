@@ -23,6 +23,14 @@ export function E2eProfileSection() {
   const sync = useKeySyncAvailability().data
   const hasBackup = !!e2e.serverIdentities?.[0]?.recoveryBackup
   const needsReminder = useNeedsRecoveryCode(hasBackup)
+  if (e2e.serverEncryptionDisabled) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('e2e.title')}</Text>
+        <Text style={styles.sectionDescription}>{t('e2e.profile.status.serverDisabled')}</Text>
+      </View>
+    )
+  }
   if (e2e.status === 'unsupported') return null
 
   const ready = e2e.status === 'ready'

@@ -32,7 +32,7 @@ export function useDmCrypto(conversation: ChatConversation | undefined, items: C
   const queryClient = useQueryClient()
   const userId = e2e.userId
   const peerId = conversation?.participants.find((participant) => participant.id !== userId)?.id
-  const peerQuery = useContactIdentities(peerId, e2e.status !== 'unsupported')
+  const peerQuery = useContactIdentities(peerId, e2e.status !== 'unsupported' || e2e.serverEncryptionDisabled)
   const { meta, loaded, setContactPin } = useE2eKeysStore()
 
   const myPublic = useMemo(
@@ -49,6 +49,7 @@ export function useDmCrypto(conversation: ChatConversation | undefined, items: C
     peerIdentityCount: peerQuery.isError ? undefined : peerQuery.data?.length,
     encryptionDisabledAt: conversation?.encryptionDisabledAt,
     setupFailed,
+    serverEncryptionDisabled: e2e.serverEncryptionDisabled,
   })
 
   const rows = useMemo<DmRow[]>(() => {

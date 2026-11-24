@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import {
   fetchServerInfo,
   getCurrentServerUrl,
+  resolveDirectMessagePolicy,
   resolveServerLimits,
   serverFeatureSupport,
+  type DirectMessagePolicy,
   type FeatureSupport,
   type ServerFeature,
   type ServerLimits,
@@ -39,4 +41,36 @@ export function useServerLimits(): ServerLimits {
 export function useServerFeatureSupport(feature: ServerFeature): FeatureSupport {
   const { data } = useServerInfo()
   return withMissingMark(serverFeatureSupport(data, feature), feature)
+}
+
+export interface DirectMessagePolicyState extends DirectMessagePolicy {
+  /** The server states the policy itself (newer servers); otherwise it is derived from its features. */
+  explicit: boolean
+  /** The administrator turned direct messages off. Family chat is unaffected. */
+  disabledByAdmin: boolean
+  /** DMs are on but the administrator turned encryption off: new messages are readable by them. */
+  encryptionDisabledByAdmin: boolean
+}
+
+export function directMessagePolicyOf(
+  info: Parameters<typeof resolveDirectMessagePolicy>[0]
+): DirectMessagePolicyState {
+  const policy = resolveDirectMessagePolicy(info)
+  const explicit = !!info?.directMessages
+  return {
+    ...policy,
+    explicit,
+    disabledByAdmin: explicit && !policy.enabled,
+    encryptionDisabledByAdmin: explicit && policy.enabled && !policy.encryption,
+  }
+}
+
+export function useDirectMessagePolicy(): DirectMessagePolicyState {
+  return directMessagePolicyOf(useServerInfo().data)
+}
+
+/** `directMessages` support, forced to 'unsupported' when the administrator turned DMs off. */
+export function useDirectMessagesSupport(): FeatureSupport {
+  const support = useServerFeatureSupport('directMessages')
+  return useDirectMessagePolicy().disabledByAdmin ? 'unsupported' : support
 }

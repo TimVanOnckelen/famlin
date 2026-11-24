@@ -868,7 +868,8 @@
       "needsSetup": "Encryption couldn't be set up right now, so messages are not encrypted.",
       "needsRestore": "Your messages are not encrypted because this phone doesn't have your keys yet.",
       "setUp": "Set up encrypted messages",
-      "restore": "Restore your encrypted messages"
+      "restore": "Restore your encrypted messages",
+      "serverDisabled": "Encryption is turned off by this server's administrator. They can read new messages in this conversation."
     },
     "error": {
       "noKeyForMe": "This message was sent to your previous phone or keys, so it can't be read here.",
@@ -933,7 +934,8 @@
         "loading": "Checking…",
         "needsSetup": "Setting up…",
         "needsRestore": "This phone doesn't have your keys yet, so it can't read or send encrypted messages.",
-        "ready": "On. Your private messages are encrypted."
+        "ready": "On. Your private messages are encrypted.",
+        "serverDisabled": "Turned off by the administrator"
       },
       "reminder": "Your keys may not be backed up securely. Make a recovery code to read your messages on a new phone.",
       "showCode": "Show recovery code",

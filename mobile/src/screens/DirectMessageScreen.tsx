@@ -39,6 +39,7 @@ import { MediaThumbnail } from '@/components/MediaThumbnail'
 import { useChatConversationMessages } from '@/hooks/useChatConversationMessages'
 import type { ComposerSendBody } from '@/hooks/useChatMessageComposer'
 import { useAuthStore } from '@/stores/authStore'
+import { useDirectMessagePolicy } from '@/hooks/useServerInfo'
 import { getUploadUrl } from '@/api/uploads'
 import { formatRelativeDate } from '@/i18n/utils'
 import { isVideoUrl } from '@/utils/media'
@@ -72,6 +73,11 @@ export function DirectMessageScreen() {
     conversationId: conversation ? conversationId : '',
     modern: true,
   })
+  const dmPolicy = useDirectMessagePolicy()
+  // DMs switched off by the administrator: back to the inbox (family chats), no error screen.
+  useEffect(() => {
+    if (dmPolicy.disabledByAdmin) navigation.replace('ChatInbox')
+  }, [dmPolicy.disabledByAdmin, navigation])
   const crypto = useDmCrypto(conversation, items as ChatConversationMessage[])
   const { e2e, decision, rows } = crypto
   const e2eActive = e2e.status !== 'unsupported'
@@ -337,7 +343,7 @@ function PlaintextBanner({
   onTurnOn,
   onRestore,
 }: {
-  reason: 'disabled' | 'peerNoKey' | 'needsSetup' | 'needsRestore'
+  reason: 'disabled' | 'peerNoKey' | 'needsSetup' | 'needsRestore' | 'serverDisabled'
   name: string
   onTurnOn: () => void
   onRestore: () => void

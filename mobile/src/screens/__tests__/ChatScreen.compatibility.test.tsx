@@ -44,6 +44,7 @@ jest.mock('@/components/ChatComposer', () => ({
 jest.mock('@/i18n/utils', () => ({ formatRelativeDate: () => 'now' }))
 jest.mock('@/hooks/useServerInfo', () => ({
   useServerFeatureSupport: () => mockSupport,
+  useDirectMessagesSupport: () => mockSupport,
 }))
 jest.mock('@/hooks/useChatConversationMessages', () => ({
   useChatConversationMessages: (options: unknown) => mockUseChatConversationMessages(options),

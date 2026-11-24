@@ -11,7 +11,7 @@ import {
   type E2ePublicIdentity,
 } from '@famlin/api-client'
 import { useAuthStore } from '@/stores/authStore'
-import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { useDirectMessagePolicy, useServerFeatureSupport } from '@/hooks/useServerInfo'
 import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { useE2eKeysStore } from '@/e2e/keysStore'
 import { mirrorOnce, restoreFromSyncOnce } from '@/e2e/syncRestore'
@@ -31,6 +31,8 @@ export interface E2eState {
   latestKeys: E2eIdentityKeys | undefined
   recoveryCode: string | null
   recoveryConfirmed: boolean
+  /** The administrator turned encryption off: nothing new is encrypted, old messages still open. */
+  serverEncryptionDisabled: boolean
   refetch: () => Promise<unknown>
 }
 
@@ -38,6 +40,7 @@ export function useE2e(): E2eState {
   const userId = useAuthStore((state) => state.user?.id)
   const serverUrl = useAuthStore((state) => state.serverUrl)
   const support = useServerFeatureSupport(FEATURE)
+  const serverEncryptionDisabled = useDirectMessagePolicy().encryptionDisabledByAdmin
   const { keys, loaded, recovery, loadForScope, syncCheckedVersion } = useE2eKeysStore()
 
   useEffect(() => {
@@ -47,13 +50,14 @@ export function useE2e(): E2eState {
   const query = useQuery({
     queryKey: [...e2eMyIdentitiesQueryKey(), serverUrl, userId],
     queryFn: rememberNotFound(FEATURE, fetchMyE2eIdentities),
-    enabled: support !== 'unsupported' && !!userId && !!serverUrl,
+    // Still fetched when encryption is off, so existing encrypted messages can be verified and read.
+    enabled: (support !== 'unsupported' || serverEncryptionDisabled) && !!userId && !!serverUrl,
     retry: retryUnlessNotFound,
     staleTime: 30 * 1000,
   })
 
   const status = computeE2eStatus({
-    featureSupport: support,
+    featureSupport: serverEncryptionDisabled ? 'unsupported' : support,
     identitiesLoading: query.isPending || (query.isError && !query.data),
     keysLoaded: loaded,
     serverIdentities: query.data,
@@ -94,6 +98,7 @@ export function useE2e(): E2eState {
     latestKeys,
     recoveryCode: recovery?.code ?? null,
     recoveryConfirmed: recovery?.confirmed ?? true,
+    serverEncryptionDisabled,
     refetch: query.refetch,
   }
 }
