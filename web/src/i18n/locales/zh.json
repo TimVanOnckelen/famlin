@@ -347,6 +347,7 @@
     "directMessage": "私信",
     "familyChat": "家庭聊天",
     "unavailable": "无法使用此会话。",
+    "noConversationSelected": "未选择会话。",
     "encryptedMessage": "加密消息",
     "newMessage": "新消息",
     "searchPeople": "搜索联系人",
