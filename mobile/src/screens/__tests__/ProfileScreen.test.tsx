@@ -93,7 +93,7 @@ it('shows the export, delete, devices and gift list sections on a server that su
 it('updates the capable-server direct-message push preference', async () => {
   jest.mocked(updateMe).mockResolvedValue({
     id: 'u1',
-    pushOnDirectMessage: true,
+    pushOnChitchat: true,
   } as never)
   useAuthStore.setState({
     user: {
@@ -102,7 +102,7 @@ it('updates the capable-server direct-message push preference', async () => {
       email: 'ann@example.com',
       isAdmin: false,
       hasPassword: false,
-      pushOnDirectMessage: false,
+      pushOnChitchat: false,
     } as never,
     serverUrl: 'https://family.example',
   })
@@ -110,7 +110,7 @@ it('updates the capable-server direct-message push preference', async () => {
   await renderProfile({ version: '0.11.0', features: [...ALL, 'directMessages'] })
   await fireEvent(screen.getByLabelText('profile.notifyDirectMessage'), 'valueChange', true)
 
-  await waitFor(() => expect(updateMe).toHaveBeenCalledWith({ pushOnDirectMessage: true }))
+  await waitFor(() => expect(updateMe).toHaveBeenCalledWith({ pushOnChitchat: true }))
 })
 
 it('hides them, and never queries gift lists or devices, on a server that says it lacks them', async () => {
