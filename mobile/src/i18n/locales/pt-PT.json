@@ -19,6 +19,7 @@
     "appName": "Famlin",
     "error": "Erro",
     "edited": "Editado",
+    "clear": "Limpar",
     "delete": "Eliminar",
     "edit": "Editar",
     "close": "Fechar"
@@ -374,6 +375,7 @@
     "familyChats": "Conversas familiares",
     "privateMessages": "Mensagens privadas",
     "newMessage": "Nova mensagem",
+    "searchChats": "Pesquisar conversas",
     "previewPhoto": "Fotografia ou vídeo",
     "previewEmpty": "Ainda não há mensagens",
     "unsupportedEncryption": "Esta mensagem usa um formato não suportado",

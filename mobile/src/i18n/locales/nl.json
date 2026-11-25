@@ -19,6 +19,7 @@
     "appName": "Famlin",
     "error": "Fout",
     "edited": "Bewerkt",
+    "clear": "Wissen",
     "delete": "Verwijderen",
     "edit": "Bewerken",
     "close": "Sluiten"
@@ -374,6 +375,7 @@
     "familyChats": "Familiegesprekken",
     "privateMessages": "Privéberichten",
     "newMessage": "Nieuw bericht",
+    "searchChats": "Gesprekken zoeken",
     "previewPhoto": "Foto of video",
     "previewEmpty": "Nog geen berichten",
     "unsupportedEncryption": "Dit bericht gebruikt een niet-ondersteund formaat",

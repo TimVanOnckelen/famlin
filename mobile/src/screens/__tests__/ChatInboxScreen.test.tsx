@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react-native'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fetchChatConversations } from '@famlin/api-client'
 
@@ -101,6 +101,37 @@ it('renders family chats first, then private messages, newest-first within each 
 
   await fireEvent.press(screen.getByLabelText('chat.newMessage'))
   expect(mockNavigate).toHaveBeenCalledWith('DmMemberPicker')
+})
+
+it('filters chats as the user types and removes empty section headers', async () => {
+  jest.mocked(fetchChatConversations).mockResolvedValue({
+    items: [
+      conversation('family', 'FAMILY', '2026-11-23T17:00:00.000Z', 'Foo Bar'),
+      conversation('private', 'PRIVATE', '2026-11-24T18:00:00.000Z', 'Ana'),
+    ],
+  })
+  await renderScreen()
+
+  const search = await screen.findByLabelText('chat.searchChats')
+  await screen.findAllByTestId('chat-conversation-row')
+  expect(search.props.clearButtonMode).toBe('while-editing')
+  fireEvent.changeText(search, 'bAr')
+
+  await waitFor(() =>
+    expect(screen.getAllByTestId('chat-conversation-row').map((row) => row.props.accessibilityLabel)).toEqual([
+      'Foo Bar',
+    ])
+  )
+  expect(screen.getByTestId('chat-family-section')).toBeTruthy()
+  expect(screen.queryByTestId('chat-private-section')).toBeNull()
+
+  fireEvent.changeText(search, 'missing')
+
+  await waitFor(() => {
+    expect(screen.queryByTestId('chat-family-section')).toBeNull()
+    expect(screen.queryByTestId('chat-private-section')).toBeNull()
+    expect(screen.getByText('search.emptyTitle')).toBeTruthy()
+  })
 })
 
 it('shows localized loading and error states without a secondary family source', async () => {

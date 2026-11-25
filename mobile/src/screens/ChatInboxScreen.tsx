@@ -1,5 +1,14 @@
-import React from 'react'
-import { ActivityIndicator, SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useState } from 'react'
+import {
+  ActivityIndicator,
+  Platform,
+  SectionList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useQuery } from '@tanstack/react-query'
@@ -24,11 +33,13 @@ export function ChatInboxScreen() {
   const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const userId = useAuthStore((state) => state.user?.id)
+  const [search, setSearch] = useState('')
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: chatConversationsQueryKey(),
     queryFn: fetchChatConversations,
   })
-  const sections = chatConversationSections(data?.items ?? [])
+  const sections = chatConversationSections(data?.items ?? [], userId, search)
+  const hasSearch = search.trim().length > 0
 
   function openConversation(conversation: ChatConversation) {
     if (conversation.kind === 'FAMILY' && conversation.group) {
@@ -57,6 +68,31 @@ export function ChatInboxScreen() {
           </View>
         }
       />
+
+      <View style={styles.searchRow}>
+        <Icon name="search" size={17} color={colors.textMuted} />
+        <TextInput
+          accessibilityLabel={t('chat.searchChats')}
+          style={styles.searchInput}
+          value={search}
+          onChangeText={setSearch}
+          placeholder={t('chat.searchChats')}
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {Platform.OS === 'android' && search.length > 0 ? (
+          <TouchableOpacity
+            style={styles.clearSearch}
+            onPress={() => setSearch('')}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.clear')}
+          >
+            <Icon name="x" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
       {isLoading ? (
         <View style={styles.loading}>
@@ -118,8 +154,10 @@ export function ChatInboxScreen() {
           }}
           ListEmptyComponent={
             <EmptyState
-              title={t(isError ? 'chat.inboxError' : 'chat.inboxEmptyTitle')}
-              subtitle={isError ? t('chat.inboxErrorSubtitle') : t('chat.inboxEmptySubtitle')}
+              title={t(isError ? 'chat.inboxError' : hasSearch ? 'search.emptyTitle' : 'chat.inboxEmptyTitle')}
+              subtitle={t(
+                isError ? 'chat.inboxErrorSubtitle' : hasSearch ? 'search.emptySubtitle' : 'chat.inboxEmptySubtitle'
+              )}
               centerSubtitle
             />
           }
@@ -140,6 +178,25 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    margin: 16,
+    marginBottom: 0,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  searchInput: { flex: 1, height: 44, color: colors.textBody, fontFamily: 'Nunito_400Regular', fontSize: 15 },
+  clearSearch: {
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
