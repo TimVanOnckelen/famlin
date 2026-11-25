@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet } from 'react-native'
+import { Platform, StyleSheet } from 'react-native'
 import { render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { sendChatConversationMessage, sendChatMessage } from '@famlin/api-client'
@@ -174,5 +174,7 @@ it('keeps the empty state upright in the inverted family chat list', async () =>
 
   const emptyTitle = await screen.findByText('chat.emptyTitle')
   const emptyStateStyle = StyleSheet.flatten(emptyTitle.parent?.props.style)
-  expect(emptyStateStyle.transform).toContainEqual({ scaleY: -1 })
+  expect(emptyStateStyle.transform).toEqual(
+    Platform.OS === 'android' ? [{ scaleX: -1 }, { scaleY: -1 }] : [{ scaleY: -1 }]
+  )
 })

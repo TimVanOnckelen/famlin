@@ -465,7 +465,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   invertedEmptyState: {
-    transform: [{ scaleY: -1 }],
+    // Match VirtualizedList's platform-specific inverted transform.
+    transform: Platform.select({
+      android: [{ scaleX: -1 }, { scaleY: -1 }],
+      default: [{ scaleY: -1 }],
+    }),
   },
   loadingMore: {
     marginVertical: 10,

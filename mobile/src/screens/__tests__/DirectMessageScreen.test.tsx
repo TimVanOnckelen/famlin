@@ -1,5 +1,5 @@
 import React from 'react'
-import { Alert, StyleSheet } from 'react-native'
+import { Alert, Platform, StyleSheet } from 'react-native'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -258,7 +258,9 @@ it('keeps the empty state upright in the inverted message list', async () => {
 
   const emptyTitle = await screen.findByText('chat.emptyTitle')
   const emptyStateStyle = StyleSheet.flatten(emptyTitle.parent?.props.style)
-  expect(emptyStateStyle.transform).toContainEqual({ scaleY: -1 })
+  expect(emptyStateStyle.transform).toEqual(
+    Platform.OS === 'android' ? [{ scaleX: -1 }, { scaleY: -1 }] : [{ scaleY: -1 }]
+  )
 })
 
 it('renders a localized unavailable state for stale conversation access', async () => {
