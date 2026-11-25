@@ -24,8 +24,8 @@ jest.mock('@/components/EmptyState', () => {
   const React = require('react')
   const { Text, View } = require('react-native')
   return {
-    EmptyState: ({ title, containerStyle }: { title: string; containerStyle?: unknown }) =>
-      React.createElement(View, { style: containerStyle }, React.createElement(Text, null, title)),
+    EmptyState: ({ title, style }: { title: string; style?: unknown }) =>
+      React.createElement(View, { style }, React.createElement(Text, null, title)),
   }
 })
 jest.mock('react-native-gesture-handler', () => ({

@@ -214,12 +214,7 @@ export function ChatScreen() {
               isFetchingNextPage ? <ActivityIndicator style={styles.loadingMore} color={colors.primary} /> : undefined
             }
             ListEmptyComponent={
-              <EmptyState
-                title={t('chat.emptyTitle')}
-                subtitle={t('chat.emptySubtitle')}
-                centerSubtitle
-                containerStyle={styles.invertedEmptyState}
-              />
+              <EmptyState title={t('chat.emptyTitle')} subtitle={t('chat.emptySubtitle')} centerSubtitle />
             }
           />
         )}
@@ -463,13 +458,6 @@ const styles = StyleSheet.create({
     padding: 14,
     paddingBottom: 10,
     flexGrow: 1,
-  },
-  invertedEmptyState: {
-    // Match VirtualizedList's platform-specific inverted transform.
-    transform: Platform.select({
-      android: [{ scaleX: -1 }, { scaleY: -1 }],
-      default: [{ scaleY: -1 }],
-    }),
   },
   loadingMore: {
     marginVertical: 10,
