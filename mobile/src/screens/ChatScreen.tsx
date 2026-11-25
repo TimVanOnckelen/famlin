@@ -176,9 +176,10 @@ export function ChatScreen() {
       </View>
 
       <KeyboardAvoidingView
+        testID="chat-keyboard-avoider"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={0}
       >
         {isLoading || (modern && !conversationId) ? (
           <View style={styles.initialLoading}>

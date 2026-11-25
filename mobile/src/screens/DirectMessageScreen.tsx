@@ -148,7 +148,7 @@ export function DirectMessageScreen() {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={0}
       >
         {conversationsQuery.isLoading || query.isLoading ? (
           <View style={styles.loading}>

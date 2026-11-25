@@ -15,6 +15,14 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }))
+jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
+  const React = require('react')
+  const { View } = require('react-native')
+  return {
+    __esModule: true,
+    default: ({ children, ...props }: { children: React.ReactNode }) => React.createElement(View, props, children),
+  }
+})
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 jest.mock('@/components/Avatar', () => ({ Avatar: () => null }))
@@ -177,4 +185,18 @@ it('keeps the empty state upright in the inverted family chat list', async () =>
   expect(emptyStateStyle.transform).toEqual(
     Platform.OS === 'android' ? [{ scaleX: -1 }, { scaleY: -1 }] : [{ scaleY: -1 }]
   )
+})
+
+it('leaves Android keyboard resizing to the window in family chat', async () => {
+  const originalOS = Platform.OS
+  Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' })
+
+  try {
+    await renderScreen()
+    const keyboardView = screen.getByTestId('chat-keyboard-avoider')
+    expect(keyboardView.props.behavior).toBe('height')
+    expect(keyboardView.props.keyboardVerticalOffset).toBe(0)
+  } finally {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: originalOS })
+  }
 })
