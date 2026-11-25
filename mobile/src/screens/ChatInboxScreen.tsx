@@ -40,15 +40,23 @@ export function ChatInboxScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScreenHeader title={t('chat.inboxTitle')} onBack={() => navigation.goBack()} centered />
-      <TouchableOpacity
-        style={styles.newMessage}
-        onPress={() => navigation.navigate('DmMemberPicker')}
-        accessibilityRole="button"
-        accessibilityLabel={t('chat.newMessage')}
-      >
-        <Icon name="edit" size={18} color={colors.white} />
-      </TouchableOpacity>
+      <ScreenHeader
+        title={t('chat.inboxTitle')}
+        onBack={() => navigation.goBack()}
+        centered
+        right={
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.newMessage}
+              onPress={() => navigation.navigate('DmMemberPicker')}
+              accessibilityRole="button"
+              accessibilityLabel={t('chat.newMessage')}
+            >
+              <Icon name="edit" size={18} color={colors.white} />
+            </TouchableOpacity>
+          </View>
+        }
+      />
 
       {isLoading ? (
         <View style={styles.loading}>
@@ -123,11 +131,11 @@ export function ChatInboxScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  headerRight: {
+    width: 90,
+    alignItems: 'flex-end',
+  },
   newMessage: {
-    position: 'absolute',
-    zIndex: 2,
-    top: 16,
-    right: 18,
     width: 36,
     height: 36,
     borderRadius: 18,
