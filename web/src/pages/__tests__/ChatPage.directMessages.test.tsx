@@ -193,7 +193,7 @@ beforeEach(() => {
   })
 })
 
-it('orders family chats first and selects the newest family without rewriting the URL', async () => {
+it('orders family chats first without selecting a conversation', async () => {
   vi.mocked(fetchChatConversations).mockResolvedValue({
     items: [
       {
@@ -253,7 +253,8 @@ it('orders family chats first and selects the newest family without rewriting th
       .getAllByRole('button')
       .map((button) => button.textContent)
   ).toEqual([expect.stringContaining('Emma'), expect.stringContaining('Sophie')])
-  await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('family-new', { cursor: undefined }))
+  expect(screen.getByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
+  expect(fetchChatConversationMessages).not.toHaveBeenCalled()
   expect(screen.getByTestId('location')).toHaveTextContent('/chat')
   expect(fetchChatMessages).not.toHaveBeenCalled()
 })
@@ -272,7 +273,7 @@ it('opens the chat tab without serializing the click event', async () => {
   expect(screen.getByTestId('location')).not.toHaveTextContent('conversation=')
 })
 
-it('falls back to the newest private conversation and prompts to start a conversation for an empty inbox', async () => {
+it('keeps the newest private conversation unselected and prompts to start from an empty inbox', async () => {
   vi.mocked(fetchChatConversations)
     .mockResolvedValueOnce({
       items: [
@@ -303,9 +304,12 @@ it('falls back to the newest private conversation and prompts to start a convers
     .mockResolvedValueOnce({ items: [] })
 
   const first = renderPage()
-  expect(await screen.findByRole('heading', { name: 'Emma' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'No conversation selected.' })).toBeInTheDocument()
+  const inbox = await screen.findByRole('complementary', { name: 'Chats' })
+  expect(within(inbox).getByRole('button', { name: /Emma/ })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Family chats' })).not.toBeInTheDocument()
   expect(screen.getByTestId('location')).toHaveTextContent('/chat')
-  await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('private-new', { cursor: undefined }))
+  expect(fetchChatConversationMessages).not.toHaveBeenCalled()
   first.unmount()
 
   vi.clearAllMocks()
@@ -321,6 +325,28 @@ it('falls back to the newest private conversation and prompts to start a convers
   expect(screen.getByRole('button', { name: 'New message' })).toBeInTheDocument()
   expect(fetchChatConversationMessages).not.toHaveBeenCalled()
   expect(markChatConversationRead).not.toHaveBeenCalled()
+})
+
+it('hides direct messages when only family chats exist', async () => {
+  vi.mocked(fetchChatConversations).mockResolvedValue({
+    items: [
+      {
+        id: 'family-1',
+        kind: 'FAMILY',
+        group: { id: 'group-1', name: 'De Vries family' },
+        participants: [{ id: 'user-1', name: 'Grandpa John', avatarUrl: null }],
+        lastMessage: null,
+        unreadCount: 0,
+        updatedAt: '2026-11-22T10:00:00Z',
+      },
+    ],
+  })
+
+  renderPage()
+
+  expect(await screen.findByRole('heading', { name: 'Family chats' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Direct messages' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /De Vries family/ })).toBeInTheDocument()
 })
 
 it('shows a neutral detail state while the inbox loads or fails', async () => {
@@ -367,14 +393,13 @@ it('opens a selected conversation with browser history and marks only it read', 
   })
   renderPage()
 
-  await waitFor(() => expect(markChatConversationRead).toHaveBeenCalledWith('family-1'))
-  const inbox = screen.getByRole('complementary', { name: 'Chats' })
+  const inbox = await screen.findByRole('complementary', { name: 'Chats' })
   await userEvent.click(await within(inbox).findByRole('button', { name: /Sophie/ }))
   expect(screen.getByTestId('location')).toHaveTextContent('/chat?conversation=private-1')
   expect(await screen.findByRole('heading', { name: 'Sophie' })).toBeInTheDocument()
   expect(screen.getAllByText('See you Sunday')).not.toHaveLength(0)
   await waitFor(() => expect(markChatConversationRead).toHaveBeenCalledWith('private-1'))
-  expect(markChatConversationRead).toHaveBeenCalledWith('family-1')
+  expect(markChatConversationRead).toHaveBeenCalledTimes(1)
   await waitFor(() => expect(screen.queryByLabelText('2 unread messages')).not.toBeInTheDocument())
   expect(screen.getByRole('button', { name: 'Back to inbox' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Delete message' })).not.toBeInTheDocument()
@@ -853,16 +878,16 @@ it('polls only the active conversation while the document is visible', async () 
   try {
     renderPage()
     await waitFor(() => expect(screen.getByRole('button', { name: /Sophie/ })).toBeInTheDocument())
-    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('family-1', { cursor: undefined }))
+    expect(fetchChatConversationMessages).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: /Sophie/ }))
     await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledWith('private-1', { cursor: undefined }))
 
-    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledTimes(3), { timeout: 7000 })
+    await waitFor(() => expect(fetchChatConversationMessages).toHaveBeenCalledTimes(2), { timeout: 7000 })
 
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
     document.dispatchEvent(new Event('visibilitychange'))
     await new Promise((resolve) => setTimeout(resolve, 6500))
-    expect(fetchChatConversationMessages).toHaveBeenCalledTimes(3)
+    expect(fetchChatConversationMessages).toHaveBeenCalledTimes(2)
     expect(fetchChatConversationMessages).toHaveBeenLastCalledWith('private-1', { cursor: undefined })
   } finally {
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
