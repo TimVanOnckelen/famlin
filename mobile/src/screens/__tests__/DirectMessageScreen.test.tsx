@@ -1,5 +1,5 @@
 import React from 'react'
-import { Alert } from 'react-native'
+import { Alert, StyleSheet } from 'react-native'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -197,6 +197,9 @@ it('swipes to quote a private message and sends the reply id', async () => {
   await renderScreen()
 
   expect(await screen.findByText('Original text')).toBeTruthy()
+  const quoteTextStyle = StyleSheet.flatten(screen.getByTestId('chat-reply-quote-text').props.style)
+  expect(quoteTextStyle.flex).toBeUndefined()
+  expect(quoteTextStyle.flexShrink).toBe(1)
   await act(async () => {
     mockPanUpdate?.({ translationX: 40 })
     mockPanEnd?.()

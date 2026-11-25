@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, waitFor } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
+import { render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { sendChatConversationMessage, sendChatMessage } from '@famlin/api-client'
 
@@ -21,7 +22,17 @@ jest.mock('@/components/MediaThumbnail', () => ({ MediaThumbnail: () => null }))
 jest.mock('@/components/ReactorStack', () => ({ ReactorStack: () => null }))
 jest.mock('@/components/EmptyState', () => ({ EmptyState: () => null }))
 jest.mock('react-native-gesture-handler', () => ({
-  Gesture: { Pan: jest.fn() },
+  Gesture: {
+    Pan: () => {
+      const gesture = {
+        activeOffsetX: () => gesture,
+        failOffsetY: () => gesture,
+        onUpdate: () => gesture,
+        onEnd: () => gesture,
+      }
+      return gesture
+    },
+  },
   GestureDetector: ({ children }: { children: React.ReactNode }) => children,
 }))
 jest.mock('react-native-reanimated', () => {
@@ -111,4 +122,40 @@ it('keeps old-server family chat on the legacy route contract', async () => {
     replyToMessageId: undefined,
   })
   expect(sendChatConversationMessage).not.toHaveBeenCalled()
+})
+
+it('sizes a reply bubble from the intrinsic width of its quote', async () => {
+  mockSupport = 'supported'
+  mockUseChatConversationMessages.mockReturnValue({
+    query: { isLoading: false, isFetchingNextPage: false },
+    items: [
+      {
+        id: 'reply',
+        authorId: 'me',
+        author: { id: 'me', name: 'Me', avatarUrl: null },
+        kind: 'USER',
+        content: 'Ok!',
+        attachmentUrl: null,
+        refPostId: null,
+        readBy: [],
+        replyTo: {
+          id: 'original',
+          authorId: 'dad',
+          authorName: 'Dad',
+          kind: 'USER',
+          content: 'This is a much longer quoted message',
+          attachmentUrl: null,
+        },
+        createdAt: '2026-11-25T16:00:00.000Z',
+      },
+    ],
+    onEndReached: jest.fn(),
+    unavailable: false,
+  })
+
+  await renderScreen()
+
+  const quoteTextStyle = StyleSheet.flatten((await screen.findByTestId('chat-reply-quote-text')).props.style)
+  expect(quoteTextStyle.flex).toBeUndefined()
+  expect(quoteTextStyle.flexShrink).toBe(1)
 })

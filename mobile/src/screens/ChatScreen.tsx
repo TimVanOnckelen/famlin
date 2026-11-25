@@ -352,7 +352,7 @@ function ChatMessageRow({
                     onPress={() => onPressReplyQuote(message.replyTo!.id)}
                   >
                     <View style={[styles.replyQuoteBar, isOwn ? styles.replyQuoteBarOwn : styles.replyQuoteBarOther]} />
-                    <View style={styles.replyQuoteTextWrap}>
+                    <View style={styles.replyQuoteTextWrap} testID="chat-reply-quote-text">
                       <Text
                         style={[
                           styles.replyQuoteAuthor,
@@ -570,7 +570,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   replyQuoteTextWrap: {
-    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   replyQuoteAuthor: {
     fontFamily: 'Nunito_700Bold',

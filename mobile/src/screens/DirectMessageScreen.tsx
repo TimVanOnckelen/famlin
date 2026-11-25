@@ -291,7 +291,7 @@ function DirectMessageRow({
                     onPress={() => onPressReplyQuote(message.replyTo!.id)}
                   >
                     <View style={[styles.replyQuoteBar, isOwn ? styles.replyQuoteBarOwn : styles.replyQuoteBarOther]} />
-                    <View style={styles.replyQuoteTextWrap}>
+                    <View style={styles.replyQuoteTextWrap} testID="chat-reply-quote-text">
                       <Text
                         style={[
                           styles.replyQuoteAuthor,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   replyQuoteBar: { width: 3, borderRadius: 2, marginRight: 6 },
   replyQuoteBarOwn: { backgroundColor: colors.white },
   replyQuoteBarOther: { backgroundColor: colors.primary },
-  replyQuoteTextWrap: { flex: 1 },
+  replyQuoteTextWrap: { minWidth: 0, flexShrink: 1 },
   replyQuoteAuthor: { fontFamily: 'Nunito_700Bold', fontSize: 12 },
   replyQuoteAuthorOwn: { color: colors.white },
   replyQuoteAuthorOther: { color: colors.primary },
