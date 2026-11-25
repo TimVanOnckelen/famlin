@@ -251,6 +251,16 @@ it('shows unsupported encrypted content as a privacy-safe placeholder', async ()
   expect(screen.queryByText('message-future')).toBeNull()
 })
 
+it('keeps the empty state upright in the inverted message list', async () => {
+  jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
+  jest.mocked(fetchChatConversationMessages).mockResolvedValue({ items: [], nextCursor: null })
+  await renderScreen()
+
+  const emptyTitle = await screen.findByText('chat.emptyTitle')
+  const emptyStateStyle = StyleSheet.flatten(emptyTitle.parent?.props.style)
+  expect(emptyStateStyle.transform).toContainEqual({ scaleY: -1 })
+})
+
 it('renders a localized unavailable state for stale conversation access', async () => {
   jest.mocked(fetchChatConversations).mockResolvedValue({ items: [] })
   await renderScreen()

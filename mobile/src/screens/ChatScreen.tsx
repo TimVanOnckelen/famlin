@@ -214,7 +214,12 @@ export function ChatScreen() {
               isFetchingNextPage ? <ActivityIndicator style={styles.loadingMore} color={colors.primary} /> : undefined
             }
             ListEmptyComponent={
-              <EmptyState title={t('chat.emptyTitle')} subtitle={t('chat.emptySubtitle')} centerSubtitle />
+              <EmptyState
+                title={t('chat.emptyTitle')}
+                subtitle={t('chat.emptySubtitle')}
+                centerSubtitle
+                containerStyle={styles.invertedEmptyState}
+              />
             }
           />
         )}
@@ -458,6 +463,9 @@ const styles = StyleSheet.create({
     padding: 14,
     paddingBottom: 10,
     flexGrow: 1,
+  },
+  invertedEmptyState: {
+    transform: [{ scaleY: -1 }],
   },
   loadingMore: {
     marginVertical: 10,

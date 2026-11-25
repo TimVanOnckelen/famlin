@@ -20,7 +20,14 @@ jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 jest.mock('@/components/Avatar', () => ({ Avatar: () => null }))
 jest.mock('@/components/MediaThumbnail', () => ({ MediaThumbnail: () => null }))
 jest.mock('@/components/ReactorStack', () => ({ ReactorStack: () => null }))
-jest.mock('@/components/EmptyState', () => ({ EmptyState: () => null }))
+jest.mock('@/components/EmptyState', () => {
+  const React = require('react')
+  const { Text, View } = require('react-native')
+  return {
+    EmptyState: ({ title, containerStyle }: { title: string; containerStyle?: unknown }) =>
+      React.createElement(View, { style: containerStyle }, React.createElement(Text, null, title)),
+  }
+})
 jest.mock('react-native-gesture-handler', () => ({
   Gesture: {
     Pan: () => {
@@ -158,4 +165,14 @@ it('sizes a reply bubble from the intrinsic width of its quote', async () => {
   const quoteTextStyle = StyleSheet.flatten((await screen.findByTestId('chat-reply-quote-text')).props.style)
   expect(quoteTextStyle.flex).toBeUndefined()
   expect(quoteTextStyle.flexShrink).toBe(1)
+})
+
+it('keeps the empty state upright in the inverted family chat list', async () => {
+  mockSupport = 'supported'
+
+  await renderScreen()
+
+  const emptyTitle = await screen.findByText('chat.emptyTitle')
+  const emptyStateStyle = StyleSheet.flatten(emptyTitle.parent?.props.style)
+  expect(emptyStateStyle.transform).toContainEqual({ scaleY: -1 })
 })

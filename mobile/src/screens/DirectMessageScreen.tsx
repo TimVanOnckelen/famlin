@@ -188,7 +188,12 @@ export function DirectMessageScreen() {
               ) : undefined
             }
             ListEmptyComponent={
-              <EmptyState title={t('chat.emptyTitle')} subtitle={t('chat.emptySubtitle')} centerSubtitle />
+              <EmptyState
+                title={t('chat.emptyTitle')}
+                subtitle={t('chat.emptySubtitle')}
+                centerSubtitle
+                containerStyle={styles.invertedEmptyState}
+              />
             }
           />
         )}
@@ -359,6 +364,7 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, color: colors.textTitle, fontFamily: 'Nunito_700Bold', fontSize: 17 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 16, gap: 10, flexGrow: 1 },
+  invertedEmptyState: { transform: [{ scaleY: -1 }] },
   loadingMore: { marginVertical: 10 },
   messageRow: { position: 'relative', maxWidth: '82%', gap: 3 },
   replyIconWrapper: {
