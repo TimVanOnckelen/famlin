@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
     color: colors.textBody,
     fontFamily: 'Nunito_400Regular',
     fontSize: 15,
+    lineHeight: 20,
   },
   send: {
     width: 38,
