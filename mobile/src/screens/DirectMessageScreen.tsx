@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -50,6 +50,7 @@ export function DirectMessageScreen() {
   const { conversationId } = useRoute<any>().params as { conversationId: string }
   const queryClient = useQueryClient()
   const userId = useAuthStore((state) => state.user?.id)
+  const insets = useSafeAreaInsets()
   const [replyTarget, setReplyTarget] = useState<ChatConversationMessage | null>(null)
   const flatListRef = useRef<FlatList<ChatConversationMessage>>(null)
   const conversationsQuery = useQuery({
@@ -134,7 +135,7 @@ export function DirectMessageScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView testID="direct-message-screen" style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()} accessibilityLabel={t('common.back')}>
           <Icon name="arrow-left" size={20} color={colors.primary} />
@@ -148,7 +149,7 @@ export function DirectMessageScreen() {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -insets.bottom : 0}
       >
         {conversationsQuery.isLoading || query.isLoading ? (
           <View style={styles.loading}>
@@ -156,6 +157,8 @@ export function DirectMessageScreen() {
           </View>
         ) : (
           <FlatList
+            testID="direct-message-list"
+            style={styles.flex}
             ref={flatListRef}
             data={items as ChatConversationMessage[]}
             inverted

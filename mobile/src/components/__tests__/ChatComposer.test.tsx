@@ -5,6 +5,9 @@ import { render } from '@testing-library/react-native'
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
+}))
 jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 jest.mock('@/components/MediaThumbnail', () => ({ MediaThumbnail: () => null }))
 jest.mock('@/components/UploadProgressOverlay', () => ({ UploadProgressOverlay: () => null }))
@@ -25,8 +28,9 @@ jest.mock('@/hooks/useChatMessageComposer', () => ({
 import { ChatComposer } from '../ChatComposer'
 
 it('keeps multiline input metrics stable on iOS', async () => {
-  const { getByLabelText } = await render(<ChatComposer send={jest.fn()} />)
+  const { getByLabelText, getByTestId } = await render(<ChatComposer send={jest.fn()} />)
 
   const style = StyleSheet.flatten(getByLabelText('chat.placeholder').props.style)
   expect(style.lineHeight).toBe(20)
+  expect(StyleSheet.flatten(getByTestId('chat-composer-input').props.style).paddingBottom).toBe(34)
 })

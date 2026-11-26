@@ -14,6 +14,7 @@ jest.mock('@react-navigation/native', () => ({
 }))
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
 }))
 jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
   const React = require('react')
@@ -122,6 +123,14 @@ it('uses the generalized family conversation contract on capable servers', async
   await mockComposerSend!({ content: 'hello' })
   expect(sendChatConversationMessage).toHaveBeenCalledWith('conversation-1', { content: 'hello' })
   expect(sendChatMessage).not.toHaveBeenCalled()
+})
+
+it('keeps the modern composer at the bottom for a short feed', async () => {
+  mockSupport = 'supported'
+  await renderScreen()
+
+  const listStyle = StyleSheet.flatten((await screen.findByTestId('family-chat-list')).props.style)
+  expect(listStyle.flex).toBe(1)
 })
 
 it('keeps old-server family chat on the legacy route contract', async () => {

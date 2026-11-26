@@ -1,6 +1,7 @@
 import React from 'react'
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { SendChatMessageBody } from '@famlin/api-client'
 
 import { colors } from '@/constants/colors'
@@ -11,6 +12,7 @@ import { useChatMessageComposer } from '@/hooks/useChatMessageComposer'
 
 export function ChatComposer({ send }: { send: (body: SendChatMessageBody) => Promise<unknown> }) {
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const composer = useChatMessageComposer({ send })
 
   return (
@@ -32,7 +34,10 @@ export function ChatComposer({ send }: { send: (body: SendChatMessageBody) => Pr
           </View>
         </View>
       )}
-      <View style={styles.inputContainer}>
+      <View
+        testID="chat-composer-input"
+        style={[styles.inputContainer, { paddingBottom: Math.max(10, insets.bottom) }]}
+      >
         <TouchableOpacity
           style={styles.attach}
           onPress={composer.pickAttachment}

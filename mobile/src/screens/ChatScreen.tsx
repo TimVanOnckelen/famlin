@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -54,6 +54,7 @@ export function ChatScreen() {
   const { groupId, groupName: routeGroupName } = route.params as { groupId: string; groupName?: string }
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
+  const insets = useSafeAreaInsets()
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null)
   const flatListRef = useRef<FlatList<ChatMessage>>(null)
   const directMessagesSupport = useServerFeatureSupport('directMessages')
@@ -179,7 +180,7 @@ export function ChatScreen() {
         testID="chat-keyboard-avoider"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
-        keyboardVerticalOffset={0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -insets.bottom : 0}
       >
         {isLoading || (modern && !conversationId) ? (
           <View style={styles.initialLoading}>
@@ -187,6 +188,8 @@ export function ChatScreen() {
           </View>
         ) : (
           <FlatList
+            testID="family-chat-list"
+            style={styles.flex}
             ref={flatListRef}
             data={messages}
             inverted

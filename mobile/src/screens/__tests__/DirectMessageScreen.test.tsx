@@ -26,9 +26,14 @@ jest.mock('@react-navigation/native', () => ({
     React.useEffect(effect, [effect])
   },
 }))
-jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
-}))
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react')
+  const { View } = require('react-native')
+  return {
+    SafeAreaView: ({ children, ...props }: { children: React.ReactNode }) => React.createElement(View, props, children),
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
+  }
+})
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 jest.mock('@/components/Avatar', () => ({ Avatar: () => null }))
@@ -140,6 +145,16 @@ beforeEach(() => {
   jest.spyOn(Alert, 'alert').mockImplementation(() => {})
 })
 afterEach(() => jest.restoreAllMocks())
+
+it('keeps the composer at the bottom for a short conversation', async () => {
+  jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
+  jest.mocked(fetchChatConversationMessages).mockResolvedValue({ items: [], nextCursor: null })
+  await renderScreen()
+
+  const listStyle = StyleSheet.flatten((await screen.findByTestId('direct-message-list')).props.style)
+  expect(listStyle.flex).toBe(1)
+  expect(screen.getByTestId('direct-message-screen').props.edges).toEqual(['top', 'left', 'right'])
+})
 
 it('opens a video attachment with its authenticated original URL', async () => {
   jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
