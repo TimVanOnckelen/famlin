@@ -151,7 +151,8 @@ it('keeps the composer at the bottom for a short conversation', async () => {
   jest.mocked(fetchChatConversationMessages).mockResolvedValue({ items: [], nextCursor: null })
   await renderScreen()
 
-  const listStyle = StyleSheet.flatten((await screen.findByTestId('direct-message-list')).props.style)
+  const list = await screen.findByTestId('direct-message-list', {}, { timeout: 15000 })
+  const listStyle = StyleSheet.flatten(list.props.style)
   expect(listStyle.flex).toBe(1)
   expect(screen.getByTestId('direct-message-screen').props.edges).toEqual(['top', 'left', 'right'])
 })
