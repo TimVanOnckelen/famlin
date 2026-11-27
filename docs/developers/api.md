@@ -139,13 +139,13 @@ curl -s -H "Authorization: Bearer $FAMLIN_TOKEN" \
   "$FAMLIN_URL/api/chat/conversations/$CONVERSATION_ID/messages?take=30"
 ```
 
-Call `POST /api/chat/conversations/{id}/read` after displaying the latest page, and poll `/api/chat/conversations/unread` for the aggregate and per-conversation badge. An upload claimed by a direct message is scoped to that conversation. `Upload.chatConversationId` is authoritative; the stored participant ids are only audit/compatibility data and never grant media access after the pair loses its shared-family boundary.
+Call `POST /api/chat/conversations/{id}/read` after displaying the latest page, and poll `/api/chat/conversations/unread` for the aggregate and per-conversation badge. Direct-message uploads follow the same live shared-family authorization as the conversation.
 
 ### Conversation response compatibility
 
-Generalized messages carry open `encryption` and nullable `encryptedPayload` fields so a future server/client pair can negotiate a different payload format without changing route identity. Today's servers write plaintext (`encryption: "none"`) and no payload (`encryptedPayload: null`), and the send route accepts no encryption input. This is **not** a shipped end-to-end-encryption feature.
+Generalized messages carry `encryption` and nullable `encryptedPayload` fields for future formats. Current servers write `encryption: "none"` and do not accept encryption input; this is **not** an end-to-end-encryption feature.
 
-Client compatibility is strict: only `none` is supported. If a client sees another marker, it must show a generic unsupported-message placeholder and must not use `content`, `attachmentUrl`, or `encryptedPayload` to infer a preview. The inbox uses the same rule for `lastMessage`.
+Clients support only `none`. For any other marker, render a generic unsupported-message placeholder instead of inferring text or media content, including in inbox previews.
 
 The old-server path is additive: do not probe generalized conversation routes blindly. `directMessages` appears only on supporting servers; otherwise use the existing family inbox and `/api/chat/groups/...` endpoints. Their `ChatMessage` response schema and behavior remain the compatibility contract for installed clients.
 
@@ -241,7 +241,7 @@ curl -s -H "Authorization: Bearer $FAMLIN_TOKEN" -o latest.jpg "$FAMLIN_URL$ASSE
 
 ## Using the TypeScript client
 
-The repo's [`packages/api-client`](https://github.com/TimVanOnckelen/famlin/tree/main/packages/api-client) (`@famlin/api-client`) is the typed axios layer the official web and mobile apps use — auth, posts, comments, uploads, chat conversations, react-query cache helpers, and the `fetchApiTokens`/`createApiToken`/`revokeApiToken` functions behind the token UI. Direct-message calls are annotated with `directMessages` and guarded through `serverFeatureSupport()`/`serverSupports()`. The client also exports `isChatEncryptionSupported()`, which recognizes only `none` and lets both apps fail safe on future markers. It isn't published to npm, but if you're building in TypeScript you can depend on it from a checkout (`file:` dependency) and get the full typed surface instead of hand-rolling requests.
+The repo's [`packages/api-client`](https://github.com/TimVanOnckelen/famlin/tree/main/packages/api-client) (`@famlin/api-client`) is the typed axios layer the official web and mobile apps use — auth, posts, comments, uploads, chat conversations, react-query cache helpers, and the `fetchApiTokens`/`createApiToken`/`revokeApiToken` functions behind the token UI. It gates direct-message calls by server capability and handles unknown message formats safely. It isn't published to npm, but if you're building in TypeScript you can depend on it from a checkout (`file:` dependency) and get the full typed surface instead of hand-rolling requests.
 
 ## Keeping the reference up to date
 

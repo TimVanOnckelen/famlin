@@ -10,7 +10,7 @@ Chat is the quick-conversation area of Famlin. It holds two different kinds of c
 - **Direct messages** are private, one-to-one conversations.
 - **Family chats** are shared conversations inside one family, when that family's administrator has enabled chat.
 
-Open **Chat** from the app navigation. The inbox separates direct messages from family chats; choose **New message** to start a direct conversation. You can only choose someone with whom you currently share at least one family. The conversation does not move into either family, so it can continue only while that shared-family relationship exists.
+Open **Chat** from the app navigation. The inbox separates direct messages from family chats; on mobile, **Search chats** filters both lists by conversation name. Choose **New message**, then search for the person you want to contact. You can only choose someone with whom you currently share at least one family. The conversation does not move into either family, so it can continue only while that shared-family relationship exists.
 
 Both conversation types support text, a photo or video attachment, and replies to a particular message. New messages and unread counts refresh while Chat is active, and the Chat badge is checked periodically elsewhere in the app.
 
@@ -23,10 +23,10 @@ You can permanently delete a message you sent. In a family chat an administrator
 
 ## Privacy follows family membership
 
-Sharing a family with someone is a live requirement, not a one-time invitation. If either person stops belonging to the last family you share, the direct conversation and its participant-only attachments stop appearing for both of you. They return if you share a family again. The apps deliberately show unavailable or missing conversations rather than revealing whether an inaccessible conversation exists.
+Sharing a family with someone is a live requirement, not a one-time invitation. If either person stops belonging to the last family you share, the direct conversation and its attachments become unavailable to both of you. Access returns if you share a family again. Unavailable conversations are shown as missing rather than exposing whether they exist.
 
 Family-chat and direct-message pushes use the same **Chat messages** switch in **Profile → Notifications**. Direct-message copy is deliberately generic — it identifies a direct message without putting the message text in a lock-screen notification.
 
 ## Current limits
 
-Direct messages are currently one-to-one; there are no group DMs or edits. Family chat and direct messages are stored by your Famlin server and included in the relevant member or server export. Messages and attachments are not advertised as end-to-end encrypted. A connected server that does not offer direct messages simply keeps the original family-chat experience.
+Direct messages are currently one-to-one; there are no group DMs or edits. Famlin stores both kinds of chat on your server. Member exports include only conversations they can currently access; server backups include the stored chat data and attachments. Messages and attachments are not end-to-end encrypted. A connected server that does not offer direct messages keeps the original family-chat experience.
