@@ -6,7 +6,7 @@ import * as Device from 'expo-device'
 import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client'
 import { getPushToken, setPushToken } from '@/utils/storage'
 import { useAuthStore } from '@/stores/authStore'
-import { navigate } from '@/navigation/navigationRef'
+import { navigateWhenReady } from '@/navigation/navigationRef'
 import { getOrCreateDeviceInstallId, syncDeviceDiagnostics } from '@/utils/deviceDiagnostics'
 import { isIosFreeTeamBuild } from '@/utils/iosFreeTeam'
 
@@ -44,11 +44,18 @@ export function usePushNotifications() {
 
     function handleResponse(response: Notifications.NotificationResponse) {
       const data = response.notification.request.content.data as
-        { relatedPostId?: string | null; relatedStoryId?: string | null } | undefined
-      if (data?.relatedPostId) {
-        navigate('PostDetail', { postId: data.relatedPostId })
+        | {
+            relatedPostId?: string | null
+            relatedStoryId?: string | null
+            relatedChatConversationId?: string | null
+          }
+        | undefined
+      if (data?.relatedChatConversationId) {
+        navigateWhenReady('DirectMessage', { conversationId: data.relatedChatConversationId })
+      } else if (data?.relatedPostId) {
+        navigateWhenReady('PostDetail', { postId: data.relatedPostId })
       } else if (data?.relatedStoryId) {
-        navigate('StoryViewer', { storyId: data.relatedStoryId })
+        navigateWhenReady('StoryViewer', { storyId: data.relatedStoryId })
       }
     }
 

@@ -16,6 +16,9 @@ import { WikiPageScreen } from '@/screens/WikiPageScreen'
 import { WikiEditorScreen } from '@/screens/WikiEditorScreen'
 import { ChatScreen } from '@/screens/ChatScreen'
 import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen'
+import { ChatInboxScreen } from '@/screens/ChatInboxScreen'
+import { DmMemberPickerScreen } from '@/screens/DmMemberPickerScreen'
+import { DirectMessageScreen } from '@/screens/DirectMessageScreen'
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen'
 import { StoryViewerScreen } from '@/screens/StoryViewerScreen'
 import { StoryComposerScreen } from '@/screens/StoryComposerScreen'
@@ -141,6 +144,30 @@ export function renderAuthenticatedScreens(Stack: Stack) {
       <Stack.Screen
         name="ChatGroupPicker"
         component={ChatGroupPickerScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="ChatInbox"
+        component={ChatInboxScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="DmMemberPicker"
+        component={DmMemberPickerScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="DirectMessage"
+        component={DirectMessageScreen}
         options={{
           presentation: 'card',
           animation: 'slide_from_right',

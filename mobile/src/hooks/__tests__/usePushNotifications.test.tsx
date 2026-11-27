@@ -22,7 +22,7 @@ jest.mock('@/utils/deviceDiagnostics', () => ({
 }))
 
 jest.mock('@/navigation/navigationRef', () => ({
-  navigate: jest.fn(),
+  navigateWhenReady: jest.fn(),
 }))
 
 jest.mock('@/utils/iosFreeTeam', () => ({
@@ -33,7 +33,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useAuthStore } from '@/stores/authStore'
 import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client'
 import { setPushToken } from '@/utils/storage'
-import { navigate } from '@/navigation/navigationRef'
+import { navigateWhenReady } from '@/navigation/navigationRef'
 import { getOrCreateDeviceInstallId, syncDeviceDiagnostics } from '@/utils/deviceDiagnostics'
 import * as Notifications from 'expo-notifications'
 import { isIosFreeTeamBuild } from '@/utils/iosFreeTeam'
@@ -119,6 +119,44 @@ describe('usePushNotifications', () => {
 
     renderHook(() => usePushNotifications())
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('StoryViewer', { storyId: 'story-9' }))
+    await waitFor(() => expect(navigateWhenReady).toHaveBeenCalledWith('StoryViewer', { storyId: 'story-9' }))
+  })
+
+  it('opens a direct conversation for cold-start notification responses after routing is ready', async () => {
+    ;(useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ user: null }))
+    ;(Notifications.getLastNotificationResponseAsync as jest.Mock).mockResolvedValueOnce({
+      notification: {
+        request: { content: { data: { relatedChatConversationId: 'conversation-4' } } },
+      },
+    })
+
+    renderHook(() => usePushNotifications())
+
+    await waitFor(() =>
+      expect(navigateWhenReady).toHaveBeenCalledWith('DirectMessage', {
+        conversationId: 'conversation-4',
+      })
+    )
+  })
+
+  it('opens warm-start direct-message notifications through the readiness-aware route', async () => {
+    ;(useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ user: { id: 'u1' } }))
+    let listener!: (response: any) => void
+    ;(Notifications.addNotificationResponseReceivedListener as jest.Mock).mockImplementationOnce((next) => {
+      listener = next
+      return { remove: jest.fn() }
+    })
+    ;(fetchNotificationConfig as jest.Mock).mockResolvedValue({ pushEnabled: false })
+
+    await renderHook(() => usePushNotifications())
+    listener({
+      notification: {
+        request: { content: { data: { relatedChatConversationId: 'conversation-9' } } },
+      },
+    })
+
+    expect(navigateWhenReady).toHaveBeenCalledWith('DirectMessage', {
+      conversationId: 'conversation-9',
+    })
   })
 })

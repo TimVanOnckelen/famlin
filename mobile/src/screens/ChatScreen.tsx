@@ -5,17 +5,14 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import * as ImagePicker from 'expo-image-picker'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated'
 
@@ -25,26 +22,24 @@ import { Avatar } from '@/components/Avatar'
 import { MediaThumbnail } from '@/components/MediaThumbnail'
 import { ReactorStack } from '@/components/ReactorStack'
 import { EmptyState } from '@/components/EmptyState'
+import { ChatComposer } from '@/components/ChatComposer'
 import {
   ChatMessage,
-  fetchChatMessages,
+  chatConversationsQueryKey,
+  chatMessagesQueryKey,
+  fetchChatConversations,
   sendChatMessage,
-  markChatRead,
+  sendChatConversationMessage,
   fetchGroups,
   fetchGroupMembers,
+  isChatEncryptionSupported,
 } from '@famlin/api-client'
 import { getUploadUrl } from '@/api/uploads'
 import { formatRelativeDate } from '@/i18n/utils'
 import { isVideoUrl } from '@/utils/media'
 import { useAuthStore } from '@/stores/authStore'
-import { useCursorPagination } from '@/hooks/useCursorPagination'
-import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
-import { UploadProgressOverlay } from '@/components/UploadProgressOverlay'
-
-// V1 is polling, not a socket — chat should still feel snappier than the
-// 30s notification poll, so refetch more often, but only while this screen
-// is actually focused (see the useFocusEffect below).
-const CHAT_POLL_INTERVAL_MS = 6000
+import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { useChatConversationMessages } from '@/hooks/useChatConversationMessages'
 
 // WhatsApp-style swipe-to-reply tuning: cap how far the bubble can be dragged
 // and how far past that cap counts as a deliberate "reply" gesture rather
@@ -59,10 +54,11 @@ export function ChatScreen() {
   const { groupId, groupName: routeGroupName } = route.params as { groupId: string; groupName?: string }
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
-  const [text, setText] = useState('')
-  const [attachment, setAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null)
+  const insets = useSafeAreaInsets()
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null)
   const flatListRef = useRef<FlatList<ChatMessage>>(null)
+  const directMessagesSupport = useServerFeatureSupport('directMessages')
+  const modern = directMessagesSupport === 'supported'
 
   // Group name/member count reuse whatever the app already fetches for group
   // info rather than rebuilding it: the groups list (same ['groups'] cache
@@ -81,78 +77,39 @@ export function ChatScreen() {
     queryFn: () => fetchGroupMembers(groupId),
   })
 
-  const {
-    query,
-    items: messages,
-    onEndReached,
-  } = useCursorPagination<ChatMessage>({
-    queryKey: ['chatMessages', groupId],
-    queryFn: (cursor) => fetchChatMessages(groupId, cursor),
+  const conversationsQuery = useQuery({
+    queryKey: chatConversationsQueryKey(),
+    queryFn: fetchChatConversations,
+    enabled: modern,
   })
-  const { isLoading, isFetchingNextPage, refetch } = query
+  const conversationId = conversationsQuery.data?.items.find(
+    (conversation) => conversation.kind === 'FAMILY' && conversation.group?.id === groupId
+  )?.id
+  const messagesScope = modern
+    ? ({ modern: true, conversationId: conversationId ?? '' } as const)
+    : ({ modern: false, groupId } as const)
+  const { query, items: feedMessages, onEndReached, unavailable } = useChatConversationMessages(messagesScope)
+  const messages = feedMessages as ChatMessage[]
+  const { isLoading, isFetchingNextPage } = query
 
-  useFocusEffect(
-    React.useCallback(() => {
-      const interval = setInterval(() => {
-        refetch()
-      }, CHAT_POLL_INTERVAL_MS)
-      return () => clearInterval(interval)
-    }, [refetch])
-  )
-
-  // Clears the unread badge whenever the chat is opened.
-  useFocusEffect(
-    React.useCallback(() => {
-      markChatRead(groupId)
-        .then(() => queryClient.invalidateQueries({ queryKey: ['chat-unread'] }))
-        .catch(() => {})
-    }, [groupId, queryClient])
-  )
-
-  const sendMutation = useMutation({
-    mutationFn: (body: { content?: string; attachmentUrl?: string; replyToMessageId?: string }) =>
-      sendChatMessage(groupId, body),
-    onSuccess: () => {
-      setText('')
-      setAttachment(null)
-      setReplyTarget(null)
-      queryClient.invalidateQueries({ queryKey: ['chatMessages', groupId] })
-    },
-    onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('chat.sendFailed'))
-    },
-  })
-
-  // Same pick-then-upload flow as PostDetailScreen's comment attachment.
-  const {
-    pick: pickAttachmentMedia,
-    uploading: attachmentUploading,
-    progress: attachmentUploadProgress,
-  } = usePickAndUploadMedia({
-    pickerOptions: {
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      quality: 0.8,
-    },
-    onPicked: ([asset]) => setAttachment({ uri: asset.uri, isVideo: asset.isVideo }),
-    onError: () => setAttachment(null),
-  })
-
-  async function pickAttachment() {
-    const result = await pickAttachmentMedia()
-    if (!result) return
-    const [asset] = result.assets
-    const [uploadedUrl] = result.urls
-    setAttachment({ uri: asset.uri, isVideo: asset.isVideo, uploadedUrl })
-  }
-
-  function handleSend() {
-    const trimmed = text.trim()
-    if (!trimmed && !attachment?.uploadedUrl) return
-    sendMutation.mutate({
-      content: trimmed || undefined,
-      attachmentUrl: attachment?.uploadedUrl,
+  async function send(body: { content?: string; attachmentUrl?: string }) {
+    if (modern && conversationId && !replyTarget) {
+      const created = await sendChatConversationMessage(conversationId, body)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: chatMessagesQueryKey(conversationId) }),
+        queryClient.invalidateQueries({ queryKey: chatConversationsQueryKey() }),
+      ])
+      return created
+    }
+    const created = await sendChatMessage(groupId, {
+      ...body,
       replyToMessageId: replyTarget?.id,
     })
+    setReplyTarget(null)
+    await queryClient.invalidateQueries({
+      queryKey: modern ? chatMessagesQueryKey(conversationId ?? '') : ['chatMessages', groupId],
+    })
+    return created
   }
 
   function handleSwipeToReply(message: ChatMessage) {
@@ -185,7 +142,18 @@ export function ChatScreen() {
   // item in the list is it. Keep this simple, no per-message tracking.
   const latestOwnMessageId = useMemo(() => messages.find((m) => m.authorId === user?.id)?.id, [messages, user?.id])
 
-  const canSend = (!!text.trim() || !!attachment?.uploadedUrl) && !attachmentUploading
+  const stale = unavailable || (modern && conversationsQuery.isFetched && !conversationId)
+  if (stale) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <EmptyState
+          title={t('chat.conversationUnavailable')}
+          subtitle={t('chat.conversationUnavailableSubtitle')}
+          centerSubtitle
+        />
+      </SafeAreaView>
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -209,19 +177,23 @@ export function ChatScreen() {
       </View>
 
       <KeyboardAvoidingView
+        testID="chat-keyboard-avoider"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -insets.bottom : 0}
       >
-        {isLoading ? (
+        {isLoading || (modern && !conversationId) ? (
           <View style={styles.initialLoading}>
             <ActivityIndicator color={colors.primary} />
           </View>
         ) : (
           <FlatList
+            testID="family-chat-list"
+            style={styles.flex}
             ref={flatListRef}
             data={messages}
             inverted
+            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             onEndReached={onEndReached}
@@ -231,7 +203,7 @@ export function ChatScreen() {
               <ChatMessageRow
                 message={item}
                 isOwn={item.authorId === user?.id}
-                showReadReceipt={item.id === latestOwnMessageId && item.readBy.length > 0}
+                showReadReceipt={item.id === latestOwnMessageId && (item.readBy?.length ?? 0) > 0}
                 onPressAttachment={() =>
                   navigation.navigate('ImageViewer', { urls: [getUploadUrl(item.attachmentUrl!)], initialIndex: 0 })
                 }
@@ -275,49 +247,7 @@ export function ChatScreen() {
           </View>
         )}
 
-        {attachment && (
-          <View style={styles.attachmentPreviewRow}>
-            <View style={styles.attachmentPreview}>
-              <MediaThumbnail url={attachment.uri} style={styles.attachmentPreviewImage} />
-              {attachmentUploading && (
-                <UploadProgressOverlay progress={attachmentUploadProgress} style={styles.attachmentUploadingOverlay} />
-              )}
-              <TouchableOpacity
-                style={styles.attachmentRemoveButton}
-                onPress={() => setAttachment(null)}
-                accessibilityLabel={t('postDetail.removeAttachment')}
-              >
-                <Icon name="x" size={12} color={colors.white} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.inputContainer}>
-          <TouchableOpacity
-            style={styles.attachButton}
-            onPress={pickAttachment}
-            disabled={attachmentUploading}
-            accessibilityLabel={t('chat.addAttachment')}
-          >
-            <Icon name="image" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            placeholder={t('chat.placeholder')}
-            placeholderTextColor={colors.textMuted}
-            value={text}
-            onChangeText={setText}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
-            onPress={handleSend}
-            disabled={!canSend || sendMutation.isPending}
-          >
-            <Icon name="send" size={18} color={colors.white} />
-          </TouchableOpacity>
-        </View>
+        <ChatComposer send={send} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -341,6 +271,8 @@ function ChatMessageRow({
   onPressReplyQuote: (messageId: string) => void
 }) {
   const { t } = useTranslation()
+  const encryption = (message as ChatMessage & { encryption?: string }).encryption
+  const encryptionSupported = !encryption || isChatEncryptionSupported(encryption)
 
   // Hooks must run unconditionally on every render — the SYSTEM_MILESTONE
   // early return below happens before any of this is used, but `kind` is
@@ -383,7 +315,7 @@ function ChatMessageRow({
         : Math.max(0, Math.min(MAX_SWIPE_TRANSLATION, event.translationX))
     })
     .onEnd(() => {
-      if (Math.abs(translateX.value) > MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO) {
+      if (encryptionSupported && Math.abs(translateX.value) > MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO) {
         runOnJS(onSwipeToReply)(message)
       }
       translateX.value = withSpring(0)
@@ -411,50 +343,61 @@ function ChatMessageRow({
         >
           {!isOwn && <Text style={styles.messageAuthor}>{message.author.name}</Text>}
           <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-            {!!message.replyTo && (
-              <TouchableOpacity
-                style={styles.replyQuote}
-                activeOpacity={0.7}
-                onPress={() => onPressReplyQuote(message.replyTo!.id)}
-              >
-                <View style={[styles.replyQuoteBar, isOwn ? styles.replyQuoteBarOwn : styles.replyQuoteBarOther]} />
-                <View style={styles.replyQuoteTextWrap}>
-                  <Text
-                    style={[styles.replyQuoteAuthor, isOwn ? styles.replyQuoteAuthorOwn : styles.replyQuoteAuthorOther]}
-                    numberOfLines={1}
-                  >
-                    {message.replyTo.authorName}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.replyQuoteSnippet,
-                      isOwn ? styles.replyQuoteSnippetOwn : styles.replyQuoteSnippetOther,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {message.replyTo.content ??
-                      (message.replyTo.attachmentUrl ? replyToAttachmentLabel(message.replyTo.attachmentUrl) : '')}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            {!!message.attachmentUrl && (
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={onPressAttachment}
-                accessibilityLabel={t('postDetail.viewAttachment')}
-              >
-                <MediaThumbnail
-                  url={getUploadUrl(message.attachmentUrl, 'thumbnail')}
-                  fallbackUrl={getUploadUrl(message.attachmentUrl)}
-                  style={styles.attachmentImage}
-                />
-              </TouchableOpacity>
-            )}
-            {!!message.content && (
+            {!encryptionSupported ? (
               <Text style={[styles.messageText, isOwn ? styles.messageTextOwn : styles.messageTextOther]}>
-                {message.content}
+                {t('chat.unsupportedEncryption')}
               </Text>
+            ) : (
+              <>
+                {!!message.replyTo && (
+                  <TouchableOpacity
+                    style={styles.replyQuote}
+                    activeOpacity={0.7}
+                    onPress={() => onPressReplyQuote(message.replyTo!.id)}
+                  >
+                    <View style={[styles.replyQuoteBar, isOwn ? styles.replyQuoteBarOwn : styles.replyQuoteBarOther]} />
+                    <View style={styles.replyQuoteTextWrap} testID="chat-reply-quote-text">
+                      <Text
+                        style={[
+                          styles.replyQuoteAuthor,
+                          isOwn ? styles.replyQuoteAuthorOwn : styles.replyQuoteAuthorOther,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {message.replyTo.authorName}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.replyQuoteSnippet,
+                          isOwn ? styles.replyQuoteSnippetOwn : styles.replyQuoteSnippetOther,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {message.replyTo.content ??
+                          (message.replyTo.attachmentUrl ? replyToAttachmentLabel(message.replyTo.attachmentUrl) : '')}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+                {!!message.attachmentUrl && (
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={onPressAttachment}
+                    accessibilityLabel={t('postDetail.viewAttachment')}
+                  >
+                    <MediaThumbnail
+                      url={getUploadUrl(message.attachmentUrl, 'thumbnail')}
+                      fallbackUrl={getUploadUrl(message.attachmentUrl)}
+                      style={styles.attachmentImage}
+                    />
+                  </TouchableOpacity>
+                )}
+                {!!message.content && (
+                  <Text style={[styles.messageText, isOwn ? styles.messageTextOwn : styles.messageTextOther]}>
+                    {message.content}
+                  </Text>
+                )}
+              </>
             )}
           </View>
           <Text style={[styles.messageTime, isOwn ? styles.messageTimeOwn : styles.messageTimeOther]}>
@@ -631,7 +574,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   replyQuoteTextWrap: {
-    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   replyQuoteAuthor: {
     fontFamily: 'Nunito_700Bold',
