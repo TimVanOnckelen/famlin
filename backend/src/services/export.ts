@@ -92,6 +92,8 @@ export async function buildExportArchive(
     comments,
     reactions,
     favorites,
+    chatConversations,
+    chatConversationParticipants,
     chatMessages,
     chatReads,
     mediaAlbumLinks,
@@ -142,6 +144,8 @@ export async function buildExportArchive(
     prisma.comment.findMany(),
     prisma.like.findMany(),
     prisma.favorite.findMany(),
+    prisma.chatConversation.findMany(),
+    prisma.chatConversationParticipant.findMany(),
     prisma.chatMessage.findMany(),
     prisma.chatRead.findMany(),
     prisma.mediaAlbumLink.findMany(),
@@ -216,6 +220,8 @@ export async function buildExportArchive(
       comments: comments.length,
       reactions: reactions.length,
       favorites: favorites.length,
+      chatConversations: chatConversations.length,
+      chatConversationParticipants: chatConversationParticipants.length,
       chatMessages: chatMessages.length,
       chatReads: chatReads.length,
       mediaAlbumLinks: mediaAlbumLinks.length,
@@ -241,6 +247,10 @@ export async function buildExportArchive(
   archive.append(JSON.stringify(comments, null, 2), { name: 'data/comments.json' })
   archive.append(JSON.stringify(reactions, null, 2), { name: 'data/reactions.json' })
   archive.append(JSON.stringify(favorites, null, 2), { name: 'data/favorites.json' })
+  archive.append(JSON.stringify(chatConversations, null, 2), { name: 'data/chat-conversations.json' })
+  archive.append(JSON.stringify(chatConversationParticipants, null, 2), {
+    name: 'data/chat-conversation-participants.json',
+  })
   archive.append(JSON.stringify(chatMessages, null, 2), { name: 'data/chat-messages.json' })
   archive.append(JSON.stringify(chatReads, null, 2), { name: 'data/chat-reads.json' })
   archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' })

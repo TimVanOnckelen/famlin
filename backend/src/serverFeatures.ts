@@ -38,6 +38,7 @@ export const SERVER_FEATURES = [
   'paginatedComments', // unreleased after 0.8.7 — GET /api/posts/:postId/comments?take=&cursor= (issue #130)
   'configurableLimits', // unreleased after 0.8.7 — server-info `limits` (issue #436)
   'calendarFeed', // unreleased after 0.8.7 — /api/calendar iCal feed + /api/auth/me/calendar-feed (issue #499)
+  'directMessages', // unreleased after 0.10.0 — private one-to-one /api/chat conversations
 ] as const
 
 export type ServerFeature = (typeof SERVER_FEATURES)[number]

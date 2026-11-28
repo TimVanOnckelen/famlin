@@ -74,9 +74,12 @@ export interface DomainEvents {
     reactionType: string
   }
   'chat.created': {
+    conversationId: string
+    conversationKind: string
     messageId: string
-    groupId: string
-    groupName: string
+    groupId: string | null
+    groupName: string | null
+    participantIds: string[]
     authorId: string
     authorName: string
     content: string | null

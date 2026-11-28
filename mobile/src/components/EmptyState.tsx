@@ -12,13 +12,14 @@ interface EmptyStateProps {
   /** Style overrides for the one call site whose empty state deviates from
    * the common look (NotificationsScreen's smaller, single-line, muted
    * variant) — everyone else can leave these unset. */
+  style?: StyleProp<ViewStyle>
   containerStyle?: StyleProp<ViewStyle>
   titleStyle?: StyleProp<TextStyle>
 }
 
-export function EmptyState({ title, subtitle, centerSubtitle, containerStyle, titleStyle }: EmptyStateProps) {
+export function EmptyState({ title, subtitle, centerSubtitle, style, containerStyle, titleStyle }: EmptyStateProps) {
   return (
-    <View style={[styles.emptyState, containerStyle]}>
+    <View style={[styles.emptyState, style, containerStyle]}>
       <Text style={[styles.emptyStateText, titleStyle]}>{title}</Text>
       {!!subtitle && (
         <Text style={[styles.emptyStateSubtext, centerSubtitle && styles.emptyStateSubtextCentered]}>{subtitle}</Text>

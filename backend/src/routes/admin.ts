@@ -79,6 +79,7 @@ import adminBackupRoutes from './adminBackups.js'
 import adminMediaMirrorRoutes, { isMirroredElsewhere } from './adminMediaMirror.js'
 import { getIntegrationsOverview, invalidateIntegrationChecks } from '../services/integrations.js'
 import { getPublicOrigin } from '../utils/publicOrigin.js'
+import { deleteUserWithPrivateConversations } from '../services/accountDeletion.js'
 
 // Safety cap on GET /media/:provider/people's combined (own + cross-owner
 // discovered) catalog size — this feeds an admin "map this person" picker,
@@ -433,7 +434,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       // leave the disk too.
       await deleteStoriesWithMedia({ authorId: id })
       const giftLists = await giftListsOfUser(id)
-      await prisma.user.delete({ where: { id } })
+      await deleteUserWithPrivateConversations(id)
       invalidateSessionCache(id)
       await afterGiftListParticipantsRemoved(giftLists, request.user!.id)
       return { success: true }
@@ -495,14 +496,18 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const body = createGroupBodySchema.parse(request.body)
     if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return
 
-    const group = await prisma.group.create({
-      data: {
-        name: body.name,
-        description: body.description,
-        allowedPostTypes: body.allowedPostTypes ?? [],
-        chitchatEnabled: body.chitchatEnabled ?? false,
-        storiesEnabled: body.storiesEnabled ?? true,
-      },
+    const group = await prisma.$transaction(async (tx) => {
+      const created = await tx.group.create({
+        data: {
+          name: body.name,
+          description: body.description,
+          allowedPostTypes: body.allowedPostTypes ?? [],
+          chitchatEnabled: body.chitchatEnabled ?? false,
+          storiesEnabled: body.storiesEnabled ?? true,
+        },
+      })
+      await tx.chatConversation.create({ data: { kind: 'FAMILY', groupId: created.id } })
+      return created
     })
 
     return group
@@ -516,16 +521,25 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return
 
     try {
-      const group = await prisma.group.update({
-        where: { id },
-        data: {
-          name: body.name,
-          description: body.description,
-          // Omitted = unchanged; an explicit [] resets to "all allowed".
-          ...(body.allowedPostTypes ? { allowedPostTypes: body.allowedPostTypes } : {}),
-          ...(body.chitchatEnabled !== undefined ? { chitchatEnabled: body.chitchatEnabled } : {}),
-          ...(body.storiesEnabled !== undefined ? { storiesEnabled: body.storiesEnabled } : {}),
-        },
+      const group = await prisma.$transaction(async (tx) => {
+        const updated = await tx.group.update({
+          where: { id },
+          data: {
+            name: body.name,
+            description: body.description,
+            // Omitted = unchanged; an explicit [] resets to "all allowed".
+            ...(body.allowedPostTypes ? { allowedPostTypes: body.allowedPostTypes } : {}),
+            ...(body.chitchatEnabled !== undefined ? { chitchatEnabled: body.chitchatEnabled } : {}),
+            ...(body.storiesEnabled !== undefined ? { storiesEnabled: body.storiesEnabled } : {}),
+          },
+        })
+        if (body.chitchatEnabled === true) {
+          await tx.chatConversation.createMany({
+            data: [{ kind: 'FAMILY', groupId: id }],
+            skipDuplicates: true,
+          })
+        }
+        return updated
       })
       return group
     } catch (err) {
@@ -1094,14 +1108,15 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     // A log row joins its post's `content`, which makes this a third content
     // READING surface alongside /content/posts and /content/comments — so it
-    // takes the same circle narrowing they do. Rows with no post (a chat or
-    // on-this-day send) carry nothing circle-scoped and stay visible, so the
-    // operational view an admin needs is unaffected.
+    // takes the same circle narrowing they do. DM delivery rows are excluded
+    // entirely; other rows with no post (family chat or on-this-day) carry no
+    // private conversation content.
     const adminCircleIds = await getUserCircleIds(request.user!.id)
 
     const logs = await prisma.pushDeliveryLog.findMany({
       where: {
         ...(postId ? { postId } : {}),
+        notifyType: { not: 'new_direct_message' },
         OR: [{ postId: null }, { post: { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] } }],
       },
       orderBy: { createdAt: 'desc' },

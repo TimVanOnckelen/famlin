@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../app.js'
 import { prisma } from '../db.js'
 import { createUserToken } from '../plugins/auth.js'
+import { randomUUID } from 'crypto'
 
 // DELETE /api/auth/me — the in-app account deletion path App Store guideline
 // 5.1.1(v) requires. Pins that it really is a hard delete (content gone, token
@@ -45,10 +46,34 @@ describe('DELETE /api/auth/me', () => {
 
   it('permanently deletes the account, its content, and its sessions', async () => {
     const user = await createMember('self-delete')
+    const peer = await createMember('self-delete-peer')
     const token = tokenFor(user)
 
     const post = await prisma.post.create({
       data: { content: 'Goodbye', groupId, authorId: user.id },
+    })
+    const conversation = await app.inject({
+      method: 'POST',
+      url: '/api/chat/conversations',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { kind: 'PRIVATE', participantIds: [peer.id] },
+    })
+    const conversationId = conversation.json().id
+    const orphanAssetKey = randomUUID()
+    await prisma.upload.create({
+      data: {
+        assetKey: orphanAssetKey,
+        uploaderId: user.id,
+        bound: true,
+        chatConversationId: conversationId,
+        participantUserIds: [user.id, peer.id].sort(),
+      },
+    })
+    await app.inject({
+      method: 'POST',
+      url: `/api/chat/conversations/${conversationId}/messages`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { content: 'Private history should be deleted too' },
     })
 
     const res = await app.inject({
@@ -63,6 +88,8 @@ describe('DELETE /api/auth/me', () => {
     // Cascades, same as an admin-initiated delete — there is no restore.
     expect(await prisma.post.findUnique({ where: { id: post.id } })).toBeNull()
     expect(await prisma.groupMember.count({ where: { userId: user.id } })).toBe(0)
+    expect(await prisma.chatConversation.findUnique({ where: { id: conversationId } })).toBeNull()
+    expect(await prisma.upload.findUnique({ where: { assetKey: orphanAssetKey } })).toBeNull()
 
     const afterRes = await app.inject({
       method: 'GET',

@@ -196,6 +196,7 @@ export interface User {
     pushOnNewPost: boolean;
     pushOnNewComment: boolean;
     pushOnNewLike: boolean;
+    pushOnChitchat?: boolean;
     pushOnStory?: boolean;
     pushOnGiftList?: boolean;
 }
@@ -287,6 +288,7 @@ export interface Notification {
     type: string;
     relatedPostId?: string | null;
     relatedStoryId?: string | null;
+    relatedChatConversationId?: string | null;
     message: string;
     readAt?: string | null;
     createdAt: string;

@@ -7,16 +7,20 @@ import { excerptText } from './notifications.js'
 
 interface ChatMessageRow {
   id: string
-  groupId: string
+  conversationId: string
+  groupId: string | null
   authorId: string
   author: { id: string; name: string; avatarUrl: string | null }
   kind: string
   content: string | null
   attachmentUrl: string | null
+  encryption: string
+  encryptedPayload: unknown
   refPostId: string | null
   replyToMessageId: string | null
   replyToMessage: {
     id: string
+    conversationId: string
     authorId: string
     author: { id: string; name: string }
     kind: string
@@ -33,6 +37,21 @@ interface ChatUser {
   avatarUrl: string | null
 }
 
+function shapeReplyTo(message: ChatMessageRow) {
+  return message.replyToMessage?.conversationId === message.conversationId
+    ? {
+        id: message.replyToMessage.id,
+        authorId: message.replyToMessage.authorId,
+        authorName: message.replyToMessage.author.name,
+        kind: message.replyToMessage.kind,
+        // Preserve null for attachment-only messages so clients can render
+        // the correct attachment fallback.
+        content: message.replyToMessage.content?.trim() ? excerptText(message.replyToMessage.content) : null,
+        attachmentUrl: message.replyToMessage.attachmentUrl,
+      }
+    : null
+}
+
 export function shapeChatMessage(message: ChatMessageRow, readBy: ChatUser[]) {
   return {
     id: message.id,
@@ -44,24 +63,30 @@ export function shapeChatMessage(message: ChatMessageRow, readBy: ChatUser[]) {
     attachmentUrl: message.attachmentUrl,
     refPostId: message.refPostId,
     replyToMessageId: message.replyToMessageId,
-    replyTo: message.replyToMessage
-      ? {
-          id: message.replyToMessage.id,
-          authorId: message.replyToMessage.authorId,
-          authorName: message.replyToMessage.author.name,
-          kind: message.replyToMessage.kind,
-          // Preserve null (rather than excerptText's '' fallback) for an
-          // attachment-only original message — the api-client contract is
-          // `content: string | null`, and mobile's replyTo.content ??
-          // photoLabel fallback (ChatScreen.tsx) only works if a missing
-          // quote is actually null, not an empty string.
-          content: message.replyToMessage.content?.trim() ? excerptText(message.replyToMessage.content) : null,
-          attachmentUrl: message.replyToMessage.attachmentUrl,
-        }
-      : null,
+    replyTo: shapeReplyTo(message),
     createdAt: message.createdAt,
     editedAt: message.editedAt,
     readBy,
+  }
+}
+
+export function shapeConversationChatMessage(message: ChatMessageRow) {
+  return {
+    id: message.id,
+    conversationId: message.conversationId,
+    groupId: message.groupId,
+    authorId: message.authorId,
+    author: message.author,
+    kind: message.kind,
+    content: message.content,
+    attachmentUrl: message.attachmentUrl,
+    refPostId: message.refPostId,
+    replyToMessageId: message.replyToMessageId,
+    replyTo: shapeReplyTo(message),
+    createdAt: message.createdAt,
+    editedAt: message.editedAt,
+    encryption: message.encryption,
+    encryptedPayload: message.encryptedPayload,
   }
 }
 

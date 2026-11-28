@@ -60,6 +60,14 @@ describe('serverFeatureSupport', () => {
     expect(serverFeatureSupport({ version: '0.8.7' }, 'wiki')).toBe('unsupported')
   })
 
+  it('gates direct messages on an explicit server feature', () => {
+    expect(serverFeatureSupport({ version: '0.10.0', features: ['directMessages'] }, 'directMessages')).toBe(
+      'supported'
+    )
+    expect(serverFeatureSupport({ version: '0.10.0', features: [] }, 'directMessages')).toBe('unsupported')
+    expect(serverFeatureSupport({ version: '0.8.7' }, 'directMessages')).toBe('unsupported')
+  })
+
   it('stays unknown for every id before server-info loads', () => {
     expect(serverFeatureSupport(undefined, 'deviceDiagnostics')).toBe('unknown')
   })

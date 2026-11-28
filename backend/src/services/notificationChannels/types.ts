@@ -16,6 +16,7 @@ export type NotifyType =
   // see pushOnChitchat below (deliberately no email preference, chat is
   // chattier than posts/comments).
   | 'new_chat_message'
+  | 'new_direct_message'
   // A TRIP post check-in (services/postTypes/trip.ts's `checkin` interaction)
   // — push-only, reuses pushOnNewPost (see PUSH_PREF_FIELD in push.ts). Fires
   // instead of new_comment for a check-in comment (Comment.metadata.kind ===
@@ -76,6 +77,7 @@ export interface ChannelSendArgs {
   // Set instead of postId for story notifications — lets the client's
   // notification-tap handler open the story viewer.
   storyId?: string | null
+  chatConversationId?: string | null
   // Set only when an admin triggered this send manually (the "resend push"
   // content-moderation action) — omitted/undefined for every organic,
   // event-triggered send. Only the push channel acts on this (see

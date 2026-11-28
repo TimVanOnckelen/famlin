@@ -2,11 +2,20 @@ import { FastifyInstance } from 'fastify'
 import { prisma } from '../db.js'
 import { updateNotificationBodySchema } from '../types.js'
 import { getT } from '../i18n/index.js'
+import { findAccessibleConversation, visiblePrivateConversationIds } from '../services/chatConversations.js'
 
 export default async function notificationRoutes(fastify: FastifyInstance) {
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request) => {
+    const userId = request.user!.id
+    const visibleConversationIds = await visiblePrivateConversationIds(userId)
     const notifications = await prisma.notification.findMany({
-      where: { userId: request.user!.id },
+      where: {
+        userId,
+        OR: [
+          { type: { not: 'new_direct_message' } },
+          { type: 'new_direct_message', relatedChatConversationId: { in: visibleConversationIds } },
+        ],
+      },
       include: {
         post: {
           select: {
@@ -29,8 +38,17 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
   })
 
   fastify.get('/unread-count', { preHandler: [fastify.authenticate] }, async (request) => {
+    const userId = request.user!.id
+    const visibleConversationIds = await visiblePrivateConversationIds(userId)
     const count = await prisma.notification.count({
-      where: { userId: request.user!.id, readAt: null },
+      where: {
+        userId,
+        readAt: null,
+        OR: [
+          { type: { not: 'new_direct_message' } },
+          { type: 'new_direct_message', relatedChatConversationId: { in: visibleConversationIds } },
+        ],
+      },
     })
 
     return { count }
@@ -43,6 +61,13 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
     const notification = await prisma.notification.findUnique({ where: { id } })
 
     if (!notification || notification.userId !== request.user!.id) {
+      return reply.status(404).send({ error: getT(request)('errors.notificationNotFound') })
+    }
+    if (
+      notification.type === 'new_direct_message' &&
+      (!notification.relatedChatConversationId ||
+        !(await findAccessibleConversation(notification.relatedChatConversationId, request.user!.id)))
+    ) {
       return reply.status(404).send({ error: getT(request)('errors.notificationNotFound') })
     }
 

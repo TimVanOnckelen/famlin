@@ -282,6 +282,8 @@ export interface User {
   pushOnNewPost: boolean
   pushOnNewComment: boolean
   pushOnNewLike: boolean
+  // Family-chat push preference. Missing = older server.
+  pushOnChitchat?: boolean
   // Opt-in push for other members' new stories. Missing = older server.
   pushOnStory?: boolean
   // Push for gift lists (added, draw, recipient's new wishes). Missing = older server.
@@ -408,6 +410,8 @@ export interface Notification {
   // Set instead of relatedPostId for new_story/story_reply/story_reaction.
   // Null again once the story has expired and been deleted.
   relatedStoryId?: string | null
+  // Set for a direct-message notification; null or absent for other types.
+  relatedChatConversationId?: string | null
   message: string
   readAt?: string | null
   createdAt: string

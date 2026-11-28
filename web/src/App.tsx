@@ -292,7 +292,7 @@ function AppRoutes({ user }: { user: User }) {
               user={user}
               onOpenFeed={nav.toFeed}
               onOpenPhotos={nav.toPhotos}
-              onOpenChat={nav.toChat}
+              onOpenChat={nav.toChatConversation}
               onOpenFavorites={nav.toFavorites}
               onOpenWiki={nav.toWiki}
               onOpenProfile={nav.toProfile}

@@ -2076,6 +2076,7 @@ paths:
                   description: An `/uploads/...` path from the upload endpoint.
                 replyToMessageId:
                   type: string
+                  minLength: 1
                   description: |
                     The id of an existing message in this group to reply to.
                     Must belong to the same group; unknown or cross-group ids
@@ -2110,13 +2111,208 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/chat/people:
+    get:
+      operationId: listChatPeople
+      tags: [Chat]
+      summary: List people available for a direct message
+      description: |
+        Returns users who currently share at least one family with the caller.
+        Results exclude the caller, are deduplicated, and are ordered by name.
+      responses:
+        '200':
+          description: Eligible direct-message recipients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/chat/conversations:
+    get:
+      operationId: listChatConversations
+      tags: [Chat]
+      summary: List visible family and private conversations
+      description: |
+        Includes enabled family chats for the caller and private conversations
+        whose participants currently share a family. Newest activity is first.
+      responses:
+        '200':
+          description: Visible conversations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationsPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createPrivateChatConversation
+      tags: [Chat]
+      summary: Create or reuse a private conversation
+      description: |
+        This release supports one-to-one `PRIVATE` conversations only. Repeated
+        or concurrent requests by either participant return the same
+        conversation. The recipient must currently share a family with the
+        caller and cannot be the caller.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, participantIds]
+              properties:
+                kind: { type: string, enum: [PRIVATE] }
+                participantIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 1
+                  items: { type: string }
+      responses:
+        '200':
+          description: The existing or newly created conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/chat/conversations/unread:
+    get:
+      operationId: getConversationUnreadCounts
+      tags: [Chat]
+      summary: Get unread counts for visible conversations
+      responses:
+        '200':
+          description: Per-conversation and total unread counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer }
+                  byConversation:
+                    type: object
+                    additionalProperties: { type: integer }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/chat/conversations/{conversationId}/messages:
+    get:
+      operationId: listConversationMessages
+      tags: [Chat]
+      summary: List messages in a visible conversation
+      description: |
+        Newest first, cursor-paginated. Private conversations require both
+        explicit participation and a currently shared family.
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of conversation-aware messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationMessagesPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createConversationMessage
+      tags: [Chat]
+      summary: Send a conversation message
+      description: |
+        Text, an upload path, or both are required. Private attachments must
+        be fresh uploads owned by the sender and become conversation-scoped
+        atomically with the message. `replyToMessageId` may reference only an
+        existing message in this same conversation. Unknown or cross-conversation
+        ids are rejected with the same 404 response.
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string, maxLength: 2000 }
+                attachmentUrl: { type: string }
+                replyToMessageId:
+                  type: string
+                  minLength: 1
+                  description: The id of an existing message in this conversation.
+      responses:
+        '200':
+          description: The created conversation-aware message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: |
+            The conversation is not accessible, or `replyToMessageId` does not
+            reference a message in this conversation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/chat/conversations/{conversationId}/read:
+    post:
+      operationId: markConversationRead
+      tags: [Chat]
+      summary: Mark one conversation read
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Read position updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/chat/messages/{id}:
     delete:
       operationId: deleteChatMessage
       tags: [Chat]
       summary: Delete a chat message
       description: |
-        Permanent. Only the author (or an admin) can delete.
+        Permanent. Family chat messages may be deleted by the author or an
+        admin. Private messages may be deleted only by their author while the
+        conversation remains accessible; admin status is not a bypass.
       parameters:
         - name: id
           in: path
@@ -5209,7 +5405,7 @@ components:
         pushOnNewLike: { type: boolean }
         pushOnChitchat:
           type: boolean
-          description: Push notifications for new chat messages (email variant not supported).
+          description: Push notifications for family chat and direct messages (email variant not supported).
         pushOnStory:
           type: boolean
           description: |
@@ -5849,6 +6045,87 @@ components:
             Members who have marked the chat read at or after this message.
             Derived read-time from per-user read positions, not a per-message
             receipt list.
+
+    ChatConversation:
+      type: object
+      required: [id, kind, participants, lastMessage, unreadCount, updatedAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [FAMILY, PRIVATE] }
+        group:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            name: { type: string }
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+        lastMessage:
+          nullable: true
+          allOf:
+            - type: object
+              properties:
+                id: { type: string }
+                authorId: { type: string }
+                content: { type: string, nullable: true }
+                hasAttachment: { type: boolean }
+                createdAt: { type: string, format: date-time }
+                encryption: { type: string }
+        unreadCount: { type: integer }
+        updatedAt: { type: string, format: date-time }
+
+    ChatConversationsPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatConversation'
+
+    ChatConversationMessage:
+      type: object
+      properties:
+        id: { type: string }
+        conversationId: { type: string }
+        groupId: { type: string, nullable: true }
+        authorId: { type: string }
+        author:
+          $ref: '#/components/schemas/UserSummary'
+        kind: { type: string }
+        content: { type: string, nullable: true }
+        attachmentUrl: { type: string, nullable: true }
+        refPostId: { type: string, nullable: true }
+        replyToMessageId:
+          type: string
+          nullable: true
+          description: The id of the message this one replies to, if any.
+        replyTo:
+          nullable: true
+          description: A lightweight preview of the same-conversation message being replied to.
+          allOf:
+            - type: object
+              properties:
+                id: { type: string }
+                authorId: { type: string }
+                authorName: { type: string }
+                kind: { type: string }
+                content: { type: string, nullable: true }
+                attachmentUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        editedAt: { type: string, format: date-time, nullable: true }
+        encryption: { type: string }
+        encryptedPayload: {}
+
+    ChatConversationMessagesPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatConversationMessage'
+        nextCursor: { type: string, nullable: true }
 
     ChatMessagesPage:
       type: object

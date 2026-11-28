@@ -11,7 +11,14 @@ import { ProfileScreen } from '@/screens/ProfileScreen'
 import { Icon } from '@/components/Icon'
 import { colors } from '@/constants/colors'
 import { Group } from '@/types'
-import { fetchGroups, fetchChatUnreadCounts } from '@famlin/api-client'
+import {
+  chatUnreadConversationsQueryKey,
+  fetchChatConversationUnreadCounts,
+  fetchChatUnreadCounts,
+  fetchGroups,
+} from '@famlin/api-client'
+import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { chatEntryTarget, chatUnreadTotal } from '@/utils/chatNavigation'
 
 const Tab = createBottomTabNavigator()
 
@@ -46,28 +53,35 @@ export function MainTabs() {
   const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const [activeTab, setActiveTab] = useState('Feed')
+  const directMessagesSupport = useServerFeatureSupport('directMessages')
 
   // Shares the ['groups']/['chat-unread'] cache FeedScreen already populates.
   const { data: groups } = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
-  const { data: chatUnreadCounts } = useQuery({
+  const { data: legacyChatUnreadCounts } = useQuery({
     queryKey: ['chat-unread'],
     queryFn: fetchChatUnreadCounts,
     refetchInterval: 30000,
+    enabled: directMessagesSupport === 'unsupported',
+  })
+  const { data: conversationUnreadCounts } = useQuery({
+    queryKey: chatUnreadConversationsQueryKey(),
+    queryFn: fetchChatConversationUnreadCounts,
+    refetchInterval: 30000,
+    enabled: directMessagesSupport === 'supported',
   })
   const chatGroups = (groups ?? []).filter((g: Group) => g.chitchatEnabled)
-  const chatUnreadTotal = Object.values(chatUnreadCounts ?? {}).reduce((sum, count) => sum + count, 0)
+  const unreadTotal = chatUnreadTotal(directMessagesSupport, conversationUnreadCounts, legacyChatUnreadCounts)
+  const showChat = directMessagesSupport === 'supported' || chatGroups.length > 0
 
   // The chat tab has no screen of its own inside this navigator — Chat/
   // ChatGroupPicker are sibling stack screens (see App.tsx), same precedent
   // as FeedScreen's own openChat(): a single chat-enabled group jumps
   // straight in, more than one goes through the picker.
   function openChat() {
-    if (chatGroups.length === 0) return
-    if (chatGroups.length === 1) {
-      navigation.navigate('Chat', { groupId: chatGroups[0].id, groupName: chatGroups[0].name })
-      return
-    }
-    navigation.navigate('ChatGroupPicker')
+    const target = chatEntryTarget(directMessagesSupport, chatGroups)
+    if (!target) return
+    if (target.route === 'Chat') navigation.navigate(target.route, target.params)
+    else navigation.navigate(target.route)
   }
 
   return (
@@ -105,14 +119,14 @@ export function MainTabs() {
             tabBarLabel: t('tabs.photos'),
           }}
         />
-        {chatGroups.length > 0 && (
+        {showChat && (
           <Tab.Screen
             name="Chat"
             component={NoopScreen}
             options={{
               tabBarIcon: ({ color }) => <ChatIcon color={color} />,
               tabBarLabel: t('tabs.chat'),
-              tabBarBadge: chatUnreadTotal > 0 ? (chatUnreadTotal > 9 ? '9+' : chatUnreadTotal) : undefined,
+              tabBarBadge: unreadTotal > 0 ? (unreadTotal > 9 ? '9+' : unreadTotal) : undefined,
             }}
             listeners={{
               tabPress: (e) => {
