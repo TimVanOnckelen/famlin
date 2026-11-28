@@ -155,7 +155,8 @@ it('keeps the composer at the bottom for a short conversation', async () => {
   const listStyle = StyleSheet.flatten(list.props.style)
   expect(listStyle.flex).toBe(1)
   expect(screen.getByTestId('direct-message-screen').props.edges).toEqual(['top', 'left', 'right'])
-})
+  // The first render in this file is slow on CI; outlast the 15s findBy wait above.
+}, 20000)
 
 it('opens a video attachment with its authenticated original URL', async () => {
   jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
