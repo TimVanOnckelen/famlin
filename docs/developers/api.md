@@ -81,7 +81,7 @@ Media tokens are valid for 7 days, can only read media (they are not a session c
 
 **Rate limits:** 300 requests/minute per IP overall; `POST /api/uploads` is additionally limited to 60 uploads per 10 minutes, login/setup/OIDC/password-change/invite-registration endpoints to 10 attempts per 15 minutes, and the invite-preview endpoint (`GET /api/invites/{token}`) to 30 attempts per 15 minutes. `429` responses include standard `retry-after` headers.
 
-**Pagination:** list endpoints that can grow large ([`GET /api/posts`](./api-reference/list-posts), [`/api/posts/search`](./api-reference/search-posts), [`/api/favorites`](./api-reference/list-favorites)) take `?cursor=` and `?take=` (default 30, max 100) and return:
+**Pagination:** list endpoints that can grow large ([`GET /api/posts`](./api-reference/list-posts), [`/api/posts/search`](./api-reference/search-posts), [`/api/favorites`](./api-reference/list-favorites), and the conversation history routes) take `?cursor=` and `?take=` (default 30, max 100) and return:
 
 ```json
 { "items": [ ... ], "nextCursor": "cmb1..." }
@@ -89,7 +89,9 @@ Media tokens are valid for 7 days, can only read media (they are not a session c
 
 Pass `nextCursor` back as `?cursor=` for the next page; `null` means you've reached the end.
 
-**Authorization model:** every piece of content belongs to exactly one group (family), and you can only see or touch content in groups you are a member of. There is no way to opt out of this per token — a request for a group you're not in is a `403`. Admin-only management endpoints live under `/api/admin` and require an admin account; they're not part of the documented API (see [Architecture](./architecture.md) for the full route map).
+**Authorization model:** family content belongs to one or more family boundaries, and you can only see or touch it through current membership. Private direct-message conversations are the deliberate exception to “one group”: each has exactly two explicit participants, and access additionally requires that pair to share at least one family **at the time of every request**. There is no stored creation-time grant. A private conversation, its history, its read position, and its uploads all return `404` once that shared-family relationship no longer exists; even an admin cannot bypass it. A plain group request you're not a member of is a `403`. Admin-only management endpoints live under `/api/admin` and require an admin account; they're not part of the documented API (see [Architecture](./architecture.md) for the full route map).
+
+**Server capabilities:** a newer client must check `GET /api/auth/server-info`'s `features` array before calling feature-only routes. Direct-message calls are gated by the stable `directMessages` id. On an older server, leave the original family-chat screen and `/api/chat/groups/...` calls in place instead of attempting the conversation routes.
 
 ## Recipe: post a photo update
 
@@ -105,6 +107,47 @@ curl -X POST "$FAMLIN_URL/api/posts" \
   -H "Content-Type: application/json" \
   -d "{\"groupId\": \"cmb1ghi...\", \"content\": \"Beach day ☀️\", \"uploadedAssetUrls\": [\"$URLS\"]}"
 ```
+
+## Recipe: start a direct message
+
+Servers that advertise `directMessages` expose a combined inbox while preserving the legacy family-chat routes. First find an eligible person, then create (or reopen) the canonical pair:
+
+```bash
+PEOPLE=$(curl -s -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  "$FAMLIN_URL/api/chat/people")
+
+# The recipient must currently share at least one family with you.
+RECIPIENT_ID=$(printf '%s' "$PEOPLE" | jq -r '.items[] | select(.name == "Sophie") | .id' | head -1)
+
+CONVERSATION=$(curl -s -X POST "$FAMLIN_URL/api/chat/conversations" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"kind\":\"PRIVATE\",\"participantIds\":[\"$RECIPIENT_ID\"]}")
+CONVERSATION_ID=$(printf '%s' "$CONVERSATION" | jq -r '.id')
+
+# Upload first if you want to send a photo/video, then pass that /uploads/ path.
+curl -s -X POST "$FAMLIN_URL/api/chat/conversations/$CONVERSATION_ID/messages" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Are you joining Sunday lunch?"}'
+```
+
+History is newest-first and cursor-paginated:
+
+```bash
+curl -s -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  "$FAMLIN_URL/api/chat/conversations/$CONVERSATION_ID/messages?take=30"
+```
+
+Call `POST /api/chat/conversations/{id}/read` after displaying the latest page, and poll `/api/chat/conversations/unread` for the aggregate and per-conversation badge. Direct-message uploads follow the same live shared-family authorization as the conversation.
+
+### Conversation response compatibility
+
+Generalized messages carry `encryption` and nullable `encryptedPayload` fields for future formats. Current servers write `encryption: "none"` and do not accept encryption input; this is **not** an end-to-end-encryption feature.
+
+Clients support only `none`. For any other marker, render a generic unsupported-message placeholder instead of inferring text or media content, including in inbox previews.
+
+The old-server path is additive: do not probe generalized conversation routes blindly. `directMessages` appears only on supporting servers; otherwise use the existing family inbox and `/api/chat/groups/...` endpoints. Their `ChatMessage` response schema and behavior remain the compatibility contract for installed clients.
 
 ## Recipe: create a poll and vote on it
 
@@ -198,8 +241,8 @@ curl -s -H "Authorization: Bearer $FAMLIN_TOKEN" -o latest.jpg "$FAMLIN_URL$ASSE
 
 ## Using the TypeScript client
 
-The repo's [`packages/api-client`](https://github.com/TimVanOnckelen/famlin/tree/main/packages/api-client) (`@famlin/api-client`) is the typed axios layer the official web and mobile apps use — auth, posts, comments, uploads, react-query cache helpers, and the `fetchApiTokens`/`createApiToken`/`revokeApiToken` functions behind the token UI. It isn't published to npm, but if you're building in TypeScript you can depend on it from a checkout (`file:` dependency) and get the full typed surface instead of hand-rolling requests.
+The repo's [`packages/api-client`](https://github.com/TimVanOnckelen/famlin/tree/main/packages/api-client) (`@famlin/api-client`) is the typed axios layer the official web and mobile apps use — auth, posts, comments, uploads, chat conversations, react-query cache helpers, and the `fetchApiTokens`/`createApiToken`/`revokeApiToken` functions behind the token UI. It gates direct-message calls by server capability and handles unknown message formats safely. It isn't published to npm, but if you're building in TypeScript you can depend on it from a checkout (`file:` dependency) and get the full typed surface instead of hand-rolling requests.
 
 ## Keeping the reference up to date
 
-The [API reference](./api-reference/famlin-api) is generated from [`docs/openapi/famlin.yaml`](https://github.com/TimVanOnckelen/famlin/blob/main/docs/openapi/famlin.yaml) by [docusaurus-plugin-openapi-docs](https://github.com/PaloAltoNetworks/docusaurus-openapi-docs). After editing the spec, run `npm run gen-api-docs` in `docs/` (the build does this automatically).
+The [API reference](./api-reference/famlin-api) is generated from [`docs/openapi/famlin.yaml`](https://github.com/TimVanOnckelen/famlin/blob/main/docs/openapi/famlin.yaml) by [docusaurus-plugin-openapi-docs](https://github.com/PaloAltoNetworks/docusaurus-openapi-docs). After editing the spec, run `npm run clean-api-docs` followed by `npm run gen-api-docs` in `docs/` (the build does both automatically). Never hand-edit generated reference files.
