@@ -27,6 +27,36 @@ Sharing a family with someone is a live requirement: if either person stops belo
 
 Family-chat and direct-message pushes use the same **Chat messages** switch in **Profile → Notifications**. Direct-message copy is deliberately generic — it identifies a direct message without putting the message text in a lock-screen notification.
 
+## Encrypted private messages
+
+If your server's administrator has turned on encryption, private one-to-one messages sent from the mobile app are end-to-end encrypted: only you and the other person can read them, not the server or its administrator. You don't need to set anything up — the app creates your keys the first time you open a private conversation.
+
+Encryption is off by default. While it is off, every private conversation tells you that the server's administrator, and anyone with access to the server or its backups, can read your messages.
+
+:::warning Lost keys mean lost messages
+
+Nobody can recover encrypted messages for you — not your administrator, and not from a server backup. If you lose your phone without a keychain backup or a recovery code (see [New phone](#new-phone)), your encrypted messages are gone for good.
+
+:::
+
+- A small lock under a message means it is encrypted. **Not encrypted** means it was sent without encryption, for example from the web app (which can't encrypt), or before the other person had opened a private conversation in the app. A banner above the message box tells you whether your next message will be encrypted, and why not if it won't be.
+- Either person can turn encryption off for a conversation from the conversation menu. Both of you then see a note in the conversation, and you can turn it back on the same way.
+- The web app shows encrypted messages as a lock with a note to open the conversation in the app.
+- Encrypted conversations support text and photos; videos can't be sent in them yet.
+
+### New phone
+
+Your keys are saved automatically in your phone's own keychain backup: iCloud Keychain on iPhone, your Google backup on Android. On a new phone signed in to the same Apple or Google account (and on Android, restored from that backup), your old messages are readable again without doing anything.
+
+Moving between an iPhone and an Android phone, or with that backup turned off, you have two other options:
+
+- **Scan from your old phone.** On the new phone, choose **Restore your encrypted messages → Scan from my other phone**, then on the old phone go to **Profile → Encrypted messages → Link a new device** and scan the code.
+- **Recovery code.** Under **Profile → Encrypted messages** you can create a recovery code for extra safety. Keep it somewhere safe, such as a password manager. Nobody, including your administrator, can recover it for you.
+
+If none of these work, choose **Start over**: new messages work right away, and the other person still has your whole conversation.
+
+To check that nobody has swapped the keys, compare the **safety code** with the other person in person (from the conversation menu), or scan each other's code.
+
 ## Current limits
 
-Direct messages are currently one-to-one; there are no group DMs or edits. Famlin stores both kinds of chat on your server. Member exports include only conversations they can currently access; server backups include the stored chat data and attachments. Messages and attachments are not end-to-end encrypted. A connected server that does not offer direct messages keeps the original family-chat experience.
+Direct messages are currently one-to-one; there are no group DMs or edits. Famlin stores both kinds of chat on your server. Member exports include only conversations they can currently access; server backups include the stored chat data and attachments. Family chats, and direct messages sent without encryption, are stored readable on the server; see [Encrypted private messages](#encrypted-private-messages). A connected server that does not offer direct messages keeps the original family-chat experience.

@@ -44,7 +44,18 @@ type ChatPageProps = {
   onLogout: () => void
 }
 
-export function DirectMessagesChatPage(props: ChatPageProps) {
+type DirectMessagesChatPageProps = ChatPageProps & {
+  /** The admin lets the web app offer private messages (default true). */
+  privateMessagesInWeb?: boolean
+  /** The admin turned encryption off for the whole server. */
+  encryptionOffByAdmin?: boolean
+}
+
+export function DirectMessagesChatPage({
+  privateMessagesInWeb = true,
+  encryptionOffByAdmin = false,
+  ...props
+}: DirectMessagesChatPageProps) {
   const { t, i18n } = useTranslation()
   const client = useQueryClient()
   const location = useLocation()
@@ -54,12 +65,19 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
     queryKey: ['chat-conversations'],
     queryFn: fetchChatConversations,
   })
-  const items = conversations.data?.items ?? []
+  const allItems = conversations.data?.items ?? []
+  // Private messages hidden on the web: family chats only, as if the others didn't exist.
+  const items = privateMessagesInWeb ? allItems : allItems.filter((item) => item.kind === 'FAMILY')
   const sortedItems = [...items].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   const family = sortedItems.filter((item) => item.kind === 'FAMILY')
   const direct = sortedItems.filter((item) => item.kind === 'PRIVATE')
   const params = new URLSearchParams(location.search)
-  const requestedConversationId = params.get('conversation')
+  const rawRequestedConversationId = params.get('conversation')
+  // A link to a hidden private conversation quietly falls back to the inbox.
+  const requestedConversationId =
+    !privateMessagesInWeb && allItems.some((item) => item.id === rawRequestedConversationId && item.kind === 'PRIVATE')
+      ? null
+      : rawRequestedConversationId
   const requestedGroupId = params.get('group')
   const hasExplicitSelection = requestedConversationId !== null || requestedGroupId !== null
   const selected = conversations.isSuccess
@@ -139,15 +157,17 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
       <div className="chat-column">
         <div className="chat-page-heading">
           <ScreenHeader title={t('chat.title')} />
-          <button
-            type="button"
-            className="btn btn-primary chat-new-message"
-            aria-label={t('chat.newMessage')}
-            onClick={() => setPickerOpen(true)}
-          >
-            <Icon name="plus" size={18} strokeWidth={2.5} className="chat-new-message-icon" />
-            <span className="chat-new-message-label">{t('chat.newMessage')}</span>
-          </button>
+          {privateMessagesInWeb && (
+            <button
+              type="button"
+              className="btn btn-primary chat-new-message"
+              aria-label={t('chat.newMessage')}
+              onClick={() => setPickerOpen(true)}
+            >
+              <Icon name="plus" size={18} strokeWidth={2.5} className="chat-new-message-icon" />
+              <span className="chat-new-message-label">{t('chat.newMessage')}</span>
+            </button>
+          )}
         </div>
         {conversations.isError && (
           <div className="chat-hint">
@@ -172,7 +192,9 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
                   selectedId={selectedId}
                 />
               )}
-              {direct.length > 0 && (
+              {!privateMessagesInWeb ? (
+                <p className="chat-hint chat-private-in-app">{t('chat.privateInApp')}</p>
+              ) : direct.length > 0 ? (
                 <InboxSection
                   title={t('chat.directMessages')}
                   items={direct}
@@ -181,7 +203,7 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
                   onSelect={selectConversation}
                   selectedId={selectedId}
                 />
-              )}
+              ) : null}
             </aside>
           )}
           {selected ? (
@@ -193,6 +215,7 @@ export function DirectMessagesChatPage(props: ChatPageProps) {
               locale={i18n.language}
               onBack={openInbox}
               user={props.user}
+              encryptionOffByAdmin={encryptionOffByAdmin}
             />
           ) : (
             <ConversationPlaceholder
@@ -400,7 +423,9 @@ function ConversationShell({
   locale,
   onBack,
   user,
+  encryptionOffByAdmin = false,
 }: {
+  encryptionOffByAdmin?: boolean
   conversation: ChatConversation | null
   messages: ChatConversationMessagesPage['items']
   messagesQuery: ReturnType<typeof useInfiniteQuery<ChatConversationMessagesPage>>
@@ -546,6 +571,20 @@ function ConversationShell({
         ) : (
           messages.map((message) => {
             const encrypted = !isChatEncryptionSupported(message.encryption)
+            if (message.kind === 'SYSTEM_ENCRYPTION_DISABLED' || message.kind === 'SYSTEM_ENCRYPTION_ENABLED') {
+              return (
+                <div key={message.id} className="chat-system-message">
+                  <span className="chat-system-pill chat-system-pill-info">
+                    {t(
+                      message.kind === 'SYSTEM_ENCRYPTION_DISABLED'
+                        ? 'chat.encryptionDisabledNotice'
+                        : 'chat.encryptionEnabledNotice',
+                      { name: message.author.name }
+                    )}
+                  </span>
+                </div>
+              )
+            }
             if (message.kind === 'SYSTEM_MILESTONE') {
               return (
                 <div key={message.id} className="chat-system-message">
@@ -566,12 +605,19 @@ function ConversationShell({
                   {!encrypted && message.replyTo && (
                     <blockquote className="chat-reply-quote">
                       <strong>{message.replyTo.authorName}</strong>
-                      <span>{message.replyTo.content ?? t('chat.attachmentPreview')}</span>
+                      <span>
+                        {!isChatEncryptionSupported(message.replyTo.encryption ?? 'none')
+                          ? t('chat.encryptedMessage')
+                          : (message.replyTo.content ?? t('chat.attachmentPreview'))}
+                      </span>
                     </blockquote>
                   )}
                   {encrypted ? (
-                    <div className={`chat-bubble${message.authorId === user.id ? ' chat-bubble-own' : ''}`}>
-                      {t('chat.encryptedMessage')}
+                    <div
+                      className={`chat-bubble chat-bubble-encrypted${message.authorId === user.id ? ' chat-bubble-own' : ''}`}
+                    >
+                      <Icon name="lock" size={14} />
+                      <span>{t('chat.encryptedBubble')}</span>
                     </div>
                   ) : message.attachmentUrl ? (
                     <button
@@ -599,6 +645,11 @@ function ConversationShell({
                   <time className="chat-message-time" dateTime={message.createdAt}>
                     {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                   </time>
+                  {conversation?.kind === 'PRIVATE' && message.kind === 'USER' && !encrypted && (
+                    <span className="chat-not-encrypted" title={t('chat.notEncryptedTooltip')}>
+                      {t('chat.notEncrypted')}
+                    </span>
+                  )}
                   <div className="chat-message-actions">
                     {!encrypted && (
                       <button
@@ -630,6 +681,11 @@ function ConversationShell({
           })
         )}
       </div>
+      {conversation?.kind === 'PRIVATE' && (
+        <p className="chat-encryption-notice">
+          {t(encryptionOffByAdmin ? 'chat.encryptionOffByAdmin' : 'chat.webEncryptionNotice')}
+        </p>
+      )}
       {conversation && (
         <form
           className="chat-composer-form"

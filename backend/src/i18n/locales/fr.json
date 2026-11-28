@@ -25,6 +25,13 @@
     "chatConversationNotFound": "Conversation introuvable",
     "cannotMessageYourself": "Vous ne pouvez pas démarrer une conversation avec vous-même",
     "invalidChatAttachment": "La pièce jointe doit être un fichier inutilisé que vous avez téléversé",
+    "e2eIdentityVersionConflict": "Conflit de version de clé : rechargez vos clés et réessayez",
+    "e2eRecipientHasNoKey": "Le destinataire n'a pas encore configuré le chiffrement",
+    "e2eKeyVersionStale": "Les clés de chiffrement sont obsolètes : actualisez et réessayez",
+    "invalidEncryptedMessage": "Message chiffré invalide",
+    "chatEncryptionNotSupported": "Le chiffrement est disponible uniquement dans les conversations privées",
+    "e2eTransferExists": "Session de transfert déjà utilisée",
+    "e2eTransferNotFound": "Transfert introuvable ou expiré",
     "replyToMessageNotFound": "Le message auquel tu réponds est introuvable",
     "notificationNotFound": "Notification introuvable",
     "failedToRegisterPushToken": "Impossible d'enregistrer le jeton de notification",
@@ -51,6 +58,7 @@
     "notFound": "Introuvable",
     "unsupportedFileType": "Type de fichier non pris en charge : {{ext}}",
     "fileTooLarge": "Le fichier est trop volumineux (max. {{max}} Mo)",
+    "noFileUploaded": "Aucun fichier n'a été téléversé",
     "tooManyAttachments": "Trop de photos ou de vidéos (max. {{max}})",
     "cannotRemoveLastAdmin": "Impossible de retirer le dernier administrateur",
     "cannotDeleteLastAdminAccount": "Tu es le seul administrateur de ce serveur. Nomme d'abord quelqu'un d'autre administrateur, puis supprime ton compte.",
@@ -155,7 +163,9 @@
     "backupKitNotSaved": "Confirmez que vous avez conservé le kit de secours en dehors de ce serveur avant d'activer le chiffrement",
     "backupKeyMissing": "Générez d'abord une clé de chiffrement des sauvegardes",
     "mediaMirrorAlbumLinkedElsewhere": "Cet album est lié à une autre famille. Y copier les envois y montrerait les photos de cette famille — choisissez ou créez un autre album.",
-    "mediaAlbumMirroredElsewhere": "Une autre famille copie ses envois dans cet album. Le lier ici montrerait les photos de cette famille — choisissez un autre album."
+    "mediaAlbumMirroredElsewhere": "Une autre famille copie ses envois dans cet album. Le lier ici montrerait les photos de cette famille — choisissez un autre album.",
+    "directMessagesDisabled": "Les messages privés sont désactivés sur ce serveur",
+    "e2eDirectMessagesDisabled": "Les messages privés chiffrés de bout en bout sont désactivés sur ce serveur"
   },
   "notifications": {
     "newPost": "{{author}} a publié dans {{group}} : « {{excerpt}} »",

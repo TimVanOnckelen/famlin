@@ -395,7 +395,8 @@
     "deleteMessageTitle": "Delete message?",
     "deleteMessageConfirm": "This permanently removes the message for everyone in this conversation.",
     "delete": "Delete",
-    "deleteMessage": "Delete message"
+    "deleteMessage": "Delete message",
+    "previewEncrypted": "Encrypted message"
   },
   "photos": {
     "title": "Photos",
@@ -838,5 +839,144 @@
     "sent": "Sent to admin",
     "sendFailed": "Not sent, try again",
     "close": "Close scroll diagnostics"
+  },
+  "e2e": {
+    "title": "Encrypted messages",
+    "addPhoto": "Attach a photo",
+    "photoFailed": "Couldn't load the photo. Tap to try again.",
+    "encryptedMessage": "Encrypted message",
+    "stillChecking": "Checking encryption…",
+    "decrypting": "Decrypting…",
+    "conversationMenu": "Encryption and safety code",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off encryption",
+    "turnOffTitle": "Turn off encryption?",
+    "turnOffConfirm": "New messages in this chat with {{name}} will no longer be encrypted. Both of you will see a note in the chat. You can turn it back on at any time.",
+    "verify": "Verify",
+    "dismiss": "Dismiss",
+    "keyChanged": "{{name}}'s security code changed. This can happen when they get a new phone or reset their keys. Compare the safety code to be sure.",
+    "state": {
+      "encrypted": "Encrypted",
+      "notEncrypted": "Not encrypted"
+    },
+    "system": {
+      "disabled": "{{name}} turned off encryption",
+      "enabled": "{{name}} turned encryption back on"
+    },
+    "banner": {
+      "encrypted": "End-to-end encrypted: only you and the other person can read these messages. Nobody can recover them if you lose your keys, so keep a backup. Photos only, no videos.",
+      "disabled": "Encryption is off for this conversation. Messages you send are not encrypted.",
+      "peerNoKey": "{{name}} hasn't set up encrypted messages yet. Messages are not encrypted.",
+      "needsSetup": "Encryption couldn't be set up right now, so messages are not encrypted.",
+      "needsRestore": "Your messages are not encrypted because this phone doesn't have your keys yet.",
+      "setUp": "Set up encrypted messages",
+      "restore": "Restore your encrypted messages",
+      "serverDisabled": "Not end-to-end encrypted. This server's administrator, and anyone with access to the server or its backups, can read messages in this conversation."
+    },
+    "error": {
+      "noKeyForMe": "This message was sent to your previous phone or keys, so it can't be read here.",
+      "unknownVersion": "Update the app to read this message.",
+      "badSignature": "This message couldn't be verified and was hidden.",
+      "corrupt": "This message can't be decrypted.",
+      "restoreKeys": "Restore your keys"
+    },
+    "restore": {
+      "title": "Get your keys on this phone",
+      "body": "You set up encrypted messages before, but this phone doesn't have your keys yet. Choose how to get them.",
+      "scan": "Scan from my other phone",
+      "enterCode": "Enter my recovery code",
+      "startOver": "I lost them, start over",
+      "startOverTitle": "Start over?",
+      "startOverMessage": "You will get new keys. New messages keep working, but old messages stay readable only on the old phone and for the other person.",
+      "startOverConfirm": "Start over",
+      "scanTitle": "Scan with your other phone",
+      "scanBody": "On the phone where encrypted messages already work, open Famlin → Profile → Encrypted messages → Link a new device and scan this code.",
+      "waiting": "Waiting for your other phone…",
+      "scanTimeout": "That took too long.",
+      "tryAgain": "Try again",
+      "codeTitle": "Enter your recovery code",
+      "codeBody": "Type the 8 groups of 4 characters you saved when you set up encrypted messages.",
+      "restore": "Restore",
+      "invalid": "That doesn't look like a recovery code. Check for typos.",
+      "wrong": "That recovery code doesn't match. Check it and try again.",
+      "failed": "Couldn't restore your keys. Try again.",
+      "doneTitle": "Your keys are back",
+      "doneBody": "You can read and send encrypted messages on this phone.",
+      "noBackup": "There is no recovery code for your messages. If you no longer have your other phone, you can start over: new messages keep working, but old ones stay readable only on the old phone and for the other person."
+    },
+    "link": {
+      "title": "Link a new device",
+      "heading": "Link a new phone",
+      "body": "On the new phone, open Famlin and choose Restore your keys → Scan from my other phone. Then scan the code it shows here.",
+      "scan": "Scan the code",
+      "scanTitle": "Scan the new phone",
+      "scanHint": "Point the camera at the code on your new phone.",
+      "failed": "Couldn't link the phone. Try again.",
+      "doneTitle": "Phone linked",
+      "doneBody": "Your new phone will have your keys in a moment.",
+      "notReady": "This phone doesn't have your keys yet, so it can't link another one."
+    },
+    "safetyCode": {
+      "menu": "Safety code",
+      "title": "Safety code",
+      "unavailable": "A safety code is available once you and {{name}} both have encrypted messages set up.",
+      "body": "To be sure nobody is listening in, compare this code with {{name}}, in person or on a call. If it is the same on both phones, your chat is private.",
+      "scan": "Scan {{name}}'s code",
+      "mark": "It matches: mark as verified",
+      "unmark": "Remove verification",
+      "verified": "Verified with {{name}}",
+      "scanMatch": "The codes match.",
+      "scanMismatch": "The codes do NOT match. Don't trust this chat until you've checked with the other person.",
+      "scanTitle": "Scan the safety code",
+      "scanHint": "Scan the code on {{name}}'s phone."
+    },
+    "profile": {
+      "status": {
+        "unsupported": "This server doesn't support encrypted messages.",
+        "loading": "Checking…",
+        "needsSetup": "Setting up…",
+        "needsRestore": "This phone doesn't have your keys yet, so it can't read or send encrypted messages.",
+        "ready": "On. Your private messages are encrypted.",
+        "serverDisabled": "Turned off by the administrator: private messages are not end-to-end encrypted, and the administrator can read them."
+      },
+      "reminder": "Your keys may not be backed up securely. Make a recovery code to read your messages on a new phone.",
+      "showCode": "Show recovery code",
+      "showTitle": "Show recovery code?",
+      "showMessage": "Anyone who sees this code can read your private messages. Make sure no one is looking.",
+      "show": "Show",
+      "codeTitle": "Your recovery code",
+      "noCodeTitle": "Code not on this phone",
+      "noCodeMessage": "This phone doesn't hold your recovery code. Create a new one to get a code you can save.",
+      "newCode": "New recovery code",
+      "newCodeTitle": "Create a new recovery code?",
+      "newCodeMessage": "Your old code will stop working.",
+      "newCodeSaved": "Save it now. The old code no longer works.",
+      "linkDevice": "Link a new device",
+      "reset": "Reset keys",
+      "resetTitle": "Reset your keys?",
+      "resetMessage": "You get new keys and a new recovery code. Messages sent to your old keys can only be read on phones that still have them. Your contacts will see that your security code changed.",
+      "backupNow": "Extra safety: recovery code",
+      "resetDone": "New keys created."
+    },
+    "backup": {
+      "title": "Extra safety: recovery code",
+      "body": "Your keys are saved automatically, but a recovery code is needed when you switch between iPhone and Android, or when your iCloud or Google backup is off. It's optional.",
+      "start": "Create a backup code",
+      "accountLabel": "Account",
+      "codeTitle": "Your recovery code",
+      "codeBody": "Save this code in your password manager or write it down. You will need it to read your old messages on a new phone. Anyone with this code can read your messages, so don't share it.",
+      "shareCode": "Copy or save to password manager",
+      "saved": "I saved my recovery code"
+    },
+    "reminder": {
+      "text": "If you lose this phone without a backup, your encrypted messages are gone for good — nobody can recover them, not even your administrator. Make a recovery code.",
+      "action": "Make code",
+      "dismiss": "Not now"
+    },
+    "sync": {
+      "statusIos": "Automatically saved in your iCloud Keychain, if it's turned on. It also restores on a new iPhone.",
+      "statusAndroid": "Automatically saved with your Google backup.",
+      "statusAndroidNoLock": "Turn on a screen lock so your Google backup can store it securely."
+    }
   }
 }

@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["FamlinKeySyncModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.famlinkeysync.FamlinKeySyncModule"]
+  }
+}

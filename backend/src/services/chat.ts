@@ -26,6 +26,7 @@ interface ChatMessageRow {
     kind: string
     content: string | null
     attachmentUrl: string | null
+    encryption: string
   } | null
   createdAt: Date
   editedAt: Date | null
@@ -38,18 +39,22 @@ interface ChatUser {
 }
 
 function shapeReplyTo(message: ChatMessageRow) {
-  return message.replyToMessage?.conversationId === message.conversationId
-    ? {
-        id: message.replyToMessage.id,
-        authorId: message.replyToMessage.authorId,
-        authorName: message.replyToMessage.author.name,
-        kind: message.replyToMessage.kind,
-        // Preserve null for attachment-only messages so clients can render
-        // the correct attachment fallback.
-        content: message.replyToMessage.content?.trim() ? excerptText(message.replyToMessage.content) : null,
-        attachmentUrl: message.replyToMessage.attachmentUrl,
-      }
-    : null
+  const replyTo = message.replyToMessage
+  if (replyTo?.conversationId !== message.conversationId) return null
+  // An encrypted message is never excerpted or exposed here: the server can't
+  // read it, so the client resolves the quote locally from the original.
+  const encrypted = replyTo.encryption !== 'none'
+  return {
+    id: replyTo.id,
+    authorId: replyTo.authorId,
+    authorName: replyTo.author.name,
+    kind: replyTo.kind,
+    // Preserve null for attachment-only messages so clients can render
+    // the correct attachment fallback.
+    content: !encrypted && replyTo.content?.trim() ? excerptText(replyTo.content) : null,
+    attachmentUrl: encrypted ? null : replyTo.attachmentUrl,
+    encryption: replyTo.encryption,
+  }
 }
 
 export function shapeChatMessage(message: ChatMessageRow, readBy: ChatUser[]) {

@@ -395,7 +395,8 @@
     "deleteMessageTitle": "Eliminar mensagem?",
     "deleteMessageConfirm": "Esta ação remove definitivamente a mensagem para todos nesta conversa.",
     "delete": "Eliminar",
-    "deleteMessage": "Eliminar mensagem"
+    "deleteMessage": "Eliminar mensagem",
+    "previewEncrypted": "Mensagem encriptada"
   },
   "photos": {
     "title": "Fotografias",
@@ -838,5 +839,144 @@
     "sent": "Enviado ao administrador",
     "sendFailed": "Não enviado, tente novamente",
     "close": "Fechar diagnóstico de deslocamento"
+  },
+  "e2e": {
+    "title": "Mensagens encriptadas",
+    "addPhoto": "Anexar uma foto",
+    "photoFailed": "Não foi possível carregar a foto. Toque para tentar de novo.",
+    "encryptedMessage": "Mensagem encriptada",
+    "stillChecking": "A verificar a encriptação…",
+    "decrypting": "A desencriptar…",
+    "conversationMenu": "Encriptação e código de segurança",
+    "turnOn": "Ativar",
+    "turnOff": "Desativar a encriptação",
+    "turnOffTitle": "Desativar a encriptação?",
+    "turnOffConfirm": "As novas mensagens desta conversa com {{name}} deixam de ser encriptadas. Ambos verão uma nota na conversa. Pode voltar a ativá-la a qualquer momento.",
+    "verify": "Verificar",
+    "dismiss": "Dispensar",
+    "keyChanged": "O código de segurança de {{name}} mudou. Isto pode acontecer com um telemóvel novo ou chaves novas. Compare o código de segurança para ter a certeza.",
+    "state": {
+      "encrypted": "Encriptada",
+      "notEncrypted": "Não encriptada"
+    },
+    "system": {
+      "disabled": "{{name}} desativou a encriptação",
+      "enabled": "{{name}} voltou a ativar a encriptação"
+    },
+    "banner": {
+      "encrypted": "Encriptação ponto a ponto: só tu e a outra pessoa podem ler estas mensagens. Ninguém as pode recuperar se perderes as tuas chaves, por isso guarda uma cópia. Só fotos, sem vídeos.",
+      "disabled": "A encriptação está desativada nesta conversa. As mensagens que enviar não são encriptadas.",
+      "peerNoKey": "{{name}} ainda não configurou as mensagens encriptadas. As mensagens não são encriptadas.",
+      "needsSetup": "Não foi possível configurar a encriptação agora, por isso as mensagens não são encriptadas.",
+      "needsRestore": "As suas mensagens não são encriptadas porque este telemóvel ainda não tem as suas chaves.",
+      "setUp": "Configurar mensagens encriptadas",
+      "restore": "Restaurar as suas mensagens encriptadas",
+      "serverDisabled": "Sem encriptação ponto a ponto. O administrador deste servidor, e qualquer pessoa com acesso ao servidor ou às suas cópias de segurança, pode ler as mensagens desta conversa."
+    },
+    "error": {
+      "noKeyForMe": "Esta mensagem foi enviada para o seu telemóvel ou chaves anteriores, por isso não pode ser lida aqui.",
+      "unknownVersion": "Atualize a aplicação para ler esta mensagem.",
+      "badSignature": "Não foi possível verificar esta mensagem e ela foi ocultada.",
+      "corrupt": "Não é possível desencriptar esta mensagem.",
+      "restoreKeys": "Restaurar as suas chaves"
+    },
+    "restore": {
+      "title": "Obtenha as suas chaves neste telemóvel",
+      "body": "Já configurou as mensagens encriptadas, mas este telemóvel ainda não tem as suas chaves. Escolha como as obter.",
+      "scan": "Ler a partir do meu outro telemóvel",
+      "enterCode": "Introduzir o meu código de recuperação",
+      "startOver": "Perdi-as, recomeçar",
+      "startOverTitle": "Recomeçar?",
+      "startOverMessage": "Vai receber chaves novas. As mensagens novas continuam a funcionar, mas as antigas só podem ser lidas no telemóvel antigo e pela outra pessoa.",
+      "startOverConfirm": "Recomeçar",
+      "scanTitle": "Leia com o seu outro telemóvel",
+      "scanBody": "No telemóvel onde as mensagens encriptadas já funcionam, abra o Famlin → Perfil → Mensagens encriptadas → Associar um novo dispositivo e leia este código.",
+      "waiting": "A aguardar pelo seu outro telemóvel…",
+      "scanTimeout": "Demorou demasiado.",
+      "tryAgain": "Tentar de novo",
+      "codeTitle": "Introduza o seu código de recuperação",
+      "codeBody": "Escreva os 8 grupos de 4 caracteres que guardou ao configurar as mensagens encriptadas.",
+      "restore": "Restaurar",
+      "invalid": "Isso não parece um código de recuperação. Verifique se há erros.",
+      "wrong": "Esse código de recuperação não corresponde. Verifique-o e tente de novo.",
+      "failed": "Não foi possível restaurar as suas chaves. Tente de novo.",
+      "doneTitle": "As suas chaves voltaram",
+      "doneBody": "Pode ler e enviar mensagens encriptadas neste telemóvel.",
+      "noBackup": "Não existe um código de recuperação para as suas mensagens. Se já não tiver o seu outro telemóvel, pode recomeçar: as mensagens novas continuam a funcionar, mas as antigas só podem ser lidas no telemóvel antigo e pela outra pessoa."
+    },
+    "link": {
+      "title": "Associar um novo dispositivo",
+      "heading": "Associar um telemóvel novo",
+      "body": "No telemóvel novo, abra o Famlin e escolha Restaurar as suas chaves → Ler a partir do meu outro telemóvel. Depois leia o código que ele mostra.",
+      "scan": "Ler o código",
+      "scanTitle": "Leia o telemóvel novo",
+      "scanHint": "Aponte a câmara para o código no seu telemóvel novo.",
+      "failed": "Não foi possível associar o telemóvel. Tente de novo.",
+      "doneTitle": "Telemóvel associado",
+      "doneBody": "O seu telemóvel novo terá as suas chaves dentro de instantes.",
+      "notReady": "Este telemóvel ainda não tem as suas chaves, por isso não pode associar outro."
+    },
+    "safetyCode": {
+      "menu": "Código de segurança",
+      "title": "Código de segurança",
+      "unavailable": "O código de segurança fica disponível quando você e {{name}} tiverem configurado as mensagens encriptadas.",
+      "body": "Para ter a certeza de que ninguém está a escutar, compare este código com {{name}}, pessoalmente ou numa chamada. Se for igual nos dois telemóveis, a vossa conversa é privada.",
+      "scan": "Ler o código de {{name}}",
+      "mark": "Corresponde: marcar como verificado",
+      "unmark": "Remover a verificação",
+      "verified": "Verificado com {{name}}",
+      "scanMatch": "Os códigos correspondem.",
+      "scanMismatch": "Os códigos NÃO correspondem. Não confie nesta conversa até confirmar com a outra pessoa.",
+      "scanTitle": "Ler o código de segurança",
+      "scanHint": "Leia o código no telemóvel de {{name}}."
+    },
+    "profile": {
+      "status": {
+        "unsupported": "Este servidor não suporta mensagens encriptadas.",
+        "loading": "A verificar…",
+        "needsSetup": "A configurar…",
+        "needsRestore": "Este telemóvel ainda não tem as suas chaves, por isso não pode ler nem enviar mensagens encriptadas.",
+        "ready": "Ativado. As suas mensagens privadas estão encriptadas.",
+        "serverDisabled": "Desligado pelo administrador: as mensagens privadas não têm encriptação ponto a ponto e o administrador pode lê-las."
+      },
+      "reminder": "As suas chaves podem não ter uma cópia segura. Crie um código de recuperação para ler as suas mensagens num telemóvel novo.",
+      "showCode": "Mostrar o código de recuperação",
+      "showTitle": "Mostrar o código de recuperação?",
+      "showMessage": "Quem vir este código pode ler as suas mensagens privadas. Certifique-se de que ninguém está a olhar.",
+      "show": "Mostrar",
+      "codeTitle": "O seu código de recuperação",
+      "noCodeTitle": "O código não está neste telemóvel",
+      "noCodeMessage": "Este telemóvel não guarda o seu código de recuperação. Crie um novo para obter um código que possa guardar.",
+      "newCode": "Novo código de recuperação",
+      "newCodeTitle": "Criar um novo código de recuperação?",
+      "newCodeMessage": "O seu código antigo deixará de funcionar.",
+      "newCodeSaved": "Guarde-o agora. O código antigo já não funciona.",
+      "linkDevice": "Associar um novo dispositivo",
+      "reset": "Repor as chaves",
+      "resetTitle": "Repor as suas chaves?",
+      "resetMessage": "Vai receber chaves novas e um novo código de recuperação. As mensagens enviadas para as suas chaves antigas só podem ser lidas em telemóveis que ainda as tenham. Os seus contactos verão que o seu código de segurança mudou.",
+      "backupNow": "Segurança extra: código de recuperação",
+      "resetDone": "Chaves novas criadas."
+    },
+    "backup": {
+      "title": "Segurança extra: código de recuperação",
+      "body": "As suas chaves são guardadas automaticamente, mas precisa de um código de recuperação se mudar entre iPhone e Android, ou se a cópia do iCloud ou da Google estiver desativada. É opcional.",
+      "start": "Criar um código de cópia",
+      "accountLabel": "Conta",
+      "codeTitle": "O seu código de recuperação",
+      "codeBody": "Guarde este código no seu gestor de palavras-passe ou escreva-o. Vai precisar dele para ler as suas mensagens antigas num telemóvel novo. Quem tiver este código pode ler as suas mensagens, por isso não o partilhe.",
+      "shareCode": "Copiar ou guardar no gestor de palavras-passe",
+      "saved": "Guardei o meu código de recuperação"
+    },
+    "reminder": {
+      "text": "Se perderes este telemóvel sem cópia, as tuas mensagens encriptadas perdem-se para sempre — ninguém as pode recuperar, nem o teu administrador. Cria um código de recuperação.",
+      "action": "Criar código",
+      "dismiss": "Agora não"
+    },
+    "sync": {
+      "statusIos": "Guardadas automaticamente no seu Porta-chaves do iCloud, se estiver ativo. Também são restauradas num iPhone novo.",
+      "statusAndroid": "Guardadas automaticamente com a sua cópia de segurança da Google.",
+      "statusAndroidNoLock": "Ative um bloqueio de ecrã para que a sua cópia da Google as possa guardar em segurança."
+    }
   }
 }

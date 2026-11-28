@@ -3,15 +3,31 @@ import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useTranslation } from 'react-i18next'
 import type { SendChatMessageBody } from '@famlin/api-client'
+import type { LocalPhoto } from '@/e2e/attachments'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 
 interface Attachment {
   uri: string
   isVideo: boolean
   uploadedUrl?: string
+  width?: number | null
+  height?: number | null
 }
 
-export function useChatMessageComposer({ send }: { send: (body: SendChatMessageBody) => Promise<unknown> }) {
+/** What a composer hands to its `send`: in an encrypted conversation the photo stays local (`localPhoto`) and is encrypted before upload. */
+export type ComposerSendBody = SendChatMessageBody & { localPhoto?: LocalPhoto }
+
+export function useChatMessageComposer({
+  send,
+  encrypted = false,
+  disabled = false,
+}: {
+  send: (body: ComposerSendBody) => Promise<unknown>
+  /** End-to-end encrypted conversation: photos only, uploaded encrypted at send time. */
+  encrypted?: boolean
+  /** Nothing may be sent yet (e.g. still unknown whether the conversation can be encrypted). */
+  disabled?: boolean
+}) {
   const { t } = useTranslation()
   const [textValue, setTextValue] = useState('')
   const [attachment, setAttachmentValue] = useState<Attachment | null>(null)
@@ -39,6 +55,15 @@ export function useChatMessageComposer({ send }: { send: (body: SendChatMessageB
   })
 
   async function pickAttachment() {
+    if (encrypted) {
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      })
+      const asset = picked.canceled ? null : picked.assets[0]
+      if (asset) setAttachment({ uri: asset.uri, isVideo: false, width: asset.width, height: asset.height })
+      return
+    }
     const result = await upload.pick()
     if (!result) return
     const asset = result.assets[0]
@@ -48,13 +73,18 @@ export function useChatMessageComposer({ send }: { send: (body: SendChatMessageB
 
   async function submit() {
     const content = textRef.current.trim()
-    const uploadedUrl = attachmentRef.current?.uploadedUrl
-    if ((!content && !uploadedUrl) || upload.uploading || sending) return false
+    const current = attachmentRef.current
+    const uploadedUrl = current?.uploadedUrl
+    const localPhoto = encrypted && current ? current : undefined
+    if ((!content && !uploadedUrl && !localPhoto) || upload.uploading || sending || disabled) return false
     setSending(true)
     try {
       await send({
         ...(content ? { content } : {}),
-        ...(uploadedUrl ? { attachmentUrl: uploadedUrl } : {}),
+        ...(uploadedUrl && !encrypted ? { attachmentUrl: uploadedUrl } : {}),
+        ...(localPhoto
+          ? { localPhoto: { uri: localPhoto.uri, width: localPhoto.width, height: localPhoto.height } }
+          : {}),
       })
       setText('')
       setAttachment(null)
@@ -67,7 +97,8 @@ export function useChatMessageComposer({ send }: { send: (body: SendChatMessageB
     }
   }
 
-  const canSend = (!!textValue.trim() || !!attachment?.uploadedUrl) && !upload.uploading && !sending
+  const hasAttachment = encrypted ? !!attachment : !!attachment?.uploadedUrl
+  const canSend = (!!textValue.trim() || hasAttachment) && !upload.uploading && !sending && !disabled
 
   return {
     text: textValue,

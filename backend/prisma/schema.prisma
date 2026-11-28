@@ -45,6 +45,7 @@ model User {
   chatReads                    ChatRead[]
   createdChatConversations     ChatConversation[]            @relation("ChatConversationCreatedBy")
   chatConversationParticipants ChatConversationParticipant[]
+  e2eIdentities                E2eIdentity[]
   circleMemberships            CircleMember[]
   createdCircles               Circle[]                      @relation("CircleCreatedBy")
   uploads                      Upload[]
@@ -292,21 +293,26 @@ model Comment {
 }
 
 model ChatConversation {
-  id             String                        @id @default(cuid())
-  kind           String
-  groupId        String?                       @unique
-  group          Group?                        @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  participantKey String?                       @unique
-  title          String?
-  createdById    String?
-  createdBy      User?                         @relation("ChatConversationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt      DateTime                      @default(now())
-  updatedAt      DateTime                      @default(now())
-  participants   ChatConversationParticipant[]
-  messages       ChatMessage[]
-  reads          ChatRead[]
-  uploads        Upload[]
-  notifications  Notification[]
+  id                     String                        @id @default(cuid())
+  kind                   String
+  groupId                String?                       @unique
+  group                  Group?                        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participantKey         String?                       @unique
+  title                  String?
+  createdById            String?
+  createdBy              User?                         @relation("ChatConversationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @default(now())
+  // Opt-out of end-to-end encryption for this private conversation (set by
+  // either participant via PUT /api/chat/conversations/:id/encryption).
+  // Informational for clients: the server accepts both message kinds always.
+  encryptionDisabledAt   DateTime?
+  encryptionDisabledById String?
+  participants           ChatConversationParticipant[]
+  messages               ChatMessage[]
+  reads                  ChatRead[]
+  uploads                Upload[]
+  notifications          Notification[]
 
   @@index([kind, updatedAt])
 }
@@ -1020,4 +1026,23 @@ model WikiPage {
 
   @@index([groupId, updatedAt])
   @@index([circleId])
+}
+
+// One end-to-end encryption key identity per user (shared between their
+// devices client-side), versioned: a key reset creates version n+1 and keeps
+// the old public keys so earlier signatures still verify. Only PUBLIC keys
+// plus an optional password-wrapped recovery backup (ciphertext) live here —
+// the server never sees a private key. See routes/e2e.ts.
+model E2eIdentity {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version        Int
+  signPublicKey  String
+  boxPublicKey   String
+  recoveryBackup Json?
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, version])
+  @@index([userId])
 }

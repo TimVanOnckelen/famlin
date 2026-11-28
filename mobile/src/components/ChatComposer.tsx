@@ -2,18 +2,25 @@ import React from 'react'
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import type { SendChatMessageBody } from '@famlin/api-client'
 
 import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
 import { MediaThumbnail } from '@/components/MediaThumbnail'
 import { UploadProgressOverlay } from '@/components/UploadProgressOverlay'
-import { useChatMessageComposer } from '@/hooks/useChatMessageComposer'
+import { useChatMessageComposer, type ComposerSendBody } from '@/hooks/useChatMessageComposer'
 
-export function ChatComposer({ send }: { send: (body: SendChatMessageBody) => Promise<unknown> }) {
+export function ChatComposer({
+  send,
+  encrypted,
+  disabled,
+}: {
+  send: (body: ComposerSendBody) => Promise<unknown>
+  encrypted?: boolean
+  disabled?: boolean
+}) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
-  const composer = useChatMessageComposer({ send })
+  const composer = useChatMessageComposer({ send, encrypted, disabled })
 
   return (
     <View>
@@ -42,7 +49,7 @@ export function ChatComposer({ send }: { send: (body: SendChatMessageBody) => Pr
           style={styles.attach}
           onPress={composer.pickAttachment}
           disabled={composer.uploading}
-          accessibilityLabel={t('chat.addAttachment')}
+          accessibilityLabel={encrypted ? t('e2e.addPhoto') : t('chat.addAttachment')}
         >
           <Icon name="image" size={18} color={colors.textMuted} />
         </TouchableOpacity>

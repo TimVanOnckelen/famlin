@@ -1,0 +1,71 @@
+---
+id: take-e-2-e-transfer
+title: "Receive a pending transfer (one-shot)"
+description: "Returns and deletes the payload, only for the same user who stored"
+sidebar_label: "Receive a pending transfer (one-shot)"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVttu20YQ/ZUBXyoZsuS6RoAKRQEHddsUaRw4DoLAMsIVNRI3JnfZ3aVkVhDQj+gX9kt6ZknJiuW2L3nIQ/0gc29zPXNm1omt2KmgrXkxS8ZJUHd8ccrXThk/Z5cMsLPwyfgmuTCz42CP2cyITeaaSt4kt4Nkxj5zul2OkysOtTOeFO7NuODAnkLOVKmmsGo2IGuKhubWxV2vSqbas6NVbskH63g2MToM6VftvTaLAfF9pbFLeKGMxSMXH3zlyTOuWEPa09nJ2ZDetOtj0TCcGNheKQcFgZ14sE4MFjCxewd/B4kWmysVcnw7/q0WVck4uJoHic9yLlUyXiehqeLD4GBSstncymVfWQNRcn56ciL/Po3ENfwLXRy37kNLZk1gE+S+qqpCZzH4o49eHq0PldrpR86COOMkVUG3KrcCn7j44MdNssSaqzv8GmsyFv1BkvapsOWeGA3zFjHzbOoSMr6+3bQyDgOxlfrUSRYOtx+D5bny/OwM26W6Rw6/fUZZrpwfJmNTF8UGUoIOhQjYw+TrzvNN/BskZyffHAb/lQ2kisKugJyeoI3vVVkVDAzR+esXFOwdGwESgGVIbbEUsUPO1oH7ny9X7Jx1/x2Nn+tSmWPHaqamBQ9a8BQqwMalVrFe0vMs4yocv1RmUasFp5TjOvDVS9mko9QUaX8Yo29nT6TlscbL+KEKKlWWa8M75RRNJpEypPTq4vyHD5evXr5PcdHdobgpRdTTWMaKVk4HpmlhszuYOuVMIa5tebNbwjhXgxC0IZEeIzyacWmphHTqeYZbcnKJg1SykY5UpUeqDvmoFXCszdyKY8Bhm0Yhmq1RiYBgH/NtuG/3wBM3tmg5O0TLFXtbu4wJBAOnavMZC/X/5H8pycdNNIPcSp9bcMyUEP84iSr5lEdbuvaj9a5JbHCvtaRtIrUr8CQPofLj0WiuykKbYWfZMLPlQZzfA1pkV4Z+jHfRFavCNqVASxqJ56xGDJsofMrKsTuvxayb2/3jNwK3FlH7l3ZJFoOSrmfJur10YMw5AZo+pl0BTd53TNhLW08+ICQfhsNhOqAMeRH4wWRJ54qnhDrooxFPzI4w6Zd31zR3tqT09eWba3rIXmEX2qRDeo6eTbAFL0x4aPor1YwnJhUvrNO/x9oa0/NoNX0Xjfo+lS4uaRMIRF+7nHaRBJHDQclM6xwi5SSsj52+wJVmG/4OlhgrrI+zCcaHqwuYLm0BlY+ziMGU/vrjzwd7Y9PIeWLsfK4zLWVjpzo2lNk2Nl4aypDeafGYbp6M9G0P+F9yIRThRU9/YhpbU4bGNK11MaNmi5fYidvZDFW3UNr40J4iV7po4ggkziBME3NeFNRRlkxEPoMGFGRDR0cLNLSKSi6n0Jnr6uhoTFudbcNDBbaOSDVPzE6OofjWo4eKSlBaP76cwgGzgEeD+EymMhatxkpikW7hUGyrMDFwtHVdJjSmm7cy18XAIqaH4Wh5BbCAAR3nDqJFS9lAKFqVK+uEcLrC8xEpKGjrA3hUsNINe1ecsV4iTQC+mUXN25msZ0F6Preh/xgx6wfy/7IG2q7YA9+HUVUAEeJ0ZKR1R2Y3aFZauPJUhr0doeF7/DD3gldyREpur9dTDGFvHaYt2f6tRqkI96CulNPSDiIxzbSXb1DnXBWe/yVevauOjfv0TwZ3m8o0Ur6qqGWFzztuPhnPNzJ5tj0uGtGet11w7+VBdxbe3DH9TxfX4JC/AdZaffg=
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Receive a pending transfer (one-shot)"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/e2e/transfers/{sessionId}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Returns and deletes the payload, only for the same user who stored
+it. Missing, expired or another user's session is 404. Session-only.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./take-e-2-e-transfer.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./take-e-2-e-transfer.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./take-e-2-e-transfer.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

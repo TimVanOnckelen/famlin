@@ -38,7 +38,7 @@ import { getUploadUrl } from '@/api/uploads'
 import { formatRelativeDate } from '@/i18n/utils'
 import { isVideoUrl } from '@/utils/media'
 import { useAuthStore } from '@/stores/authStore'
-import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { useDirectMessagesSupport } from '@/hooks/useServerInfo'
 import { useChatConversationMessages } from '@/hooks/useChatConversationMessages'
 
 // WhatsApp-style swipe-to-reply tuning: cap how far the bubble can be dragged
@@ -57,7 +57,7 @@ export function ChatScreen() {
   const insets = useSafeAreaInsets()
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null)
   const flatListRef = useRef<FlatList<ChatMessage>>(null)
-  const directMessagesSupport = useServerFeatureSupport('directMessages')
+  const directMessagesSupport = useDirectMessagesSupport()
   const modern = directMessagesSupport === 'supported'
 
   // Group name/member count reuse whatever the app already fetches for group

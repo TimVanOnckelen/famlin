@@ -25,6 +25,7 @@ export type {
   UpdateMeBody,
   ServerInfo,
   ServerLimits,
+  DirectMessagePolicy,
   Branding,
   BrandPalette,
   BrandSemantic,
@@ -41,6 +42,7 @@ export {
   fetchNotificationConfig,
   fetchServerInfo,
   resolveServerLimits,
+  resolveDirectMessagePolicy,
   getBrandingAssetUrl,
   changePassword,
   deleteAccount,
@@ -326,3 +328,62 @@ export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles'
 export type { UploadProcessing } from './uploads'
 
 export type { UploadResult, UploadSessionMedia } from './uploads'
+
+// End-to-end encrypted direct messages (#506): crypto (pure) + network calls.
+export {
+  E2E_MESSAGE_ENCRYPTION,
+  E2eError,
+  generateIdentity,
+  publicIdentity,
+  assertKeysMatchIdentity,
+  safetyCode,
+  encryptMessage,
+  decryptMessage,
+  parseMessagePayload,
+  newMessageId,
+  generateRecoveryCode,
+  formatRecoveryCode,
+  normalizeRecoveryCode,
+  sealRecoveryBackup,
+  openRecoveryBackup,
+  createTransferRequest,
+  parseTransferQr,
+  sealTransfer,
+  openTransfer,
+  encryptAttachment,
+  decryptAttachment,
+} from './e2e'
+export type {
+  E2eAttachmentV1,
+  E2eErrorCode,
+  E2eIdentityKeys,
+  E2eKeyEntryV1,
+  E2eMessageContentV1,
+  E2eMessagePayloadV1,
+  E2ePublicIdentity,
+  E2eRecoveryBackupV1,
+  E2eTransferPayloadV1,
+  EncryptMessageInput,
+  DecryptMessageInput,
+  TransferRequest,
+} from './e2e'
+export {
+  e2eMyIdentitiesQueryKey,
+  e2eUserIdentitiesQueryKey,
+  fetchMyE2eIdentities,
+  fetchUserE2eIdentities,
+  publishE2eIdentity,
+  updateE2eRecoveryBackup,
+  putE2eTransfer,
+  takeE2eTransfer,
+  sendEncryptedChatMessage,
+  uploadEncryptedAttachment,
+  setChatConversationEncryption,
+} from './e2eApi'
+export type {
+  E2ePublishedIdentity,
+  E2eOwnIdentity,
+  PublishE2eIdentityBody,
+  SendEncryptedChatMessageBody,
+  ChatConversationEncryptionState,
+} from './e2eApi'

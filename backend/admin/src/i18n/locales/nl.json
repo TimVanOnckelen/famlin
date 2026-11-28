@@ -536,7 +536,22 @@
     "maxVideoDurationSeconds": "Langste video (seconden)",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} seconden. De apps controleren dit vóór het uploaden; oudere app-versies houden hun limiet van 2 minuten.",
     "maxUploadSizeMb": "Grootste upload (MB)",
-    "maxUploadSizeMbHint": "Per bestand, {{min}}–{{max}} MB. Een reverse proxy vóór Famlin kan minder toestaan: het gratis abonnement van Cloudflare stopt uploads bijvoorbeeld bij 100 MB."
+    "maxUploadSizeMbHint": "Per bestand, {{min}}–{{max}} MB. Een reverse proxy vóór Famlin kan minder toestaan: het gratis abonnement van Cloudflare stopt uploads bijvoorbeeld bij 100 MB.",
+    "directMessages": "Privéberichten",
+    "directMessagesDesc": "Privéberichten tussen twee leden.",
+    "directMessagesEnabled": "Privéberichten toestaan",
+    "directMessagesEnabledHint": "Laat leden privéberichten naar elkaar sturen. Als je dit uitzet, worden bestaande privégesprekken verborgen maar niet verwijderd; de familiechat blijft werken.",
+    "directMessagesOnWeb": "Privéberichten aanbieden in de webapp",
+    "directMessagesOnWebHint": "De webapp kan end-to-end versleutelde berichten niet lezen. Laat dit uit om privéberichten alleen in de mobiele app aan te bieden.",
+    "e2eDirectMessagesEnabled": "Privéberichten end-to-end versleutelen",
+    "e2eDirectMessagesEnabledHint": "Standaard uit. Als dit aan staat, versleutelt de Famlin-app privéberichten op de telefoon van de leden, zodat niemand anders — ook jij als beheerder niet — ze kan lezen. Later uitzetten geldt alleen voor nieuwe berichten; berichten die al versleuteld zijn, blijven versleuteld.",
+    "e2eOffRiskTitle": "Privéberichten zijn niet end-to-end versleuteld",
+    "e2eOffRiskBody": "Jij, en iedereen met toegang tot deze server of de back-ups ervan, kan elk privébericht lezen. Leden zien daar in elk privégesprek een melding van.",
+    "e2eOnRiskTitle": "Sleutels kwijt betekent berichten kwijt",
+    "e2eOnRiskBody": "Alleen de telefoons van de leden hebben de sleutels. Raakt iemand zijn telefoon kwijt zonder sleutelhanger-back-up of herstelcode, dan zijn de versleutelde berichten niet meer te herstellen — niet door jou en niet uit een serverback-up. Je kunt versleutelde berichten ook niet lezen of modereren.",
+    "e2eConfirmTitle": "End-to-end versleuteling aanzetten?",
+    "e2eConfirmBody": "Privéberichten die vanuit de app worden verstuurd, worden op de telefoon van de leden versleuteld. Niemand anders kan ze lezen — jij niet, en ook niet via de server of de back-ups. Dat betekent ook dat niemand ze kan herstellen: raakt een lid zijn telefoon kwijt zonder sleutelhanger-back-up of herstelcode, dan zijn de versleutelde berichten voorgoed weg. Bestaande berichten blijven zoals ze zijn.",
+    "e2eConfirm": "Versleuteling aanzetten"
   },
   "media": {
     "peopleMapping": {

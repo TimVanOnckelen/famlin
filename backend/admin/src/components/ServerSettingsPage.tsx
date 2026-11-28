@@ -10,6 +10,8 @@ import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../
 import { Icon, type IconName } from './Icon'
 import { BrandingSection } from './BrandingSection'
 import { SettingToggle } from '@famlin/ui/common/setting-toggle'
+import { ConfirmDialog } from '@famlin/ui/common/confirm-dialog'
+import { Alert, AlertDescription, AlertTitle } from '@famlin/ui/alert'
 import { SettingsCard } from './settings/SettingsCard'
 import { SettingsSaveBar } from './settings/SettingsSaveBar'
 import { useSettingsForm } from './settings/useSettingsForm'
@@ -35,6 +37,8 @@ export function ServerSettingsPage() {
   const [activeSection, setActiveSection] = useState<SectionId>(
     requested === 'branding' || requested === 'access' ? requested : 'general'
   )
+  // Turning end-to-end encryption on is confirmed first: lost keys mean lost messages.
+  const [confirmE2e, setConfirmE2e] = useState(false)
 
   if (loadError)
     return (
@@ -196,6 +200,71 @@ export function ServerSettingsPage() {
                   hint={t('serverSettings.updateCheckHint')}
                   checked={form.updateCheckEnabled}
                   onCheckedChange={(checked) => updateField('updateCheckEnabled', checked)}
+                />
+              </SettingsCard>
+            )}
+
+            {activeSection === 'general' && (
+              <SettingsCard
+                icon="message-circle"
+                title={t('serverSettings.directMessages')}
+                desc={t('serverSettings.directMessagesDesc')}
+              >
+                <SettingToggle
+                  title={t('serverSettings.directMessagesEnabled')}
+                  hint={t('serverSettings.directMessagesEnabledHint')}
+                  checked={form.directMessagesEnabled}
+                  onCheckedChange={(checked) => updateField('directMessagesEnabled', checked)}
+                />
+                <SettingToggle
+                  title={t('serverSettings.directMessagesOnWeb')}
+                  hint={t('serverSettings.directMessagesOnWebHint')}
+                  checked={form.directMessagesOnWeb}
+                  disabled={!form.directMessagesEnabled}
+                  onCheckedChange={(checked) => updateField('directMessagesOnWeb', checked)}
+                />
+                <SettingToggle
+                  title={t('serverSettings.e2eDirectMessagesEnabled')}
+                  hint={t('serverSettings.e2eDirectMessagesEnabledHint')}
+                  checked={form.e2eDirectMessagesEnabled}
+                  disabled={!form.directMessagesEnabled}
+                  onCheckedChange={(checked) =>
+                    checked ? setConfirmE2e(true) : updateField('e2eDirectMessagesEnabled', false)
+                  }
+                />
+                {form.directMessagesEnabled && (
+                  <Alert
+                    className={
+                      form.e2eDirectMessagesEnabled
+                        ? 'border-warning/20 bg-warning/10'
+                        : 'border-destructive/20 bg-destructive/10'
+                    }
+                  >
+                    <AlertTitle>
+                      {t(
+                        form.e2eDirectMessagesEnabled
+                          ? 'serverSettings.e2eOnRiskTitle'
+                          : 'serverSettings.e2eOffRiskTitle'
+                      )}
+                    </AlertTitle>
+                    <AlertDescription>
+                      {t(
+                        form.e2eDirectMessagesEnabled ? 'serverSettings.e2eOnRiskBody' : 'serverSettings.e2eOffRiskBody'
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <ConfirmDialog
+                  open={confirmE2e}
+                  onOpenChange={(open) => !open && setConfirmE2e(false)}
+                  title={t('serverSettings.e2eConfirmTitle')}
+                  description={t('serverSettings.e2eConfirmBody')}
+                  confirmLabel={t('serverSettings.e2eConfirm')}
+                  cancelLabel={t('common.cancel')}
+                  onConfirm={() => {
+                    updateField('e2eDirectMessagesEnabled', true)
+                    setConfirmE2e(false)
+                  }}
                 />
               </SettingsCard>
             )}

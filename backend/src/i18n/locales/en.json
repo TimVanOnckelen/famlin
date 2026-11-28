@@ -25,6 +25,13 @@
     "chatConversationNotFound": "Conversation not found",
     "cannotMessageYourself": "You cannot start a conversation with yourself",
     "invalidChatAttachment": "Attachment must be an unused upload owned by you",
+    "e2eIdentityVersionConflict": "Key version conflict: reload your keys and try again",
+    "e2eRecipientHasNoKey": "The recipient has not set up encryption yet",
+    "e2eKeyVersionStale": "Encryption keys are out of date: refresh and try again",
+    "invalidEncryptedMessage": "Invalid encrypted message",
+    "chatEncryptionNotSupported": "Encryption is only available in private conversations",
+    "e2eTransferExists": "Transfer session already in use",
+    "e2eTransferNotFound": "Transfer not found or expired",
     "replyToMessageNotFound": "Message being replied to was not found",
     "notificationNotFound": "Notification not found",
     "failedToRegisterPushToken": "Failed to register push token",
@@ -51,6 +58,7 @@
     "notFound": "Not found",
     "unsupportedFileType": "Unsupported file type: {{ext}}",
     "fileTooLarge": "File is too large (max {{max}} MB)",
+    "noFileUploaded": "No file was uploaded",
     "tooManyAttachments": "Too many photos or videos (max {{max}})",
     "cannotRemoveLastAdmin": "Cannot remove the last remaining admin",
     "cannotDeleteLastAdminAccount": "You're the only admin on this server. Make someone else an admin first, then delete your account.",
@@ -155,7 +163,9 @@
     "backupKitNotSaved": "Confirm that you stored the emergency kit outside this server before turning on encryption",
     "backupKeyMissing": "Generate a backup encryption key first",
     "mediaMirrorAlbumLinkedElsewhere": "This album is linked to another family. Mirroring into it would show this family's photos there — choose or create another album.",
-    "mediaAlbumMirroredElsewhere": "Another family mirrors its uploads into this album. Linking it here would show that family's photos — choose another album."
+    "mediaAlbumMirroredElsewhere": "Another family mirrors its uploads into this album. Linking it here would show that family's photos — choose another album.",
+    "directMessagesDisabled": "Direct messages are turned off on this server",
+    "e2eDirectMessagesDisabled": "End-to-end encrypted direct messages are turned off on this server"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

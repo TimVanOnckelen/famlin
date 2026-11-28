@@ -536,7 +536,22 @@
     "maxVideoDurationSeconds": "最长视频（秒）",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} 秒。应用会在上传前检查；旧版应用仍使用 2 分钟的限制。",
     "maxUploadSizeMb": "最大上传（MB）",
-    "maxUploadSizeMbHint": "每个文件 {{min}}–{{max}} MB。Famlin 前面的反向代理可能允许的更少：例如 Cloudflare 免费套餐会在 100 MB 时中止上传。"
+    "maxUploadSizeMbHint": "每个文件 {{min}}–{{max}} MB。Famlin 前面的反向代理可能允许的更少：例如 Cloudflare 免费套餐会在 100 MB 时中止上传。",
+    "directMessages": "私信",
+    "directMessagesDesc": "成员之间的一对一私人消息。",
+    "directMessagesEnabled": "允许私信",
+    "directMessagesEnabledHint": "允许成员互相发送一对一私人消息。关闭后，现有的私人对话会被隐藏但不会被删除；家庭聊天不受影响。",
+    "directMessagesOnWeb": "在网页应用中提供私信",
+    "directMessagesOnWebHint": "网页应用无法读取端到端加密的消息。保持关闭可仅在手机应用中提供私信。",
+    "e2eDirectMessagesEnabled": "对私信进行端到端加密",
+    "e2eDirectMessagesEnabledHint": "默认关闭。开启后，Famlin 应用会在成员的手机上加密私信，任何其他人（包括身为管理员的你）都无法阅读。之后关闭只影响新消息；已加密的消息仍保持加密。",
+    "e2eOffRiskTitle": "私信未进行端到端加密",
+    "e2eOffRiskBody": "你以及任何能访问此服务器或其备份的人都可以阅读所有私信。成员会在每个私人对话中看到相关提示。",
+    "e2eOnRiskTitle": "丢失密钥就意味着丢失消息",
+    "e2eOnRiskBody": "只有成员的手机持有密钥。如果有人在没有钥匙串备份或恢复码的情况下丢失手机，其加密消息将无法恢复——你无法恢复，服务器备份也无法恢复。你也无法阅读或管理加密消息。",
+    "e2eConfirmTitle": "开启端到端加密？",
+    "e2eConfirmBody": "从应用发送的私信将在成员的手机上加密。其他任何人都无法阅读——你不能，通过服务器或其备份也不能。这也意味着没有人能恢复它们：如果成员在没有钥匙串备份或恢复码的情况下丢失手机，其加密消息将永久丢失。现有消息保持不变。",
+    "e2eConfirm": "开启加密"
   },
   "media": {
     "peopleMapping": {

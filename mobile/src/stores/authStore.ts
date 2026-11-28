@@ -15,6 +15,7 @@ import { setApiBaseUrl, setMediaToken, unregisterDevice, unregisterPushToken } f
 import { refreshMediaToken } from '@/api/uploads'
 import { usePendingShareStore } from '@/stores/pendingShareStore'
 import { checkServerFeature } from '@/utils/serverFeatures'
+import { wipeE2eData } from '@/e2e/wipe'
 
 interface AuthState {
   user: User | null
@@ -29,7 +30,7 @@ interface AuthState {
   setServerUrl: (serverUrl: string) => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   serverUrl: null,
@@ -64,6 +65,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       await unregisterDevice(installId).catch(() => {})
     }
     await deleteDeviceReport()
+    // End-to-end keys go with an explicit sign-out (not with clearSession, a
+    // mere session expiry) — before the server address is forgotten, as it
+    // scopes them.
+    const { user, serverUrl } = get()
+    await wipeE2eData(user && serverUrl ? { serverUrl, userId: user.id } : null)
     await deleteToken()
     await deleteServerUrl()
     setMediaToken(null)

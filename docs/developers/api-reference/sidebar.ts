@@ -8,6 +8,52 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "End-to-end encryption",
+      link: {
+        type: "doc",
+        id: "api-reference/end-to-end-encryption",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/list-my-e-2-e-identities",
+          label: "List your own key identities",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/create-e-2-e-identity",
+          label: "Publish a new key identity version",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/set-e-2-e-recovery-backup",
+          label: "Set or clear the recovery backup",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-e-2-e-identities",
+          label: "Get a member's public key identities",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/put-e-2-e-transfer",
+          label: "Hand an encrypted identity to a new device",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
+          id: "api-reference/take-e-2-e-transfer",
+          label: "Receive a pending transfer (one-shot)",
+          className: "api-method get",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Account",
       link: {
         type: "doc",
@@ -416,6 +462,12 @@ const sidebar: SidebarsConfig = {
           label: "Get unread message counts per group",
           className: "api-method get",
         },
+        {
+          type: "doc",
+          id: "api-reference/set-conversation-encryption",
+          label: "Opt a private conversation out of, or back into, encryption",
+          className: "api-method put",
+        },
       ],
     },
     {
@@ -814,6 +866,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/upload-encrypted-blob",
+          label: "Upload an encrypted attachment blob",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
           id: "api-reference/get-media-token",
           label: "Get a media token",
           className: "api-method get",
@@ -1172,6 +1230,36 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/chatconversation",
           label: "ChatConversation",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/e-2-epublicidentity",
+          label: "E2ePublicIdentity",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/e-2-eownidentity",
+          label: "E2eOwnIdentity",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/e-2-erecoverybackup",
+          label: "E2eRecoveryBackup",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/e-2-etransferpayload",
+          label: "E2eTransferPayload",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/e-2-emessagepayloadv-1",
+          label: "E2eMessagePayloadV1",
           className: "schema",
         },
         {

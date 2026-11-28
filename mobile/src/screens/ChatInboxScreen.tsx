@@ -11,9 +11,15 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { chatConversationsQueryKey, fetchChatConversations, type ChatConversation } from '@famlin/api-client'
+import {
+  chatConversationsQueryKey,
+  e2eUserIdentitiesQueryKey,
+  fetchChatConversations,
+  fetchUserE2eIdentities,
+  type ChatConversation,
+} from '@famlin/api-client'
 
 import { colors } from '@/constants/colors'
 import { Avatar } from '@/components/Avatar'
@@ -21,6 +27,14 @@ import { EmptyState } from '@/components/EmptyState'
 import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { useAuthStore } from '@/stores/authStore'
+import { useDirectMessagePolicy } from '@/hooks/useServerInfo'
+import { decryptChatPayload } from '@/e2e/decrypt'
+import { toPublicIdentities, useE2e } from '@/e2e/useE2e'
+import { useSilentE2eSetup } from '@/e2e/useSilentSetup'
+import { useE2eKeysStore } from '@/e2e/keysStore'
+import { shouldShowBackupReminder } from '@/e2e/backupReminder'
+import { useNeedsRecoveryCode } from '@/e2e/useKeySync'
+import { E2eNotice } from '@/components/E2eNotice'
 import { formatRelativeDate } from '@/i18n/utils'
 import {
   chatConversationPreview,
@@ -38,8 +52,38 @@ export function ChatInboxScreen() {
     queryKey: chatConversationsQueryKey(),
     queryFn: fetchChatConversations,
   })
-  const sections = chatConversationSections(data?.items ?? [], userId, search)
+  const dmPolicy = useDirectMessagePolicy()
+  // Private messages switched off by the administrator: family chats only.
+  const sections = chatConversationSections(data?.items ?? [], userId, search).filter(
+    (section) => !dmPolicy.disabledByAdmin || section.key === 'family'
+  )
   const hasSearch = search.trim().length > 0
+
+  // Previews of encrypted last messages are decrypted here, so the inbox needs
+  // the identities of whoever wrote them.
+  const e2e = useE2e()
+  useSilentE2eSetup()
+  const meta = useE2eKeysStore((state) => state.meta)
+  const dismissReminder = useE2eKeysStore((state) => state.dismissBackupReminder)
+  const needsCode = useNeedsRecoveryCode(!!e2e.serverIdentities?.[0]?.recoveryBackup)
+  const showReminder = e2e.status === 'ready' && needsCode && shouldShowBackupReminder({ meta, hasBackup: false })
+  const authorIds = [
+    ...new Set(
+      (data?.items ?? [])
+        .filter((item) => item.lastMessage?.encryption === 'v1' && item.lastMessage.authorId !== userId)
+        .map((item) => item.lastMessage!.authorId)
+    ),
+  ]
+  const authorQueries = useQueries({
+    queries: authorIds.map((authorId) => ({
+      queryKey: e2eUserIdentitiesQueryKey(authorId),
+      queryFn: () => fetchUserE2eIdentities(authorId),
+      staleTime: 60 * 1000,
+      enabled: (e2e.status !== 'unsupported' || e2e.serverEncryptionDisabled) && !dmPolicy.disabledByAdmin,
+    })),
+  })
+  const identitiesByAuthor = new Map(authorIds.map((id, index) => [id, authorQueries[index]?.data]))
+  const myPublic = userId ? toPublicIdentities(userId, e2e.serverIdentities) : undefined
 
   function openConversation(conversation: ChatConversation) {
     if (conversation.kind === 'FAMILY' && conversation.group) {
@@ -56,16 +100,18 @@ export function ChatInboxScreen() {
         onBack={() => navigation.goBack()}
         centered
         right={
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={styles.newMessage}
-              onPress={() => navigation.navigate('DmMemberPicker')}
-              accessibilityRole="button"
-              accessibilityLabel={t('chat.newMessage')}
-            >
-              <Icon name="edit" size={18} color={colors.white} />
-            </TouchableOpacity>
-          </View>
+          dmPolicy.disabledByAdmin ? undefined : (
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                style={styles.newMessage}
+                onPress={() => navigation.navigate('DmMemberPicker')}
+                accessibilityRole="button"
+                accessibilityLabel={t('chat.newMessage')}
+              >
+                <Icon name="edit" size={18} color={colors.white} />
+              </TouchableOpacity>
+            </View>
+          )
         }
       />
 
@@ -94,6 +140,17 @@ export function ChatInboxScreen() {
         ) : null}
       </View>
 
+      {showReminder && (
+        <E2eNotice
+          icon="shield"
+          message={t('e2e.reminder.text')}
+          actions={[
+            { label: t('e2e.reminder.action'), onPress: () => navigation.navigate('E2eBackup') },
+            { label: t('e2e.reminder.dismiss'), onPress: () => void dismissReminder() },
+          ]}
+        />
+      )}
+
       {isLoading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={colors.primary} />
@@ -112,7 +169,19 @@ export function ChatInboxScreen() {
           )}
           renderItem={({ item }) => {
             const title = chatConversationTitle(item, userId)
-            const preview = chatConversationPreview(item)
+            const preview = chatConversationPreview(item, (last) =>
+              decryptChatPayload({
+                messageId: last.id,
+                conversationId: item.id,
+                authorId: last.authorId,
+                payload: last.encryptedPayload,
+                myKeys: e2e.myKeys,
+                senderIdentities:
+                  last.authorId === userId
+                    ? myPublic
+                    : toPublicIdentities(last.authorId, identitiesByAuthor.get(last.authorId)),
+              })
+            )
             const otherParticipant =
               item.kind === 'PRIVATE' ? item.participants.find((participant) => participant.id !== userId) : undefined
             return (
@@ -139,6 +208,9 @@ export function ChatInboxScreen() {
                     )}
                   </View>
                   <View style={styles.previewRow}>
+                    {'encrypted' in preview && preview.encrypted && (
+                      <Icon name="lock" size={12} color={colors.textMuted} />
+                    )}
                     <Text style={styles.preview} numberOfLines={1}>
                       {preview.key === 'chat.previewText' ? preview.text : t(preview.key)}
                     </Text>

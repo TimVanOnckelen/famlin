@@ -7,6 +7,7 @@ import {
   fetchGroupMembers,
   fetchChatMessages,
   fetchServerInfo,
+  resolveDirectMessagePolicy,
   serverFeatureSupport,
   sendChatMessage,
   markChatRead,
@@ -52,8 +53,20 @@ export function ChatPage(props: Parameters<typeof LegacyChatPage>[0]) {
   })
   const support = serverFeatureSupport(serverQuery.data, 'directMessages')
 
-  if (support === 'supported') return <DirectMessagesChatPage {...props} />
-  if (support === 'unsupported' || serverQuery.isError) return <LegacyChatPage {...props} />
+  const policy = resolveDirectMessagePolicy(serverQuery.data)
+  // An administrator who turned DMs off gets the plain family chat, whatever else the server advertises.
+  const disabledByAdmin = !!serverQuery.data?.directMessages && !policy.enabled
+
+  if (support === 'supported' && !disabledByAdmin) {
+    return (
+      <DirectMessagesChatPage
+        {...props}
+        privateMessagesInWeb={policy.web}
+        encryptionOffByAdmin={!!serverQuery.data?.directMessages && !policy.encryption}
+      />
+    )
+  }
+  if (support === 'unsupported' || disabledByAdmin || serverQuery.isError) return <LegacyChatPage {...props} />
 
   return (
     <AppShell

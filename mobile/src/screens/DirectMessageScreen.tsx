@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +24,7 @@ import {
   fetchChatConversations,
   isChatEncryptionSupported,
   sendChatConversationMessage,
+  setChatConversationEncryption,
   type ChatConversationMessage,
 } from '@famlin/api-client'
 
@@ -31,15 +32,24 @@ import { colors } from '@/constants/colors'
 import { Avatar } from '@/components/Avatar'
 import { ChatComposer } from '@/components/ChatComposer'
 import { EmptyState } from '@/components/EmptyState'
+import { E2eNotice } from '@/components/E2eNotice'
+import { EncryptedPhoto } from '@/components/EncryptedPhoto'
 import { Icon } from '@/components/Icon'
 import { MediaThumbnail } from '@/components/MediaThumbnail'
 import { useChatConversationMessages } from '@/hooks/useChatConversationMessages'
+import type { ComposerSendBody } from '@/hooks/useChatMessageComposer'
 import { useAuthStore } from '@/stores/authStore'
+import { useDirectMessagePolicy } from '@/hooks/useServerInfo'
 import { getUploadUrl } from '@/api/uploads'
 import { formatRelativeDate } from '@/i18n/utils'
 import { isVideoUrl } from '@/utils/media'
 import { chatConversationTitle } from '@/utils/chatConversations'
 import { removeChatMessageFromCache } from '@/utils/chatCache'
+import { useDmCrypto, type DmRow } from '@/e2e/useDmCrypto'
+import { sendEncryptedMessage } from '@/e2e/send'
+import { decryptErrorKey } from '@/e2e/decrypt'
+import { getCachedContent } from '@/e2e/cache'
+import { useE2eKeysStore } from '@/e2e/keysStore'
 
 const MAX_SWIPE_TRANSLATION = 60
 const SWIPE_REPLY_THRESHOLD_RATIO = 0.35
@@ -52,7 +62,7 @@ export function DirectMessageScreen() {
   const userId = useAuthStore((state) => state.user?.id)
   const insets = useSafeAreaInsets()
   const [replyTarget, setReplyTarget] = useState<ChatConversationMessage | null>(null)
-  const flatListRef = useRef<FlatList<ChatConversationMessage>>(null)
+  const flatListRef = useRef<FlatList<DmRow>>(null)
   const conversationsQuery = useQuery({
     queryKey: chatConversationsQueryKey(),
     queryFn: fetchChatConversations,
@@ -64,6 +74,14 @@ export function DirectMessageScreen() {
     conversationId: conversation ? conversationId : '',
     modern: true,
   })
+  const dmPolicy = useDirectMessagePolicy()
+  // DMs switched off by the administrator: back to the inbox (family chats), no error screen.
+  useEffect(() => {
+    if (dmPolicy.disabledByAdmin) navigation.replace('ChatInbox')
+  }, [dmPolicy.disabledByAdmin, navigation])
+  const crypto = useDmCrypto(conversation, items as ChatConversationMessage[])
+  const { e2e, decision, rows } = crypto
+  const e2eActive = e2e.status !== 'unsupported'
 
   const deleteMutation = useMutation({
     mutationFn: (messageId: string) => deleteChatMessage(messageId),
@@ -73,6 +91,35 @@ export function DirectMessageScreen() {
       void queryClient.invalidateQueries({ queryKey: chatUnreadConversationsQueryKey() })
     },
   })
+
+  const encryptionMutation = useMutation({
+    mutationFn: (enabled: boolean) => setChatConversationEncryption(conversationId, enabled),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: chatConversationsQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: chatMessagesQueryKey(conversationId) }),
+      ]),
+    onError: (error: any) =>
+      Alert.alert(t('common.error'), error.response?.data?.error || error.message || t('common.tryAgain')),
+  })
+
+  function confirmTurnOff() {
+    Alert.alert(t('e2e.turnOffTitle'), t('e2e.turnOffConfirm', { name: title }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('e2e.turnOff'), style: 'destructive', onPress: () => encryptionMutation.mutate(false) },
+    ])
+  }
+
+  function openMenu() {
+    const off = !!conversation?.encryptionDisabledAt
+    Alert.alert(title, undefined, [
+      { text: t('e2e.safetyCode.menu'), onPress: () => navigation.navigate('SafetyCode', { conversationId }) },
+      off
+        ? { text: t('e2e.turnOn'), onPress: () => encryptionMutation.mutate(true) }
+        : { text: t('e2e.turnOff'), style: 'destructive', onPress: confirmTurnOff },
+      { text: t('common.cancel'), style: 'cancel' },
+    ])
+  }
 
   function confirmDelete(message: ChatConversationMessage) {
     Alert.alert(t('chat.deleteMessageTitle'), t('chat.deleteMessageConfirm'), [
@@ -89,11 +136,28 @@ export function DirectMessageScreen() {
     ])
   }
 
-  async function send(body: { content?: string; attachmentUrl?: string }) {
-    const created = await sendChatConversationMessage(conversationId, {
-      ...body,
-      ...(replyTarget ? { replyToMessageId: replyTarget.id } : {}),
-    })
+  async function send(body: ComposerSendBody) {
+    const replyToMessageId = replyTarget?.id
+    let created
+    if (decision.kind === 'wait') throw new Error(t('e2e.stillChecking'))
+    if (decision.kind === 'encrypt' && e2e.latestKeys && crypto.peerId) {
+      created = await sendEncryptedMessage({
+        queryClient,
+        conversationId,
+        sender: e2e.latestKeys,
+        peerId: crypto.peerId,
+        text: body.content,
+        photo: body.localPhoto,
+        replyToMessageId,
+      })
+      void useE2eKeysStore.getState().noteEncryptedSend()
+    } else {
+      created = await sendChatConversationMessage(conversationId, {
+        ...(body.content ? { content: body.content } : {}),
+        ...(body.attachmentUrl ? { attachmentUrl: body.attachmentUrl } : {}),
+        ...(replyToMessageId ? { replyToMessageId } : {}),
+      })
+    }
     setReplyTarget(null)
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: chatMessagesQueryKey(conversationId) }),
@@ -103,7 +167,7 @@ export function DirectMessageScreen() {
   }
 
   function handleJumpToOriginal(messageId: string) {
-    const index = (items as ChatConversationMessage[]).findIndex((message) => message.id === messageId)
+    const index = rows.findIndex((row) => row.message.id === messageId)
     if (index === -1) return
     try {
       flatListRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true })
@@ -134,6 +198,9 @@ export function DirectMessageScreen() {
     )
   }
 
+  const encrypting = decision.kind === 'encrypt'
+  const replySnippet = replyTarget ? replySnippetOf(replyTarget, t) : ''
+
   return (
     <SafeAreaView testID="direct-message-screen" style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -144,6 +211,18 @@ export function DirectMessageScreen() {
         <Text style={styles.headerTitle} numberOfLines={1}>
           {title}
         </Text>
+        {e2eActive && (
+          <>
+            {crypto.verified && <Icon name="shield" size={18} color={colors.primary} />}
+            <TouchableOpacity style={styles.back} onPress={openMenu} accessibilityLabel={t('e2e.conversationMenu')}>
+              <Icon
+                name={encrypting ? 'lock' : 'unlock'}
+                size={18}
+                color={encrypting ? colors.primary : colors.textMuted}
+              />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -160,31 +239,38 @@ export function DirectMessageScreen() {
             testID="direct-message-list"
             style={styles.flex}
             ref={flatListRef}
-            data={items as ChatConversationMessage[]}
+            data={rows}
             inverted
             maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.message.id}
             contentContainerStyle={styles.list}
             onEndReached={onEndReached}
             onEndReachedThreshold={0.5}
             onScrollToIndexFailed={({ index, averageItemLength }) => {
               flatListRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true })
             }}
-            renderItem={({ item }) => (
-              <DirectMessageRow
-                message={item}
-                isOwn={item.authorId === userId}
-                onSwipeToReply={setReplyTarget}
-                onPressReplyQuote={handleJumpToOriginal}
-                onDelete={() => confirmDelete(item)}
-                onPressAttachment={() =>
-                  navigation.navigate('ImageViewer', {
-                    urls: [getUploadUrl(item.attachmentUrl!)],
-                    initialIndex: 0,
-                  })
-                }
-              />
-            )}
+            renderItem={({ item }) =>
+              item.kind === 'system' ? (
+                <SystemRow row={item} />
+              ) : (
+                <DirectMessageRow
+                  row={item}
+                  isOwn={item.message.authorId === userId}
+                  showState={e2eActive}
+                  hasKeys={e2e.myKeys.length > 0}
+                  onSwipeToReply={setReplyTarget}
+                  onPressReplyQuote={handleJumpToOriginal}
+                  onDelete={() => confirmDelete(item.message)}
+                  onRestore={() => navigation.navigate('E2eRestore')}
+                  onPressAttachment={(uri) =>
+                    navigation.navigate('ImageViewer', {
+                      urls: [uri ?? getUploadUrl(item.message.attachmentUrl!)],
+                      initialIndex: 0,
+                    })
+                  }
+                />
+              )
+            }
             ListFooterComponent={
               query.isFetchingNextPage ? (
                 <ActivityIndicator color={colors.primary} style={styles.loadingMore} />
@@ -203,10 +289,7 @@ export function DirectMessageScreen() {
                 {t('chat.replyingTo', { name: replyTarget.author.name })}
               </Text>
               <Text style={styles.replyPreviewSnippet} numberOfLines={1}>
-                {replyTarget.content ??
-                  (replyTarget.attachmentUrl && isVideoUrl(replyTarget.attachmentUrl)
-                    ? t('chat.attachmentVideo')
-                    : t('chat.attachmentPhoto'))}
+                {replySnippet}
               </Text>
             </View>
             <TouchableOpacity
@@ -218,29 +301,102 @@ export function DirectMessageScreen() {
             </TouchableOpacity>
           </View>
         )}
-        <ChatComposer send={send} />
+        {crypto.keyChanged && (
+          <E2eNotice
+            icon="alert-circle"
+            tone="warning"
+            message={t('e2e.keyChanged', { name: title })}
+            actions={[
+              { label: t('e2e.verify'), onPress: () => navigation.navigate('SafetyCode', { conversationId }) },
+              { label: t('e2e.dismiss'), onPress: crypto.dismissKeyChange },
+            ]}
+          />
+        )}
+        {decision.kind === 'plaintext' && decision.reason !== 'unsupported' && (
+          <PlaintextBanner
+            reason={decision.reason}
+            name={title}
+            onTurnOn={() => encryptionMutation.mutate(true)}
+            onRestore={() => navigation.navigate('E2eRestore')}
+          />
+        )}
+        {decision.kind === 'wait' && <E2eNotice icon="lock" message={t('e2e.stillChecking')} />}
+        {encrypting && <E2eNotice icon="lock" message={t('e2e.banner.encrypted')} />}
+        <ChatComposer send={send} encrypted={encrypting} disabled={decision.kind === 'wait'} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
+function replySnippetOf(message: ChatConversationMessage, t: (key: string) => string): string {
+  if (message.encryption !== 'none') {
+    const content = getCachedContent(message.id)
+    if (content?.text) return content.text
+    return content?.attachment ? t('chat.attachmentPhoto') : t('e2e.encryptedMessage')
+  }
+  return (
+    message.content ??
+    (message.attachmentUrl && isVideoUrl(message.attachmentUrl) ? t('chat.attachmentVideo') : t('chat.attachmentPhoto'))
+  )
+}
+
+function PlaintextBanner({
+  reason,
+  name,
+  onTurnOn,
+  onRestore,
+}: {
+  reason: 'disabled' | 'peerNoKey' | 'needsSetup' | 'needsRestore' | 'serverDisabled'
+  name: string
+  onTurnOn: () => void
+  onRestore: () => void
+}) {
+  const { t } = useTranslation()
+  const actions =
+    reason === 'disabled'
+      ? [{ label: t('e2e.turnOn'), onPress: onTurnOn }]
+      : reason === 'needsRestore'
+        ? [{ label: t('e2e.banner.restore'), onPress: onRestore }]
+        : []
+  return <E2eNotice icon="unlock" tone="warning" message={t(`e2e.banner.${reason}`, { name })} actions={actions} />
+}
+
+function SystemRow({ row }: { row: DmRow }) {
+  const { t } = useTranslation()
+  const key = row.message.kind === 'SYSTEM_ENCRYPTION_DISABLED' ? 'e2e.system.disabled' : 'e2e.system.enabled'
+  return (
+    <View style={styles.systemRow}>
+      <Text style={styles.systemText}>{t(key, { name: row.message.author.name })}</Text>
+    </View>
+  )
+}
+
 function DirectMessageRow({
-  message,
+  row,
   isOwn,
+  showState,
+  hasKeys,
   onSwipeToReply,
   onPressReplyQuote,
   onDelete,
+  onRestore,
   onPressAttachment,
 }: {
-  message: ChatConversationMessage
+  row: DmRow
   isOwn: boolean
+  showState: boolean
+  hasKeys: boolean
   onSwipeToReply: (message: ChatConversationMessage) => void
   onPressReplyQuote: (messageId: string) => void
   onDelete: () => void
-  onPressAttachment: () => void
+  onRestore: () => void
+  onPressAttachment: (decryptedUri?: string) => void
 }) {
   const { t } = useTranslation()
-  const supported = isChatEncryptionSupported(message.encryption)
+  const message = row.message
+  const result = row.result
+  const readable = row.kind === 'plain' || (row.kind === 'encrypted' && result?.status === 'ok')
+  const supported = row.kind !== 'unsupported'
   const translateX = useSharedValue(0)
   const bubbleAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -257,7 +413,7 @@ function DirectMessageRow({
         : Math.max(0, Math.min(MAX_SWIPE_TRANSLATION, event.translationX))
     })
     .onEnd(() => {
-      if (supported && Math.abs(translateX.value) > MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO) {
+      if (readable && Math.abs(translateX.value) > MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO) {
         runOnJS(onSwipeToReply)(message)
       }
       translateX.value = withSpring(0)
@@ -265,6 +421,20 @@ function DirectMessageRow({
 
   const replyAttachmentLabel = (attachmentUrl: string) =>
     isVideoUrl(attachmentUrl) ? t('chat.attachmentVideo') : t('chat.attachmentPhoto')
+
+  const replyTo = message.replyTo
+  const quoteSnippet = (() => {
+    if (!replyTo) return ''
+    if (replyTo.encryption && replyTo.encryption !== 'none') {
+      const content = getCachedContent(replyTo.id)
+      if (content?.text) return content.text
+      return content?.attachment ? t('chat.attachmentPhoto') : t('e2e.encryptedMessage')
+    }
+    return replyTo.content ?? (replyTo.attachmentUrl ? replyAttachmentLabel(replyTo.attachmentUrl) : '')
+  })()
+
+  const content = result?.status === 'ok' ? result.content : undefined
+  const textColor = [styles.messageText, isOwn && styles.ownMessageText]
 
   return (
     <View style={[styles.messageRow, isOwn ? styles.messageRowOwn : styles.messageRowOther]}>
@@ -282,16 +452,16 @@ function DirectMessageRow({
         <Animated.View style={[styles.messageContent, bubbleAnimatedStyle]}>
           <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
             {!supported ? (
-              <Text style={[styles.messageText, isOwn && styles.ownMessageText]}>
-                {t('chat.unsupportedEncryption')}
-              </Text>
+              <Text style={textColor}>{t('chat.unsupportedEncryption')}</Text>
+            ) : row.kind === 'encrypted' && !content ? (
+              <EncryptedProblem result={result} hasKeys={hasKeys} isOwn={isOwn} onRestore={onRestore} />
             ) : (
               <>
-                {!!message.replyTo && (
+                {!!replyTo && (
                   <TouchableOpacity
                     style={styles.replyQuote}
                     activeOpacity={0.7}
-                    onPress={() => onPressReplyQuote(message.replyTo!.id)}
+                    onPress={() => onPressReplyQuote(replyTo.id)}
                   >
                     <View style={[styles.replyQuoteBar, isOwn ? styles.replyQuoteBarOwn : styles.replyQuoteBarOther]} />
                     <View style={styles.replyQuoteTextWrap} testID="chat-reply-quote-text">
@@ -302,7 +472,7 @@ function DirectMessageRow({
                         ]}
                         numberOfLines={1}
                       >
-                        {message.replyTo.authorName}
+                        {replyTo.authorName}
                       </Text>
                       <Text
                         style={[
@@ -311,14 +481,16 @@ function DirectMessageRow({
                         ]}
                         numberOfLines={1}
                       >
-                        {message.replyTo.content ??
-                          (message.replyTo.attachmentUrl ? replyAttachmentLabel(message.replyTo.attachmentUrl) : '')}
+                        {quoteSnippet}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 )}
-                {!!message.attachmentUrl && (
-                  <TouchableOpacity onPress={onPressAttachment} accessibilityLabel={t('postDetail.viewAttachment')}>
+                {row.kind === 'plain' && !!message.attachmentUrl && (
+                  <TouchableOpacity
+                    onPress={() => onPressAttachment()}
+                    accessibilityLabel={t('postDetail.viewAttachment')}
+                  >
                     <MediaThumbnail
                       url={getUploadUrl(message.attachmentUrl, 'thumbnail')}
                       fallbackUrl={getUploadUrl(message.attachmentUrl)}
@@ -326,9 +498,16 @@ function DirectMessageRow({
                     />
                   </TouchableOpacity>
                 )}
-                {!!message.content && (
-                  <Text style={[styles.messageText, isOwn && styles.ownMessageText]}>{message.content}</Text>
+                {!!content?.attachment && (
+                  <EncryptedPhoto
+                    messageId={message.id}
+                    attachment={content.attachment}
+                    style={styles.attachment}
+                    onPress={(uri) => onPressAttachment(uri)}
+                  />
                 )}
+                {row.kind === 'plain' && !!message.content && <Text style={textColor}>{message.content}</Text>}
+                {!!content?.text && <Text style={textColor}>{content.text}</Text>}
               </>
             )}
             {isOwn && (
@@ -337,9 +516,49 @@ function DirectMessageRow({
               </TouchableOpacity>
             )}
           </View>
-          <Text style={[styles.time, isOwn && styles.timeOwn]}>{formatRelativeDate(message.createdAt)}</Text>
+          <View style={[styles.timeRow, isOwn && styles.timeRowOwn]}>
+            {showState && supported && (
+              <View
+                style={styles.stateMark}
+                accessibilityLabel={row.kind === 'encrypted' ? t('e2e.state.encrypted') : t('e2e.state.notEncrypted')}
+              >
+                <Icon name={row.kind === 'encrypted' ? 'lock' : 'unlock'} size={10} color={colors.textMuted} />
+                {row.kind !== 'encrypted' && <Text style={styles.stateText}>{t('e2e.state.notEncrypted')}</Text>}
+              </View>
+            )}
+            <Text style={styles.time}>{formatRelativeDate(message.createdAt)}</Text>
+          </View>
         </Animated.View>
       </GestureDetector>
+    </View>
+  )
+}
+
+function EncryptedProblem({
+  result,
+  hasKeys,
+  isOwn,
+  onRestore,
+}: {
+  result: DmRow['result']
+  hasKeys: boolean
+  isOwn: boolean
+  onRestore: () => void
+}) {
+  const { t } = useTranslation()
+  if (!result || result.status === 'pending') {
+    return <Text style={[styles.messageText, isOwn && styles.ownMessageText]}>{t('e2e.decrypting')}</Text>
+  }
+  if (result.status !== 'error') return null
+  const textStyle = [styles.messageText, isOwn && styles.ownMessageText]
+  return (
+    <View>
+      <Text style={textStyle}>{t(decryptErrorKey(result.code))}</Text>
+      {result.code === 'no_key_for_me' && !hasKeys && (
+        <TouchableOpacity onPress={onRestore} accessibilityRole="button">
+          <Text style={[styles.problemAction, isOwn && styles.ownMessageText]}>{t('e2e.error.restoreKeys')}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   )
 }
@@ -403,7 +622,13 @@ const styles = StyleSheet.create({
   replyQuoteSnippetOther: { color: colors.textMuted },
   attachment: { width: 220, height: 220, borderRadius: 12, marginBottom: 6, overflow: 'hidden' },
   time: { color: colors.textMuted, fontFamily: 'Nunito_400Regular', fontSize: 11 },
-  timeOwn: { paddingRight: 4 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  timeRowOwn: { paddingRight: 4, justifyContent: 'flex-end' },
+  stateMark: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  stateText: { color: colors.textMuted, fontFamily: 'Nunito_400Regular', fontSize: 11 },
+  problemAction: { marginTop: 6, color: colors.primary, fontFamily: 'Nunito_700Bold', fontSize: 14 },
+  systemRow: { alignSelf: 'center', paddingVertical: 6, paddingHorizontal: 12 },
+  systemText: { color: colors.textMuted, fontFamily: 'Nunito_600SemiBold', fontSize: 12, textAlign: 'center' },
   delete: { alignSelf: 'flex-end', marginTop: 5 },
   replyPreviewRow: {
     backgroundColor: colors.white,

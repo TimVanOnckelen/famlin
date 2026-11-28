@@ -10,8 +10,10 @@ import { ScreenHeader } from '@/components/ScreenHeader'
 import { EmptyState } from '@/components/EmptyState'
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@famlin/api-client'
 import { formatDateTime } from '@/i18n/utils'
+import { useDirectMessagePolicy } from '@/hooks/useServerInfo'
 
 export function NotificationsScreen() {
+  const dmPolicy = useDirectMessagePolicy()
   const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const queryClient = useQueryClient()
@@ -77,9 +79,9 @@ export function NotificationsScreen() {
               } else if (item.relatedStoryId) {
                 navigation.navigate('StoryViewer', { storyId: item.relatedStoryId })
               } else if (item.relatedChatConversationId) {
-                navigation.navigate('DirectMessage', {
-                  conversationId: item.relatedChatConversationId,
-                })
+                // DMs switched off by the administrator: the inbox shows the family chats.
+                if (dmPolicy.disabledByAdmin) navigation.navigate('ChatInbox')
+                else navigation.navigate('DirectMessage', { conversationId: item.relatedChatConversationId })
               }
             }}
           >

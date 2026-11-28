@@ -1,0 +1,32 @@
+---
+id: e-2-emessagepayloadv-1
+title: "E2eMessagePayloadV1"
+description: "Envelope of an end-to-end encrypted message. The server validates its shape and key versions, never the ciphertext."
+sidebar_label: "E2eMessagePayloadV1"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"v":1,"senderKeyVersion":0,"nonce":"string","ct":"string","keys":[{"userId":"string","keyVersion":0,"epk":"string","nonce":"string","wk":"string"}],"sig":"string"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"E2eMessagePayloadV1"}
+>
+</Heading>
+
+
+
+Envelope of an end-to-end encrypted message. The server validates its shape and key versions, never the ciphertext.
+
+<Schema
+  {...require("./e-2-emessagepayloadv-1.Schema.json")}
+>
+  
+</Schema>
+            

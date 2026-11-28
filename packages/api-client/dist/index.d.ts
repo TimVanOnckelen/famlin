@@ -1,8 +1,8 @@
 export type { StorageAdapter } from './storage';
 export { setStorageAdapter, getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage';
 export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMediaToken, initApiBaseUrl, setUnauthorizedHandler, setLanguageResolver, } from './client';
-export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo, ServerLimits, Branding, BrandPalette, BrandSemantic, } from './auth';
-export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, resolveServerLimits, getBrandingAssetUrl, changePassword, deleteAccount, downloadMyExport, getMyExportRequest, } from './auth';
+export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo, ServerLimits, DirectMessagePolicy, Branding, BrandPalette, BrandSemantic, } from './auth';
+export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, resolveServerLimits, resolveDirectMessagePolicy, getBrandingAssetUrl, changePassword, deleteAccount, downloadMyExport, getMyExportRequest, } from './auth';
 export { compareVersions } from './version';
 export type { ServerFeature, FeatureSupport } from './features';
 export { serverSupports, serverFeatureSupport, isNotFoundError, IMPLICIT_BASELINE_FEATURES, PRE_FEATURE_LIST_FEATURES, } from './features';
@@ -49,3 +49,7 @@ export type { Circle, CircleMember } from './types';
 export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles';
 export type { UploadProcessing } from './uploads';
 export type { UploadResult, UploadSessionMedia } from './uploads';
+export { E2E_MESSAGE_ENCRYPTION, E2eError, generateIdentity, publicIdentity, assertKeysMatchIdentity, safetyCode, encryptMessage, decryptMessage, parseMessagePayload, newMessageId, generateRecoveryCode, formatRecoveryCode, normalizeRecoveryCode, sealRecoveryBackup, openRecoveryBackup, createTransferRequest, parseTransferQr, sealTransfer, openTransfer, encryptAttachment, decryptAttachment, } from './e2e';
+export type { E2eAttachmentV1, E2eErrorCode, E2eIdentityKeys, E2eKeyEntryV1, E2eMessageContentV1, E2eMessagePayloadV1, E2ePublicIdentity, E2eRecoveryBackupV1, E2eTransferPayloadV1, EncryptMessageInput, DecryptMessageInput, TransferRequest, } from './e2e';
+export { e2eMyIdentitiesQueryKey, e2eUserIdentitiesQueryKey, fetchMyE2eIdentities, fetchUserE2eIdentities, publishE2eIdentity, updateE2eRecoveryBackup, putE2eTransfer, takeE2eTransfer, sendEncryptedChatMessage, uploadEncryptedAttachment, setChatConversationEncryption, } from './e2eApi';
+export type { E2ePublishedIdentity, E2eOwnIdentity, PublishE2eIdentityBody, SendEncryptedChatMessageBody, ChatConversationEncryptionState, } from './e2eApi';

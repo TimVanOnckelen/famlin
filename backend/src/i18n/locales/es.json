@@ -25,6 +25,13 @@
     "chatConversationNotFound": "Conversación no encontrada",
     "cannotMessageYourself": "No puedes iniciar una conversación contigo mismo",
     "invalidChatAttachment": "El archivo adjunto debe ser una carga tuya que no se haya usado",
+    "e2eIdentityVersionConflict": "Conflicto de versión de clave: recarga tus claves e inténtalo de nuevo",
+    "e2eRecipientHasNoKey": "El destinatario aún no ha configurado el cifrado",
+    "e2eKeyVersionStale": "Las claves de cifrado están desactualizadas: actualiza e inténtalo de nuevo",
+    "invalidEncryptedMessage": "Mensaje cifrado no válido",
+    "chatEncryptionNotSupported": "El cifrado solo está disponible en conversaciones privadas",
+    "e2eTransferExists": "La sesión de transferencia ya está en uso",
+    "e2eTransferNotFound": "Transferencia no encontrada o caducada",
     "replyToMessageNotFound": "No se encontró el mensaje al que se responde",
     "notificationNotFound": "Notificación no encontrada",
     "failedToRegisterPushToken": "No se pudo registrar el token de notificaciones push",
@@ -51,6 +58,7 @@
     "notFound": "No encontrado",
     "unsupportedFileType": "Tipo de archivo no admitido: {{ext}}",
     "fileTooLarge": "El archivo es demasiado grande (máx. {{max}} MB)",
+    "noFileUploaded": "No se subió ningún archivo",
     "tooManyAttachments": "Demasiadas fotos o vídeos (máx. {{max}})",
     "cannotRemoveLastAdmin": "No se puede quitar al último administrador",
     "cannotDeleteLastAdminAccount": "Eres el único administrador de este servidor. Haz administrador a otra persona primero y luego elimina tu cuenta.",
@@ -155,7 +163,9 @@
     "backupKitNotSaved": "Confirma que has guardado el kit de emergencia fuera de este servidor antes de activar el cifrado",
     "backupKeyMissing": "Genera primero una clave de cifrado de copias de seguridad",
     "mediaMirrorAlbumLinkedElsewhere": "Este álbum está vinculado a otra familia. Reflejar en él mostraría allí las fotos de esta familia: elige o crea otro álbum.",
-    "mediaAlbumMirroredElsewhere": "Otra familia refleja sus subidas en este álbum. Vincularlo aquí mostraría las fotos de esa familia: elige otro álbum."
+    "mediaAlbumMirroredElsewhere": "Otra familia refleja sus subidas en este álbum. Vincularlo aquí mostraría las fotos de esa familia: elige otro álbum.",
+    "directMessagesDisabled": "Los mensajes directos están desactivados en este servidor",
+    "e2eDirectMessagesDisabled": "Los mensajes directos cifrados de extremo a extremo están desactivados en este servidor"
   },
   "notifications": {
     "newPost": "{{author}} ha publicado en {{group}}: \"{{excerpt}}\"",

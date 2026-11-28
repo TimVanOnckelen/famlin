@@ -562,6 +562,34 @@
   color: white;
 }
 
+.chat-system-pill-info {
+  background: var(--fam-surface);
+  color: var(--fam-text-muted);
+}
+
+.chat-bubble-encrypted {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-style: italic;
+}
+
+.chat-not-encrypted {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  padding: 0 4px;
+}
+
+.chat-encryption-notice {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--fam-text-muted);
+  text-align: center;
+  border-top: 1px solid var(--fam-border);
+}
+
 .chat-message-time {
   font-size: 11px;
   font-weight: 600;

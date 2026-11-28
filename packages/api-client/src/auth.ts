@@ -135,6 +135,20 @@ export interface ServerInfo {
   // Admin-configured upload limits (issue #436, feature `configurableLimits`),
   // absent on older servers. Read via resolveServerLimits().
   limits?: ServerLimits
+  // Admin policy for 1:1 direct messages, absent on servers that predate it.
+  // Read via resolveDirectMessagePolicy().
+  directMessages?: DirectMessagePolicy
+}
+
+export interface DirectMessagePolicy {
+  // Direct messages exist at all on this server (family chat is separate).
+  enabled: boolean
+  // Whether the web app offers them. A UX choice, not access control: the
+  // web can't hold E2E keys, so an admin may keep DMs to the mobile app.
+  web: boolean
+  // Whether new messages may be end-to-end encrypted. Off means the
+  // administrator can read new messages; clients must say so in every DM.
+  encryption: boolean
 }
 
 export interface ServerLimits {
@@ -153,6 +167,18 @@ const DEFAULT_LIMITS: ServerLimits = { maxAttachments: 10, maxVideoDurationSecon
 
 export function resolveServerLimits(serverInfo: ServerInfo | null | undefined): ServerLimits {
   return { ...DEFAULT_LIMITS, ...serverInfo?.limits }
+}
+
+/**
+ * The server's direct-message policy. A server without the field predates
+ * the settings: DMs and encryption then follow its advertised features, and
+ * web shows DMs whenever the server has them.
+ */
+export function resolveDirectMessagePolicy(serverInfo: ServerInfo | null | undefined): DirectMessagePolicy {
+  if (serverInfo?.directMessages) return serverInfo.directMessages
+  const features = serverInfo?.features ?? []
+  const enabled = features.includes('directMessages')
+  return { enabled, web: enabled, encryption: enabled && features.includes('e2eDirectMessages') }
 }
 
 // The family's derived palette — computed server-side (one implementation

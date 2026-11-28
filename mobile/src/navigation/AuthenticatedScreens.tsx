@@ -19,6 +19,10 @@ import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen'
 import { ChatInboxScreen } from '@/screens/ChatInboxScreen'
 import { DmMemberPickerScreen } from '@/screens/DmMemberPickerScreen'
 import { DirectMessageScreen } from '@/screens/DirectMessageScreen'
+import { E2eBackupScreen } from '@/screens/E2eBackupScreen'
+import { E2eRestoreScreen } from '@/screens/E2eRestoreScreen'
+import { E2eLinkDeviceScreen } from '@/screens/E2eLinkDeviceScreen'
+import { SafetyCodeScreen } from '@/screens/SafetyCodeScreen'
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen'
 import { StoryViewerScreen } from '@/screens/StoryViewerScreen'
 import { StoryComposerScreen } from '@/screens/StoryComposerScreen'
@@ -168,6 +172,38 @@ export function renderAuthenticatedScreens(Stack: Stack) {
       <Stack.Screen
         name="DirectMessage"
         component={DirectMessageScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="E2eBackup"
+        component={E2eBackupScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="E2eRestore"
+        component={E2eRestoreScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="E2eLinkDevice"
+        component={E2eLinkDeviceScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="SafetyCode"
+        component={SafetyCodeScreen}
         options={{
           presentation: 'card',
           animation: 'slide_from_right',

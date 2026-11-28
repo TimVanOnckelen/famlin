@@ -1,0 +1,1 @@
+{"schema":{"type":"object","required":["v","epk","nonce","ct"],"properties":{"v":{"type":"integer","enum":[1]},"epk":{"type":"string"},"nonce":{"type":"string"},"ct":{"type":"string","description":"Base64","max 4096 chars.":null}},"title":"E2eTransferPayload"},"schemaType":"response"}

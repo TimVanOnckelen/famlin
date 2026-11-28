@@ -25,6 +25,10 @@ jest.mock('@/screens/DmMemberPickerScreen', () => ({
 jest.mock('@/screens/DirectMessageScreen', () => ({
   DirectMessageScreen: function DirectMessageScreen() {},
 }))
+jest.mock('@/screens/E2eBackupScreen', () => ({ E2eBackupScreen: function E2eBackupScreen() {} }))
+jest.mock('@/screens/E2eRestoreScreen', () => ({ E2eRestoreScreen: function E2eRestoreScreen() {} }))
+jest.mock('@/screens/E2eLinkDeviceScreen', () => ({ E2eLinkDeviceScreen: function E2eLinkDeviceScreen() {} }))
+jest.mock('@/screens/SafetyCodeScreen', () => ({ SafetyCodeScreen: function SafetyCodeScreen() {} }))
 jest.mock('@/screens/ImageViewerScreen', () => ({ ImageViewerScreen: function ImageViewerScreen() {} }))
 jest.mock('@/screens/StoryViewerScreen', () => ({ StoryViewerScreen: function StoryViewerScreen() {} }))
 jest.mock('@/screens/StoryComposerScreen', () => ({

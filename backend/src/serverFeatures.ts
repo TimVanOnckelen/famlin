@@ -39,6 +39,20 @@ export const SERVER_FEATURES = [
   'configurableLimits', // unreleased after 0.8.7 — server-info `limits` (issue #436)
   'calendarFeed', // unreleased after 0.8.7 — /api/calendar iCal feed + /api/auth/me/calendar-feed (issue #499)
   'directMessages', // unreleased after 0.10.0 — private one-to-one /api/chat conversations
+  'e2eDirectMessages', // unreleased after 0.10.0 — end-to-end encrypted direct messages (/api/e2e, encryption: 'v1')
 ] as const
 
 export type ServerFeature = (typeof SERVER_FEATURES)[number]
+
+// Features an admin can switch off with a server setting (direct messages).
+// Everything else in SERVER_FEATURES is unconditional.
+export function activeServerFeatures(settings: {
+  directMessagesEnabled: boolean
+  e2eDirectMessagesEnabled: boolean
+}): ServerFeature[] {
+  return SERVER_FEATURES.filter((id) => {
+    if (id === 'directMessages') return settings.directMessagesEnabled
+    if (id === 'e2eDirectMessages') return settings.directMessagesEnabled && settings.e2eDirectMessagesEnabled
+    return true
+  })
+}

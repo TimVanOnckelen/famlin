@@ -28,6 +28,7 @@ import { Logo } from '@/components/Logo'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
 import { CalendarFeedSection } from '@/components/CalendarFeedSection'
+import { E2eProfileSection } from '@/components/E2eProfileSection'
 import { profileSectionStyles } from '@/components/profileSectionStyles'
 import { useAuthStore } from '@/stores/authStore'
 import { useScrollDiagnosticsStore } from '@/stores/scrollDiagnosticsStore'
@@ -40,7 +41,7 @@ import {
   NotificationPrefs,
 } from '@/api/auth'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
-import { useServerInfo, useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { useServerInfo, useServerFeatureSupport, useDirectMessagesSupport } from '@/hooks/useServerInfo'
 import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { setLanguage } from '@/utils/storage'
 import { formatDayMonth } from '@/i18n/utils'
@@ -56,7 +57,7 @@ export function ProfileScreen() {
   // 404 instead (featureUnavailable).
   const giftListsSupport = useServerFeatureSupport('giftLists')
   const devicesSupport = useServerFeatureSupport('deviceDiagnostics')
-  const directMessagesSupport = useServerFeatureSupport('directMessages')
+  const directMessagesSupport = useDirectMessagesSupport()
   const showExport = useServerFeatureSupport('memberExport') !== 'unsupported'
   const showAccountDeletion = useServerFeatureSupport('accountDeletion') !== 'unsupported'
   // "My gift lists" (issue #307): every gift list the user takes part in.
@@ -464,6 +465,8 @@ export function ProfileScreen() {
         )}
 
         <CalendarFeedSection />
+
+        <E2eProfileSection />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.server')}</Text>

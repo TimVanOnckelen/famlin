@@ -536,7 +536,22 @@
     "maxVideoDurationSeconds": "Vídeo más largo (segundos)",
     "maxVideoDurationSecondsHint": "{{min}}–{{max}} segundos. Las apps lo comprueban antes de subir; las versiones antiguas de la app mantienen su límite de 2 minutos.",
     "maxUploadSizeMb": "Subida más grande (MB)",
-    "maxUploadSizeMbHint": "Por archivo, {{min}}–{{max}} MB. Un proxy inverso delante de Famlin puede permitir menos: el plan gratuito de Cloudflare, por ejemplo, corta las subidas a partir de 100 MB."
+    "maxUploadSizeMbHint": "Por archivo, {{min}}–{{max}} MB. Un proxy inverso delante de Famlin puede permitir menos: el plan gratuito de Cloudflare, por ejemplo, corta las subidas a partir de 100 MB.",
+    "directMessages": "Mensajes directos",
+    "directMessagesDesc": "Mensajes privados entre dos miembros.",
+    "directMessagesEnabled": "Permitir mensajes directos",
+    "directMessagesEnabledHint": "Permite que los miembros se envíen mensajes privados uno a uno. Si lo desactivas, las conversaciones privadas existentes se ocultan sin borrarse; el chat familiar no se ve afectado.",
+    "directMessagesOnWeb": "Ofrecer mensajes directos en la aplicación web",
+    "directMessagesOnWebHint": "La aplicación web no puede leer mensajes cifrados de extremo a extremo. Déjalo desactivado para ofrecer los mensajes privados solo en la aplicación móvil.",
+    "e2eDirectMessagesEnabled": "Cifrar de extremo a extremo los mensajes directos",
+    "e2eDirectMessagesEnabledHint": "Desactivado por defecto. Cuando está activado, la app Famlin cifra los mensajes privados en los teléfonos de los miembros, para que nadie más — ni siquiera tú como administrador — pueda leerlos. Desactivarlo después solo afecta a los mensajes nuevos; los que ya están cifrados siguen cifrados.",
+    "e2eOffRiskTitle": "Los mensajes directos no tienen cifrado de extremo a extremo",
+    "e2eOffRiskBody": "Tú, y cualquiera con acceso a este servidor o a sus copias de seguridad, podéis leer todos los mensajes privados. Los miembros ven un aviso de ello en cada conversación privada.",
+    "e2eOnRiskTitle": "Perder las claves es perder los mensajes",
+    "e2eOnRiskBody": "Solo los teléfonos de los miembros tienen las claves. Si alguien pierde su teléfono sin copia en el llavero ni código de recuperación, sus mensajes cifrados no se pueden recuperar — ni por ti ni desde una copia de seguridad del servidor. Tampoco puedes leer ni moderar los mensajes cifrados.",
+    "e2eConfirmTitle": "¿Activar el cifrado de extremo a extremo?",
+    "e2eConfirmBody": "Los mensajes privados enviados desde la app se cifrarán en los teléfonos de los miembros. Nadie más puede leerlos — ni tú, ni desde el servidor o sus copias de seguridad. Eso también significa que nadie puede recuperarlos: si un miembro pierde su teléfono sin copia en el llavero ni código de recuperación, sus mensajes cifrados se pierden para siempre. Los mensajes existentes se quedan como están.",
+    "e2eConfirm": "Activar el cifrado"
   },
   "media": {
     "peopleMapping": {

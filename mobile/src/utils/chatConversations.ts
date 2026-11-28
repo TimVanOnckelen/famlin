@@ -1,4 +1,11 @@
-import { isChatEncryptionSupported, type ChatConversation, type ChatEligiblePerson } from '@famlin/api-client'
+import {
+  E2E_MESSAGE_ENCRYPTION,
+  isChatEncryptionSupported,
+  type ChatConversation,
+  type ChatConversationLastMessage,
+  type ChatEligiblePerson,
+} from '@famlin/api-client'
+import type { DecryptResult } from '@/e2e/decrypt'
 
 export type ChatConversationSection = {
   key: 'family' | 'private'
@@ -31,12 +38,29 @@ export function chatConversationTitle(conversation: ChatConversation, currentUse
 }
 
 export type ChatConversationPreview =
-  | { key: 'chat.previewText'; text: string }
-  | { key: 'chat.previewPhoto' | 'chat.previewVideo' | 'chat.previewEmpty' | 'chat.unsupportedEncryption' }
+  | { key: 'chat.previewText'; text: string; encrypted?: true }
+  | { key: 'chat.previewPhoto' | 'chat.previewVideo' | 'chat.previewEmpty'; encrypted?: true }
+  | { key: 'chat.previewEncrypted'; encrypted: true }
+  | { key: 'chat.unsupportedEncryption' }
 
-export function chatConversationPreview(conversation: ChatConversation): ChatConversationPreview {
+/**
+ * `decrypt` opens an end-to-end encrypted last message when the caller has the
+ * keys; without it (or when it can't) the row says "Encrypted message" rather
+ * than guessing. Formats this app doesn't know are never previewed.
+ */
+export function chatConversationPreview(
+  conversation: ChatConversation,
+  decrypt?: (last: ChatConversationLastMessage) => DecryptResult
+): ChatConversationPreview {
   const last = conversation.lastMessage
   if (!last) return { key: 'chat.previewEmpty' }
+  if (last.encryption === E2E_MESSAGE_ENCRYPTION) {
+    const result = decrypt?.(last)
+    if (result?.status !== 'ok') return { key: 'chat.previewEncrypted', encrypted: true }
+    if (result.content.text) return { key: 'chat.previewText', text: result.content.text, encrypted: true }
+    if (result.content.attachment) return { key: 'chat.previewPhoto', encrypted: true }
+    return { key: 'chat.previewEmpty', encrypted: true }
+  }
   if (!isChatEncryptionSupported(last.encryption)) return { key: 'chat.unsupportedEncryption' }
   if (last.content) return { key: 'chat.previewText', text: last.content }
   if (last.hasAttachment) return { key: 'chat.previewPhoto' }
