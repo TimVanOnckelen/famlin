@@ -6,6 +6,7 @@ import path from 'path'
 import { prisma } from '../src/db.js'
 import { uploadsDir } from '../src/config.js'
 import { canReadUpload } from '../src/services/uploads.js'
+import { invalidateSettingsCache } from '../src/services/settings.js'
 import { buildTestApp, createUser, createGroup, addMember, authHeader } from './helpers.js'
 
 const b64 = (n: number, fill = 1) => Buffer.alloc(n, fill).toString('base64')
@@ -79,6 +80,13 @@ async function uploadEncrypted(user: typeof alice, data = Buffer.from('opaque-by
 
 beforeAll(async () => {
   app = await buildTestApp()
+  // End-to-end encryption is opt-in per server (off by default).
+  await prisma.setting.upsert({
+    where: { key: 'e2eDirectMessagesEnabled' },
+    create: { key: 'e2eDirectMessagesEnabled', value: 'true' },
+    update: { value: 'true' },
+  })
+  invalidateSettingsCache()
   alice = await createUser({ name: 'Alice' })
   bob = await createUser({ name: 'Bob' })
   carol = await createUser({ name: 'Carol' })

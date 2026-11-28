@@ -240,7 +240,7 @@ async function loadAllSettings(): Promise<ServerSettings> {
     updateCheckEnabled: parseValue('updateCheckEnabled', map.get('updateCheckEnabled') ?? 'true'),
     directMessagesEnabled: parseValue('directMessagesEnabled', map.get('directMessagesEnabled') ?? 'true'),
     directMessagesOnWeb: parseValue('directMessagesOnWeb', map.get('directMessagesOnWeb') || 'false'),
-    e2eDirectMessagesEnabled: parseValue('e2eDirectMessagesEnabled', map.get('e2eDirectMessagesEnabled') ?? 'true'),
+    e2eDirectMessagesEnabled: parseValue('e2eDirectMessagesEnabled', map.get('e2eDirectMessagesEnabled') ?? 'false'),
     backupIncludeMedia: parseValue('backupIncludeMedia', map.get('backupIncludeMedia') ?? 'true'),
     backupEnabled: parseValue('backupEnabled', map.get('backupEnabled') || 'false'),
     backupSchedule: parseValue('backupSchedule', map.get('backupSchedule') || 'daily'),

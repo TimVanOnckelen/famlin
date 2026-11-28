@@ -263,7 +263,16 @@ Members can send each other private one-to-one messages. Three settings in `/adm
 
 - **Allow direct messages** (default: on). Lets members send private one-to-one messages. Turning it off hides existing private conversations without deleting them, and every private-message action is refused until you turn it back on; the data is kept. Family chat is not affected. Turn it off if your family only wants the shared group chat.
 - **Offer direct messages on the web app** (default: off). The web app can't read end-to-end encrypted messages, so by default only the mobile app offers private messages. Turn it on if you want the web app to offer them too (those web messages are then not encrypted). This is a hint the apps follow, not access control: the server can't tell its clients apart, so it doesn't block anything itself.
-- **End-to-end encrypt direct messages** (default: on). Messages are encrypted on members' phones so nobody else, including you as administrator, can read them. If you turn this off, new private messages are readable by the server's administrator, and members see a notice saying so in every private conversation. Messages that are already encrypted stay encrypted and readable by their participants. Leave it on unless you have a specific reason, such as legal or archiving requirements.
+- **End-to-end encrypt direct messages** (default: off). When on, the mobile app encrypts private messages on members' phones so nobody else, including you as administrator, can read them. Turning it on asks you to confirm, because it is a trade-off either way (see below). Turning it off again only affects new messages: messages that are already encrypted stay encrypted and readable by their participants.
+
+:::danger Both choices carry a risk
+
+- **Encryption off (the default):** private messages are stored readable on the server. You, and anyone who can get at the server, its database or its backups, can read every direct message. Members see a notice saying so in every private conversation.
+- **Encryption on:** only members' phones hold the keys. If a member loses their phone without a keychain backup (iCloud Keychain or Google backup) or a recovery code, their encrypted messages **cannot be recovered** — not by you, and not from a server backup or restore. You also can't read or moderate encrypted messages.
+
+The settings page shows the risk of the current choice under the switch.
+
+:::
 
 The last two switches are greyed out while direct messages are off. Admin content moderation never shows private messages, and the [data export](./managing-users-and-content.md) is unchanged by these settings. They are saved in backups and come back with a restore.
 

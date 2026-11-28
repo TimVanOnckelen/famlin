@@ -29,7 +29,15 @@ Family-chat and direct-message pushes use the same **Chat messages** switch in *
 
 ## Encrypted private messages
 
-Private one-to-one messages sent from the mobile app are end-to-end encrypted: only you and the other person can read them, not the server or its administrator. You don't need to set anything up — the app creates your keys the first time you open a private conversation.
+If your server's administrator has turned on encryption, private one-to-one messages sent from the mobile app are end-to-end encrypted: only you and the other person can read them, not the server or its administrator. You don't need to set anything up — the app creates your keys the first time you open a private conversation.
+
+Encryption is off by default. While it is off, every private conversation tells you that the server's administrator, and anyone with access to the server or its backups, can read your messages.
+
+:::warning Lost keys mean lost messages
+
+Nobody can recover encrypted messages for you — not your administrator, and not from a server backup. If you lose your phone without a keychain backup or a recovery code (see [New phone](#new-phone)), your encrypted messages are gone for good.
+
+:::
 
 - A small lock under a message means it is encrypted. **Not encrypted** means it was sent without encryption, for example from the web app (which can't encrypt), or before the other person had opened a private conversation in the app. A banner above the message box tells you whether your next message will be encrypted, and why not if it won't be.
 - Either person can turn encryption off for a conversation from the conversation menu. Both of you then see a note in the conversation, and you can turn it back on the same way.

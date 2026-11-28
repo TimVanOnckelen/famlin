@@ -1064,7 +1064,9 @@ describe('server direct-message policy', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
 
-    expect(await screen.findByText("Encryption is turned off by this server's administrator.")).toBeInTheDocument()
+    expect(
+      await screen.findByText(/This server's administrator, and anyone with access to the server/)
+    ).toBeInTheDocument()
     expect(screen.queryByText(/Messages sent from the web are not end-to-end encrypted/)).not.toBeInTheDocument()
   })
 

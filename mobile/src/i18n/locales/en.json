@@ -864,14 +864,14 @@
       "enabled": "{{name}} turned encryption back on"
     },
     "banner": {
-      "encrypted": "Messages in this chat are end-to-end encrypted. Photos only for now, no videos.",
+      "encrypted": "End-to-end encrypted: only you and the other person can read these messages. Nobody can recover them if you lose your keys, so keep a backup. Photos only, no videos.",
       "disabled": "Encryption is off for this conversation. Messages you send are not encrypted.",
       "peerNoKey": "{{name}} hasn't set up encrypted messages yet. Messages are not encrypted.",
       "needsSetup": "Encryption couldn't be set up right now, so messages are not encrypted.",
       "needsRestore": "Your messages are not encrypted because this phone doesn't have your keys yet.",
       "setUp": "Set up encrypted messages",
       "restore": "Restore your encrypted messages",
-      "serverDisabled": "Encryption is turned off by this server's administrator. They can read new messages in this conversation."
+      "serverDisabled": "Not end-to-end encrypted. This server's administrator, and anyone with access to the server or its backups, can read messages in this conversation."
     },
     "error": {
       "noKeyForMe": "This message was sent to your previous phone or keys, so it can't be read here.",
@@ -937,7 +937,7 @@
         "needsSetup": "Setting up…",
         "needsRestore": "This phone doesn't have your keys yet, so it can't read or send encrypted messages.",
         "ready": "On. Your private messages are encrypted.",
-        "serverDisabled": "Turned off by the administrator"
+        "serverDisabled": "Turned off by the administrator: private messages are not end-to-end encrypted, and the administrator can read them."
       },
       "reminder": "Your keys may not be backed up securely. Make a recovery code to read your messages on a new phone.",
       "showCode": "Show recovery code",
@@ -969,7 +969,7 @@
       "saved": "I saved my recovery code"
     },
     "reminder": {
-      "text": "Make a recovery code so you can read your encrypted messages on a new phone.",
+      "text": "If you lose this phone without a backup, your encrypted messages are gone for good — nobody can recover them, not even your administrator. Make a recovery code.",
       "action": "Make code",
       "dismiss": "Not now"
     },

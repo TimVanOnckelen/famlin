@@ -356,7 +356,7 @@
     "encryptionDisabledNotice": "{{name}} 关闭了此对话的加密",
     "encryptionEnabledNotice": "{{name}} 重新开启了此对话的加密",
     "webEncryptionNotice": "通过网页发送的消息未进行端到端加密。如需加密消息，请使用 Famlin 应用。",
-    "encryptionOffByAdmin": "此服务器的管理员已关闭加密。",
+    "encryptionOffByAdmin": "未进行端到端加密。此服务器的管理员以及任何能访问服务器或其备份的人都可以阅读私信。",
     "privateInApp": "私信可在 Famlin 应用中使用。",
     "newMessage": "新消息",
     "searchPeople": "搜索联系人",

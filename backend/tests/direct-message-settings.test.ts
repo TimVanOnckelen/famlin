@@ -36,7 +36,7 @@ beforeAll(async () => {
 })
 
 afterEach(async () => {
-  await patch({ directMessagesEnabled: true, directMessagesOnWeb: false, e2eDirectMessagesEnabled: true })
+  await patch({ directMessagesEnabled: true, directMessagesOnWeb: false, e2eDirectMessagesEnabled: false })
 })
 
 afterAll(async () => {
@@ -45,12 +45,12 @@ afterAll(async () => {
 
 describe('direct message settings', () => {
   it('has the documented defaults and round-trips through PATCH', async () => {
-    expect(await info()).toMatchObject({ directMessages: { enabled: true, web: false, encryption: true } })
+    expect(await info()).toMatchObject({ directMessages: { enabled: true, web: false, encryption: false } })
     const res = await patch({ directMessagesOnWeb: true })
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ directMessagesEnabled: true, directMessagesOnWeb: true })
     const read = await app.inject({ method: 'GET', url: '/api/admin/settings', headers: authHeader(admin) })
-    expect(read.json()).toMatchObject({ directMessagesOnWeb: true, e2eDirectMessagesEnabled: true })
+    expect(read.json()).toMatchObject({ directMessagesOnWeb: true, e2eDirectMessagesEnabled: false })
   })
 
   it('survives export/restore', () => {
@@ -60,13 +60,17 @@ describe('direct message settings', () => {
   })
 
   it.each([
-    [{}, ['directMessages', 'e2eDirectMessages'], { enabled: true, web: false, encryption: true }],
+    [{}, ['directMessages'], { enabled: true, web: false, encryption: false }],
     [
-      { directMessagesOnWeb: true },
+      { e2eDirectMessagesEnabled: true },
+      ['directMessages', 'e2eDirectMessages'],
+      { enabled: true, web: false, encryption: true },
+    ],
+    [
+      { directMessagesOnWeb: true, e2eDirectMessagesEnabled: true },
       ['directMessages', 'e2eDirectMessages'],
       { enabled: true, web: true, encryption: true },
     ],
-    [{ e2eDirectMessagesEnabled: false }, ['directMessages'], { enabled: true, web: false, encryption: false }],
     [
       { directMessagesEnabled: false, directMessagesOnWeb: true },
       [],

@@ -864,14 +864,14 @@
       "enabled": "{{name}} volvió a activar el cifrado"
     },
     "banner": {
-      "encrypted": "Los mensajes de este chat están cifrados de extremo a extremo. Por ahora solo fotos, sin vídeos.",
+      "encrypted": "Cifrado de extremo a extremo: solo tú y la otra persona podéis leer estos mensajes. Nadie puede recuperarlos si pierdes tus claves, así que guarda una copia. Solo fotos, sin vídeos.",
       "disabled": "El cifrado está desactivado en esta conversación. Los mensajes que envíes no están cifrados.",
       "peerNoKey": "{{name}} aún no ha configurado los mensajes cifrados. Los mensajes no están cifrados.",
       "needsSetup": "No se pudo configurar el cifrado ahora, así que los mensajes no están cifrados.",
       "needsRestore": "Tus mensajes no están cifrados porque este teléfono aún no tiene tus claves.",
       "setUp": "Configurar mensajes cifrados",
       "restore": "Restaurar tus mensajes cifrados",
-      "serverDisabled": "El administrador de este servidor ha desactivado el cifrado. Puede leer los mensajes nuevos de esta conversación."
+      "serverDisabled": "Sin cifrado de extremo a extremo. El administrador de este servidor, y cualquiera con acceso al servidor o a sus copias de seguridad, puede leer los mensajes de esta conversación."
     },
     "error": {
       "noKeyForMe": "Este mensaje se envió a tu teléfono o claves anteriores, así que no se puede leer aquí.",
@@ -937,7 +937,7 @@
         "needsSetup": "Configurando…",
         "needsRestore": "Este teléfono aún no tiene tus claves, así que no puede leer ni enviar mensajes cifrados.",
         "ready": "Activado. Tus mensajes privados están cifrados.",
-        "serverDisabled": "Desactivado por el administrador"
+        "serverDisabled": "Desactivado por el administrador: los mensajes privados no tienen cifrado de extremo a extremo y el administrador puede leerlos."
       },
       "reminder": "Puede que tus claves no tengan una copia segura. Crea un código de recuperación para leer tus mensajes en un teléfono nuevo.",
       "showCode": "Mostrar el código de recuperación",
@@ -969,7 +969,7 @@
       "saved": "He guardado mi código de recuperación"
     },
     "reminder": {
-      "text": "Crea un código de recuperación para poder leer tus mensajes cifrados en un teléfono nuevo.",
+      "text": "Si pierdes este teléfono sin copia, tus mensajes cifrados se pierden para siempre — nadie puede recuperarlos, ni siquiera tu administrador. Crea un código de recuperación.",
       "action": "Crear código",
       "dismiss": "Ahora no"
     },

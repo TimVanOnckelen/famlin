@@ -864,14 +864,14 @@
       "enabled": "{{name}} voltou a ativar a encriptação"
     },
     "banner": {
-      "encrypted": "As mensagens desta conversa estão encriptadas de ponta a ponta. Por agora só fotos, sem vídeos.",
+      "encrypted": "Encriptação ponto a ponto: só tu e a outra pessoa podem ler estas mensagens. Ninguém as pode recuperar se perderes as tuas chaves, por isso guarda uma cópia. Só fotos, sem vídeos.",
       "disabled": "A encriptação está desativada nesta conversa. As mensagens que enviar não são encriptadas.",
       "peerNoKey": "{{name}} ainda não configurou as mensagens encriptadas. As mensagens não são encriptadas.",
       "needsSetup": "Não foi possível configurar a encriptação agora, por isso as mensagens não são encriptadas.",
       "needsRestore": "As suas mensagens não são encriptadas porque este telemóvel ainda não tem as suas chaves.",
       "setUp": "Configurar mensagens encriptadas",
       "restore": "Restaurar as suas mensagens encriptadas",
-      "serverDisabled": "A encriptação foi desativada pelo administrador deste servidor. Ele pode ler as mensagens novas desta conversa."
+      "serverDisabled": "Sem encriptação ponto a ponto. O administrador deste servidor, e qualquer pessoa com acesso ao servidor ou às suas cópias de segurança, pode ler as mensagens desta conversa."
     },
     "error": {
       "noKeyForMe": "Esta mensagem foi enviada para o seu telemóvel ou chaves anteriores, por isso não pode ser lida aqui.",
@@ -937,7 +937,7 @@
         "needsSetup": "A configurar…",
         "needsRestore": "Este telemóvel ainda não tem as suas chaves, por isso não pode ler nem enviar mensagens encriptadas.",
         "ready": "Ativado. As suas mensagens privadas estão encriptadas.",
-        "serverDisabled": "Desativada pelo administrador"
+        "serverDisabled": "Desligado pelo administrador: as mensagens privadas não têm encriptação ponto a ponto e o administrador pode lê-las."
       },
       "reminder": "As suas chaves podem não ter uma cópia segura. Crie um código de recuperação para ler as suas mensagens num telemóvel novo.",
       "showCode": "Mostrar o código de recuperação",
@@ -969,7 +969,7 @@
       "saved": "Guardei o meu código de recuperação"
     },
     "reminder": {
-      "text": "Crie um código de recuperação para poder ler as suas mensagens encriptadas num telemóvel novo.",
+      "text": "Se perderes este telemóvel sem cópia, as tuas mensagens encriptadas perdem-se para sempre — ninguém as pode recuperar, nem o teu administrador. Cria um código de recuperação.",
       "action": "Criar código",
       "dismiss": "Agora não"
     },

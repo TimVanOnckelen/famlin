@@ -864,14 +864,14 @@
       "enabled": "{{name}} heeft de versleuteling weer aangezet"
     },
     "banner": {
-      "encrypted": "Berichten in deze chat zijn end-to-end versleuteld. Voorlopig alleen foto's, geen video's.",
+      "encrypted": "End-to-end versleuteld: alleen jij en de ander kunnen deze berichten lezen. Niemand kan ze herstellen als je je sleutels kwijtraakt, dus zorg voor een back-up. Alleen foto's, geen video's.",
       "disabled": "Versleuteling staat uit voor dit gesprek. Berichten die je stuurt zijn niet versleuteld.",
       "peerNoKey": "{{name}} heeft versleutelde berichten nog niet ingesteld. Berichten zijn niet versleuteld.",
       "needsSetup": "Versleuteling kon nu niet worden ingesteld, dus berichten zijn niet versleuteld.",
       "needsRestore": "Je berichten zijn niet versleuteld omdat deze telefoon je sleutels nog niet heeft.",
       "setUp": "Versleutelde berichten instellen",
       "restore": "Je versleutelde berichten terugzetten",
-      "serverDisabled": "Versleuteling is uitgezet door de beheerder van deze server. Die kan nieuwe berichten in dit gesprek lezen."
+      "serverDisabled": "Niet end-to-end versleuteld. De beheerder van deze server, en iedereen met toegang tot de server of de back-ups ervan, kan de berichten in dit gesprek lezen."
     },
     "error": {
       "noKeyForMe": "Dit bericht is naar je vorige telefoon of sleutels gestuurd en kan hier niet gelezen worden.",
@@ -937,7 +937,7 @@
         "needsSetup": "Instellen…",
         "needsRestore": "Deze telefoon heeft je sleutels nog niet en kan dus geen versleutelde berichten lezen of sturen.",
         "ready": "Aan. Je privéberichten zijn versleuteld.",
-        "serverDisabled": "Uitgezet door de beheerder"
+        "serverDisabled": "Uitgezet door de beheerder: privéberichten zijn niet end-to-end versleuteld en de beheerder kan ze lezen."
       },
       "reminder": "Je sleutels hebben mogelijk geen veilige back-up. Maak een herstelcode om je berichten op een nieuwe telefoon te lezen.",
       "showCode": "Herstelcode tonen",
@@ -969,7 +969,7 @@
       "saved": "Ik heb mijn herstelcode bewaard"
     },
     "reminder": {
-      "text": "Maak een herstelcode zodat je je versleutelde berichten op een nieuwe telefoon kunt lezen.",
+      "text": "Raak je deze telefoon kwijt zonder back-up, dan zijn je versleutelde berichten voorgoed weg — niemand kan ze herstellen, ook je beheerder niet. Maak een herstelcode.",
       "action": "Code maken",
       "dismiss": "Niet nu"
     },

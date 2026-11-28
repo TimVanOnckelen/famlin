@@ -544,7 +544,14 @@
     "directMessagesOnWeb": "Offer direct messages on the web app",
     "directMessagesOnWebHint": "The web app can't read end-to-end encrypted messages. Keep this off to offer private messages only in the mobile app.",
     "e2eDirectMessagesEnabled": "End-to-end encrypt direct messages",
-    "e2eDirectMessagesEnabledHint": "Messages are encrypted on members' phones so nobody else — including you as administrator — can read them. If you turn this off, new private messages are readable by the server's administrator, and members see a notice saying so in every private conversation. Messages that are already encrypted stay encrypted."
+    "e2eDirectMessagesEnabledHint": "Off by default. When on, the Famlin app encrypts private messages on members' phones, so nobody else — including you as administrator — can read them. Turning it off later only affects new messages; messages that are already encrypted stay encrypted.",
+    "e2eOffRiskTitle": "Direct messages are not end-to-end encrypted",
+    "e2eOffRiskBody": "You, and anyone with access to this server or its backups, can read every private message. Members see a notice saying so in every private conversation.",
+    "e2eOnRiskTitle": "Lost keys mean lost messages",
+    "e2eOnRiskBody": "Only members' phones hold the keys. If someone loses their phone without a keychain backup or recovery code, their encrypted messages can't be recovered — not by you, and not from a server backup. You also can't read or moderate encrypted messages.",
+    "e2eConfirmTitle": "Turn on end-to-end encryption?",
+    "e2eConfirmBody": "Private messages sent from the app will be encrypted on members' phones. Nobody else can read them — not you, and not from the server or its backups. That also means nobody can recover them: if a member loses their phone without a keychain backup or recovery code, their encrypted messages are gone for good. Existing messages stay as they are.",
+    "e2eConfirm": "Turn on encryption"
   },
   "media": {
     "peopleMapping": {

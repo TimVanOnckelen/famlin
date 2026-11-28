@@ -544,7 +544,14 @@
     "directMessagesOnWeb": "Privéberichten aanbieden in de webapp",
     "directMessagesOnWebHint": "De webapp kan end-to-end versleutelde berichten niet lezen. Laat dit uit om privéberichten alleen in de mobiele app aan te bieden.",
     "e2eDirectMessagesEnabled": "Privéberichten end-to-end versleutelen",
-    "e2eDirectMessagesEnabledHint": "Berichten worden op de telefoon van de leden versleuteld, zodat niemand anders — ook jij als beheerder niet — ze kan lezen. Als je dit uitzet, kan de beheerder van de server nieuwe privéberichten lezen en zien leden daar in elk privégesprek een melding van. Berichten die al versleuteld zijn, blijven versleuteld."
+    "e2eDirectMessagesEnabledHint": "Standaard uit. Als dit aan staat, versleutelt de Famlin-app privéberichten op de telefoon van de leden, zodat niemand anders — ook jij als beheerder niet — ze kan lezen. Later uitzetten geldt alleen voor nieuwe berichten; berichten die al versleuteld zijn, blijven versleuteld.",
+    "e2eOffRiskTitle": "Privéberichten zijn niet end-to-end versleuteld",
+    "e2eOffRiskBody": "Jij, en iedereen met toegang tot deze server of de back-ups ervan, kan elk privébericht lezen. Leden zien daar in elk privégesprek een melding van.",
+    "e2eOnRiskTitle": "Sleutels kwijt betekent berichten kwijt",
+    "e2eOnRiskBody": "Alleen de telefoons van de leden hebben de sleutels. Raakt iemand zijn telefoon kwijt zonder sleutelhanger-back-up of herstelcode, dan zijn de versleutelde berichten niet meer te herstellen — niet door jou en niet uit een serverback-up. Je kunt versleutelde berichten ook niet lezen of modereren.",
+    "e2eConfirmTitle": "End-to-end versleuteling aanzetten?",
+    "e2eConfirmBody": "Privéberichten die vanuit de app worden verstuurd, worden op de telefoon van de leden versleuteld. Niemand anders kan ze lezen — jij niet, en ook niet via de server of de back-ups. Dat betekent ook dat niemand ze kan herstellen: raakt een lid zijn telefoon kwijt zonder sleutelhanger-back-up of herstelcode, dan zijn de versleutelde berichten voorgoed weg. Bestaande berichten blijven zoals ze zijn.",
+    "e2eConfirm": "Versleuteling aanzetten"
   },
   "media": {
     "peopleMapping": {

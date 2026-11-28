@@ -864,14 +864,14 @@
       "enabled": "{{name}} a réactivé le chiffrement"
     },
     "banner": {
-      "encrypted": "Les messages de cette conversation sont chiffrés de bout en bout. Photos uniquement pour l'instant, pas de vidéos.",
+      "encrypted": "Chiffré de bout en bout : seuls vous et l'autre personne pouvez lire ces messages. Personne ne peut les récupérer si vous perdez vos clés, alors gardez une sauvegarde. Photos uniquement, pas de vidéos.",
       "disabled": "Le chiffrement est désactivé pour cette conversation. Les messages que vous envoyez ne sont pas chiffrés.",
       "peerNoKey": "{{name}} n'a pas encore configuré les messages chiffrés. Les messages ne sont pas chiffrés.",
       "needsSetup": "Le chiffrement n'a pas pu être configuré pour le moment, les messages ne sont donc pas chiffrés.",
       "needsRestore": "Vos messages ne sont pas chiffrés car ce téléphone n'a pas encore vos clés.",
       "setUp": "Configurer les messages chiffrés",
       "restore": "Restaurer vos messages chiffrés",
-      "serverDisabled": "Le chiffrement est désactivé par l'administrateur de ce serveur. Il peut lire les nouveaux messages de cette conversation."
+      "serverDisabled": "Non chiffré de bout en bout. L'administrateur de ce serveur, ainsi que toute personne ayant accès au serveur ou à ses sauvegardes, peut lire les messages de cette conversation."
     },
     "error": {
       "noKeyForMe": "Ce message a été envoyé à votre ancien téléphone ou à vos anciennes clés, il ne peut pas être lu ici.",
@@ -937,7 +937,7 @@
         "needsSetup": "Configuration…",
         "needsRestore": "Ce téléphone n'a pas encore vos clés, il ne peut donc ni lire ni envoyer de messages chiffrés.",
         "ready": "Activé. Vos messages privés sont chiffrés.",
-        "serverDisabled": "Désactivé par l'administrateur"
+        "serverDisabled": "Désactivé par l'administrateur : les messages privés ne sont pas chiffrés de bout en bout et l'administrateur peut les lire."
       },
       "reminder": "Vos clés ne sont peut-être pas sauvegardées en sécurité. Créez un code de récupération pour lire vos messages sur un nouveau téléphone.",
       "showCode": "Afficher le code de récupération",
@@ -969,7 +969,7 @@
       "saved": "J'ai conservé mon code de récupération"
     },
     "reminder": {
-      "text": "Créez un code de récupération pour pouvoir lire vos messages chiffrés sur un nouveau téléphone.",
+      "text": "Si vous perdez ce téléphone sans sauvegarde, vos messages chiffrés sont perdus pour de bon — personne ne peut les récupérer, pas même votre administrateur. Créez un code de récupération.",
       "action": "Créer un code",
       "dismiss": "Pas maintenant"
     },

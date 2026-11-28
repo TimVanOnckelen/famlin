@@ -158,9 +158,9 @@ A member export includes that member's own latest device diagnostics and the dia
 
 ### End-to-end encrypted direct messages
 
-Private one-to-one messages are encrypted on the sender's device and decrypted on the recipient's, so the server (and anyone with access to it, including its administrator and its backups) stores only ciphertext. Encryption is on by default for each private conversation, and either person can opt a conversation out; that choice is always shown in the conversation as a visible notice and never happens silently. Each message records whether it is encrypted.
+Private one-to-one messages are encrypted on the sender's device and decrypted on the recipient's, so the server (and anyone with access to it, including its administrator and its backups) stores only ciphertext. Once the administrator enables it for the server (see below), encryption is on by default for each private conversation, and either person can opt a conversation out; that choice is always shown in the conversation as a visible notice and never happens silently. Each message records whether it is encrypted.
 
-An administrator can turn encryption off for new messages (Server settings → Direct messages); members are then told in every private conversation that new messages are readable by the server's administrator, and already encrypted messages stay encrypted.
+End-to-end encryption is **opt-in per server and off by default** (Server settings → Direct messages). While it is off, private messages are stored as plaintext: the administrator and anyone with access to the server, its database or its backups can read them, and members are told so in every private conversation. Turning it on is confirmed in the admin UI, because nobody (including the administrator or a backup restore) can recover encrypted messages for a member who loses their keys. Turning it off again only affects new messages; already encrypted messages stay encrypted.
 
 Each member has one key identity, created automatically the first time they open a direct message in the app. It reaches their other devices in three ways:
 

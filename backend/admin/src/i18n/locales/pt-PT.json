@@ -544,7 +544,14 @@
     "directMessagesOnWeb": "Oferecer mensagens diretas na aplicação web",
     "directMessagesOnWebHint": "A aplicação web não consegue ler mensagens encriptadas de ponta a ponta. Mantenha desativado para oferecer mensagens privadas apenas na aplicação móvel.",
     "e2eDirectMessagesEnabled": "Encriptar mensagens diretas de ponta a ponta",
-    "e2eDirectMessagesEnabledHint": "As mensagens são encriptadas nos telemóveis dos membros, pelo que ninguém mais — incluindo você como administrador — as pode ler. Se desativar, as novas mensagens privadas podem ser lidas pelo administrador do servidor e os membros veem um aviso em cada conversa privada. As mensagens já encriptadas permanecem encriptadas."
+    "e2eDirectMessagesEnabledHint": "Desligado por predefinição. Quando ligado, a app Famlin encripta as mensagens privadas nos telemóveis dos membros, para que mais ninguém — nem tu como administrador — as possa ler. Desligar mais tarde só afeta as novas mensagens; as mensagens já encriptadas continuam encriptadas.",
+    "e2eOffRiskTitle": "As mensagens diretas não têm encriptação ponto a ponto",
+    "e2eOffRiskBody": "Tu, e qualquer pessoa com acesso a este servidor ou às suas cópias de segurança, podem ler todas as mensagens privadas. Os membros veem um aviso sobre isso em cada conversa privada.",
+    "e2eOnRiskTitle": "Perder as chaves é perder as mensagens",
+    "e2eOnRiskBody": "Só os telemóveis dos membros têm as chaves. Se alguém perder o telemóvel sem cópia no porta-chaves nem código de recuperação, as mensagens encriptadas não podem ser recuperadas — nem por ti, nem a partir de uma cópia de segurança do servidor. Também não podes ler nem moderar mensagens encriptadas.",
+    "e2eConfirmTitle": "Ligar a encriptação ponto a ponto?",
+    "e2eConfirmBody": "As mensagens privadas enviadas a partir da app serão encriptadas nos telemóveis dos membros. Mais ninguém as pode ler — nem tu, nem a partir do servidor ou das suas cópias de segurança. Isso também significa que ninguém as pode recuperar: se um membro perder o telemóvel sem cópia no porta-chaves nem código de recuperação, as mensagens encriptadas perdem-se para sempre. As mensagens existentes ficam como estão.",
+    "e2eConfirm": "Ligar a encriptação"
   },
   "media": {
     "peopleMapping": {
