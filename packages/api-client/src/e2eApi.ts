@@ -68,8 +68,8 @@ export async function putE2eTransfer(sessionId: string, payload: E2eTransferPayl
 
 /** New device: poll for the sealed identity. Resolves null while it isn't there yet (404). */
 export async function takeE2eTransfer(sessionId: string): Promise<E2eTransferPayloadV1 | null> {
-  // requires-feature: e2eDirectMessages
   try {
+    // requires-feature: e2eDirectMessages
     const response = await api.get<{ payload: E2eTransferPayloadV1 }>(`/e2e/transfers/${encodeURIComponent(sessionId)}`)
     return response.data.payload
   } catch (error) {
@@ -101,9 +101,9 @@ export async function sendEncryptedChatMessage(
  * `{ uri, name, type }` object on React Native.
  */
 export async function uploadEncryptedAttachment(file: unknown): Promise<string> {
-  // requires-feature: e2eDirectMessages
   const formData = new FormData()
   formData.append('file', file as Blob)
+  // requires-feature: e2eDirectMessages
   const response = await api.post<{ url: string }>('/uploads/encrypted', formData, {
     headers: { 'Content-Type': undefined },
     timeout: UPLOAD_TIMEOUT_MS,

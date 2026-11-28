@@ -41,7 +41,9 @@ describe('GET /api/auth/server-info', () => {
 
     expect(res.statusCode).toBe(200)
     const { features } = res.json()
-    expect(features).toEqual([...SERVER_FEATURES])
+    // End-to-end encrypted DMs are opt-in (off by default), so a fresh server
+    // advertises every feature except that one.
+    expect(features).toEqual(SERVER_FEATURES.filter((id) => id !== 'e2eDirectMessages'))
     // Ids the mobile app gates on — renaming one silently hides the feature.
     expect(features).toEqual(expect.arrayContaining(['uploadProcessing', 'livePhotos']))
   })
