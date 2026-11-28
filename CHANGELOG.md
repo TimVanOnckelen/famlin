@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.10.1](https://github.com/TimVanOnckelen/famlin/compare/v0.10.0...v0.10.1) (2026-11-28)
+
+
+### Features
+
+* **api-client:** calendar feed client and calendarFeed feature id ([#499](https://github.com/TimVanOnckelen/famlin/issues/499)) ([77cfb65](https://github.com/TimVanOnckelen/famlin/commit/77cfb65aebece4dea0be8f2d6f654ee5fb848b52))
+* **backend:** personal iCal feed of family events ([#499](https://github.com/TimVanOnckelen/famlin/issues/499)) ([9a9fed0](https://github.com/TimVanOnckelen/famlin/commit/9a9fed00ebd57497ed71bec3c2c001a82eebadc3))
+* **media:** face tags on uploaded photos via the Immich upload mirror ([418e49d](https://github.com/TimVanOnckelen/famlin/commit/418e49dbeffb59694811f88a398f31a79df5396b))
+* **media:** face tags on uploaded photos via the Immich upload mirror ([82b0284](https://github.com/TimVanOnckelen/famlin/commit/82b02846cb1f5e54574d7bc02811d0a404372d0a))
+* **mobile:** calendar subscription section on the profile screen ([#499](https://github.com/TimVanOnckelen/famlin/issues/499)) ([75f093e](https://github.com/TimVanOnckelen/famlin/commit/75f093e18d37ab1632ee61d72ef5a4a5b3206122))
+* personal iCal feed of family events ([44da1c3](https://github.com/TimVanOnckelen/famlin/commit/44da1c32538d0d2f8c222751dc1c67c7895e2515))
+* **web:** calendar subscription section on the profile page ([#499](https://github.com/TimVanOnckelen/famlin/issues/499)) ([cb9a512](https://github.com/TimVanOnckelen/famlin/commit/cb9a512005bd937d4f229eaae9ac8ea3f81219d9))
+
+
+### Bug Fixes
+
+* **api-client:** mark calendar feed calls as requiring the calendarFeed feature ([1fb9b97](https://github.com/TimVanOnckelen/famlin/commit/1fb9b9789333a82dbaddd2c0acc6c4779fe4cb4e))
+* **calendar-feed:** address review findings ([#499](https://github.com/TimVanOnckelen/famlin/issues/499)) ([0b68542](https://github.com/TimVanOnckelen/famlin/commit/0b68542c3550b9d68a7336d7adf775423632e03f))
+* derive seed database URL from Docker secrets ([a530152](https://github.com/TimVanOnckelen/famlin/commit/a530152da181dabb552bfbf32620e226c23e8ac4))
+* **i18n:** add missing Spanish translations ([f6d7ceb](https://github.com/TimVanOnckelen/famlin/commit/f6d7ceb3a0dffffcae46ac49d937587ad102dcad))
+* **mobile:** align @tanstack/react-query with the root workspace (5.108.2) ([1a1c20b](https://github.com/TimVanOnckelen/famlin/commit/1a1c20b3e066b985f317699ecb746cbfe5fe1675))
+* **mobile:** align @tanstack/react-query with the root workspace (5.108.2) ([44fdac6](https://github.com/TimVanOnckelen/famlin/commit/44fdac6d9caf30ecf3b6367a281ccbbc249bde02))
+* **mobile:** align Expo SDK packages with expo 58.1 and restore @babel/core 7 ([182799f](https://github.com/TimVanOnckelen/famlin/commit/182799f063f2f9e719eb5d1e8b0fafbd0931ee4c))
+* **mobile:** align Expo SDK packages with expo 58.1 and restore @babel/core 7 ([af1fa40](https://github.com/TimVanOnckelen/famlin/commit/af1fa40b40d985ebed7ca595980cd6207fdf4146))
+* **mobile:** more accurate scroll diagnostics on 120 Hz iPhones, stop clipping feed cards on iOS ([11aee21](https://github.com/TimVanOnckelen/famlin/commit/11aee21e90ba019f902c5a8ee1abac6a1e0158be))
+* **mobile:** stop counting a still feed in scroll diagnostics and break down late frames ([9744993](https://github.com/TimVanOnckelen/famlin/commit/974499372a430da771609e672d331d6aadc8e34a))
+
+
+### Performance Improvements
+
+* **mobile:** only clip off-screen feed cards on Android ([2b51084](https://github.com/TimVanOnckelen/famlin/commit/2b510845e81036a153d66da2acf3ce63b3e955ab))
+
 ## [0.10.0](https://github.com/TimVanOnckelen/famlin/compare/v0.9.2...v0.10.0) (2026-11-22)
 
 
