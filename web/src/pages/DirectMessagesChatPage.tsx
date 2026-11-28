@@ -80,7 +80,6 @@ export function DirectMessagesChatPage({
       : rawRequestedConversationId
   const requestedGroupId = params.get('group')
   const hasExplicitSelection = requestedConversationId !== null || requestedGroupId !== null
-  const showInboxOnly = (location.state as { showInboxOnly?: boolean } | null)?.showInboxOnly === true
   const selected = conversations.isSuccess
     ? hasExplicitSelection
       ? (items.find((item) =>
@@ -88,9 +87,7 @@ export function DirectMessagesChatPage({
             ? item.id === requestedConversationId
             : item.kind === 'FAMILY' && item.group?.id === requestedGroupId
         ) ?? null)
-      : showInboxOnly
-        ? null
-        : (family[0] ?? direct[0] ?? null)
+      : null
     : null
   const selectedId = selected?.id ?? null
   const explicitSelectionUnavailable = conversations.isSuccess && hasExplicitSelection && !selected
@@ -161,9 +158,14 @@ export function DirectMessagesChatPage({
         <div className="chat-page-heading">
           <ScreenHeader title={t('chat.title')} />
           {privateMessagesInWeb && (
-            <button type="button" className="btn btn-primary chat-new-message" onClick={() => setPickerOpen(true)}>
-              <Icon name="plus" size={17} />
-              <span>{t('chat.newMessage')}</span>
+            <button
+              type="button"
+              className="btn btn-primary chat-new-message"
+              aria-label={t('chat.newMessage')}
+              onClick={() => setPickerOpen(true)}
+            >
+              <Icon name="plus" size={18} strokeWidth={2.5} className="chat-new-message-icon" />
+              <span className="chat-new-message-label">{t('chat.newMessage')}</span>
             </button>
           )}
         </div>
@@ -180,15 +182,19 @@ export function DirectMessagesChatPage({
         >
           {conversations.isSuccess && (
             <aside className="chat-unified-inbox" aria-label={t('chat.groupListLabel')}>
-              <InboxSection
-                title={t('chat.familyChats')}
-                items={family}
-                user={props.user}
-                locale={i18n.language}
-                onSelect={selectConversation}
-                selectedId={selectedId}
-              />
-              {privateMessagesInWeb ? (
+              {family.length > 0 && (
+                <InboxSection
+                  title={t('chat.familyChats')}
+                  items={family}
+                  user={props.user}
+                  locale={i18n.language}
+                  onSelect={selectConversation}
+                  selectedId={selectedId}
+                />
+              )}
+              {!privateMessagesInWeb ? (
+                <p className="chat-hint chat-private-in-app">{t('chat.privateInApp')}</p>
+              ) : direct.length > 0 ? (
                 <InboxSection
                   title={t('chat.directMessages')}
                   items={direct}
@@ -197,9 +203,7 @@ export function DirectMessagesChatPage({
                   onSelect={selectConversation}
                   selectedId={selectedId}
                 />
-              ) : (
-                <p className="chat-hint chat-private-in-app">{t('chat.privateInApp')}</p>
-              )}
+              ) : null}
             </aside>
           )}
           {selected ? (
@@ -287,8 +291,10 @@ function RecipientPicker({
         ref={dialogRef}
       >
         <div className="modal-header">
-          <h2 id="chat-recipient-title">{t('chat.newMessage')}</h2>
-          <button type="button" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+          <h2 id="chat-recipient-title" className="modal-title">
+            {t('chat.newMessage')}
+          </h2>
+          <button type="button" className="post-detail-modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={20} />
           </button>
         </div>
@@ -328,6 +334,11 @@ function RecipientPicker({
             </button>
           ))}
           {create.isError && <p className="chat-hint">{t('chat.conversationCreateFailed')}</p>}
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose} aria-label={t('common.close')}>
+            {t('common.close')}
+          </button>
         </div>
       </div>
     </div>
@@ -639,29 +650,31 @@ function ConversationShell({
                       {t('chat.notEncrypted')}
                     </span>
                   )}
-                  {!encrypted && (
-                    <button
-                      type="button"
-                      className="chat-message-reply"
-                      aria-label={t('chat.replyTo', { name: message.author.name })}
-                      onClick={() => setReplyTo(message)}
-                    >
-                      <Icon name="message-square" size={14} />
-                    </button>
-                  )}
-                  {(message.authorId === user.id || (conversation?.kind === 'FAMILY' && user.isAdmin)) && (
-                    <button
-                      type="button"
-                      className="chat-message-delete"
-                      aria-label={t('chat.deleteMessage')}
-                      disabled={removeMessage.isPending}
-                      onClick={() => {
-                        if (window.confirm(t('chat.deleteConfirm'))) removeMessage.mutate(message.id)
-                      }}
-                    >
-                      <Icon name="trash" size={14} />
-                    </button>
-                  )}
+                  <div className="chat-message-actions">
+                    {!encrypted && (
+                      <button
+                        type="button"
+                        className="chat-message-reply"
+                        aria-label={t('chat.replyTo', { name: message.author.name })}
+                        onClick={() => setReplyTo(message)}
+                      >
+                        <Icon name="message-square" size={14} />
+                      </button>
+                    )}
+                    {(message.authorId === user.id || (conversation?.kind === 'FAMILY' && user.isAdmin)) && (
+                      <button
+                        type="button"
+                        className="chat-message-delete"
+                        aria-label={t('chat.deleteMessage')}
+                        disabled={removeMessage.isPending}
+                        onClick={() => {
+                          if (window.confirm(t('chat.deleteConfirm'))) removeMessage.mutate(message.id)
+                        }}
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </article>
             )

@@ -12,11 +12,19 @@ export type ChatConversationSection = {
   data: ChatConversation[]
 }
 
-export function chatConversationSections(conversations: ChatConversation[]): ChatConversationSection[] {
+export function chatConversationSections(
+  conversations: ChatConversation[],
+  currentUserId?: string,
+  query = ''
+): ChatConversationSection[] {
+  const needle = query.trim().toLocaleLowerCase()
   const byUpdatedAt = (a: ChatConversation, b: ChatConversation) =>
     b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id)
-  const family = conversations.filter((conversation) => conversation.kind === 'FAMILY').sort(byUpdatedAt)
-  const privateMessages = conversations.filter((conversation) => conversation.kind === 'PRIVATE').sort(byUpdatedAt)
+  const matches = conversations.filter(
+    (conversation) => !needle || chatConversationTitle(conversation, currentUserId).toLocaleLowerCase().includes(needle)
+  )
+  const family = matches.filter((conversation) => conversation.kind === 'FAMILY').sort(byUpdatedAt)
+  const privateMessages = matches.filter((conversation) => conversation.kind === 'PRIVATE').sort(byUpdatedAt)
 
   return [
     ...(family.length > 0 ? [{ key: 'family' as const, data: family }] : []),

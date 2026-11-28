@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, waitFor } from '@testing-library/react-native'
+import { Platform, StyleSheet } from 'react-native'
+import { render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { sendChatConversationMessage, sendChatMessage } from '@famlin/api-client'
 
@@ -13,15 +14,41 @@ jest.mock('@react-navigation/native', () => ({
 }))
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
 }))
+jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
+  const React = require('react')
+  const { View } = require('react-native')
+  return {
+    __esModule: true,
+    default: ({ children, ...props }: { children: React.ReactNode }) => React.createElement(View, props, children),
+  }
+})
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 jest.mock('@/components/Avatar', () => ({ Avatar: () => null }))
 jest.mock('@/components/MediaThumbnail', () => ({ MediaThumbnail: () => null }))
 jest.mock('@/components/ReactorStack', () => ({ ReactorStack: () => null }))
-jest.mock('@/components/EmptyState', () => ({ EmptyState: () => null }))
+jest.mock('@/components/EmptyState', () => {
+  const React = require('react')
+  const { Text, View } = require('react-native')
+  return {
+    EmptyState: ({ title, style }: { title: string; style?: unknown }) =>
+      React.createElement(View, { style }, React.createElement(Text, null, title)),
+  }
+})
 jest.mock('react-native-gesture-handler', () => ({
-  Gesture: { Pan: jest.fn() },
+  Gesture: {
+    Pan: () => {
+      const gesture = {
+        activeOffsetX: () => gesture,
+        failOffsetY: () => gesture,
+        onUpdate: () => gesture,
+        onEnd: () => gesture,
+      }
+      return gesture
+    },
+  },
   GestureDetector: ({ children }: { children: React.ReactNode }) => children,
 }))
 jest.mock('react-native-reanimated', () => {
@@ -99,6 +126,14 @@ it('uses the generalized family conversation contract on capable servers', async
   expect(sendChatMessage).not.toHaveBeenCalled()
 })
 
+it('keeps the modern composer at the bottom for a short feed', async () => {
+  mockSupport = 'supported'
+  await renderScreen()
+
+  const listStyle = StyleSheet.flatten((await screen.findByTestId('family-chat-list')).props.style)
+  expect(listStyle.flex).toBe(1)
+})
+
 it('keeps old-server family chat on the legacy route contract', async () => {
   mockSupport = 'unsupported'
   await renderScreen()
@@ -112,4 +147,66 @@ it('keeps old-server family chat on the legacy route contract', async () => {
     replyToMessageId: undefined,
   })
   expect(sendChatConversationMessage).not.toHaveBeenCalled()
+})
+
+it('sizes a reply bubble from the intrinsic width of its quote', async () => {
+  mockSupport = 'supported'
+  mockUseChatConversationMessages.mockReturnValue({
+    query: { isLoading: false, isFetchingNextPage: false },
+    items: [
+      {
+        id: 'reply',
+        authorId: 'me',
+        author: { id: 'me', name: 'Me', avatarUrl: null },
+        kind: 'USER',
+        content: 'Ok!',
+        attachmentUrl: null,
+        refPostId: null,
+        readBy: [],
+        replyTo: {
+          id: 'original',
+          authorId: 'dad',
+          authorName: 'Dad',
+          kind: 'USER',
+          content: 'This is a much longer quoted message',
+          attachmentUrl: null,
+        },
+        createdAt: '2026-11-25T16:00:00.000Z',
+      },
+    ],
+    onEndReached: jest.fn(),
+    unavailable: false,
+  })
+
+  await renderScreen()
+
+  const quoteTextStyle = StyleSheet.flatten((await screen.findByTestId('chat-reply-quote-text')).props.style)
+  expect(quoteTextStyle.flex).toBeUndefined()
+  expect(quoteTextStyle.flexShrink).toBe(1)
+})
+
+it('keeps the empty state upright in the inverted family chat list', async () => {
+  mockSupport = 'supported'
+
+  await renderScreen()
+
+  const emptyTitle = await screen.findByText('chat.emptyTitle')
+  const emptyStateStyle = StyleSheet.flatten(emptyTitle.parent?.props.style)
+  expect(emptyStateStyle.transform).toEqual(
+    Platform.OS === 'android' ? [{ scaleX: -1 }, { scaleY: -1 }] : [{ scaleY: -1 }]
+  )
+})
+
+it('leaves Android keyboard resizing to the window in family chat', async () => {
+  const originalOS = Platform.OS
+  Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' })
+
+  try {
+    await renderScreen()
+    const keyboardView = screen.getByTestId('chat-keyboard-avoider')
+    expect(keyboardView.props.behavior).toBe('height')
+    expect(keyboardView.props.keyboardVerticalOffset).toBe(0)
+  } finally {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: originalOS })
+  }
 })

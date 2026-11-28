@@ -1,6 +1,7 @@
 import React from 'react'
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
@@ -18,6 +19,7 @@ export function ChatComposer({
   disabled?: boolean
 }) {
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const composer = useChatMessageComposer({ send, encrypted, disabled })
 
   return (
@@ -39,7 +41,10 @@ export function ChatComposer({
           </View>
         </View>
       )}
-      <View style={styles.inputContainer}>
+      <View
+        testID="chat-composer-input"
+        style={[styles.inputContainer, { paddingBottom: Math.max(10, insets.bottom) }]}
+      >
         <TouchableOpacity
           style={styles.attach}
           onPress={composer.pickAttachment}
@@ -114,6 +119,7 @@ const styles = StyleSheet.create({
     color: colors.textBody,
     fontFamily: 'Nunito_400Regular',
     fontSize: 15,
+    lineHeight: 20,
   },
   send: {
     width: 38,

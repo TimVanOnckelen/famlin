@@ -43,6 +43,25 @@ it('omits an empty conversation section', () => {
   ).toEqual(['private'])
 })
 
+it('filters chat names immediately by any case-insensitive substring', () => {
+  const family = {
+    ...inboxConversation('family', 'FAMILY', '2026-11-24T10:00:00.000Z'),
+    group: { id: 'g-family', name: 'Foo Bar' },
+  }
+  const privateConversation = {
+    ...inboxConversation('private', 'PRIVATE', '2026-11-23T10:00:00.000Z'),
+    participants: [person('me', 'Gabriel'), person('ana', 'Barbara')],
+  }
+
+  expect(chatConversationSections([family, privateConversation], 'me', 'bAr').map((section) => section.key)).toEqual([
+    'family',
+    'private',
+  ])
+  expect(
+    chatConversationSections([family, privateConversation], 'me', 'o b').flatMap((section) => section.data)
+  ).toEqual([family])
+})
+
 it('shows family and private inbox identities with safe plaintext previews', () => {
   const family: ChatConversation = {
     id: 'family-1',

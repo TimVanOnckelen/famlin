@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -54,6 +54,7 @@ export function ChatScreen() {
   const { groupId, groupName: routeGroupName } = route.params as { groupId: string; groupName?: string }
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
+  const insets = useSafeAreaInsets()
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null)
   const flatListRef = useRef<FlatList<ChatMessage>>(null)
   const directMessagesSupport = useDirectMessagesSupport()
@@ -176,9 +177,10 @@ export function ChatScreen() {
       </View>
 
       <KeyboardAvoidingView
+        testID="chat-keyboard-avoider"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -insets.bottom : 0}
       >
         {isLoading || (modern && !conversationId) ? (
           <View style={styles.initialLoading}>
@@ -186,6 +188,8 @@ export function ChatScreen() {
           </View>
         ) : (
           <FlatList
+            testID="family-chat-list"
+            style={styles.flex}
             ref={flatListRef}
             data={messages}
             inverted
@@ -352,7 +356,7 @@ function ChatMessageRow({
                     onPress={() => onPressReplyQuote(message.replyTo!.id)}
                   >
                     <View style={[styles.replyQuoteBar, isOwn ? styles.replyQuoteBarOwn : styles.replyQuoteBarOther]} />
-                    <View style={styles.replyQuoteTextWrap}>
+                    <View style={styles.replyQuoteTextWrap} testID="chat-reply-quote-text">
                       <Text
                         style={[
                           styles.replyQuoteAuthor,
@@ -570,7 +574,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   replyQuoteTextWrap: {
-    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   replyQuoteAuthor: {
     fontFamily: 'Nunito_700Bold',

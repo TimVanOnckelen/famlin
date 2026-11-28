@@ -19,6 +19,7 @@
     "appName": "Famlin",
     "error": "错误",
     "edited": "已编辑",
+    "clear": "清除",
     "delete": "删除",
     "edit": "编辑",
     "close": "关闭"
@@ -374,6 +375,7 @@
     "familyChats": "家庭聊天",
     "privateMessages": "私人消息",
     "newMessage": "新消息",
+    "searchChats": "搜索聊天",
     "previewPhoto": "照片或视频",
     "previewEmpty": "暂无消息",
     "unsupportedEncryption": "此消息使用了不支持的格式",

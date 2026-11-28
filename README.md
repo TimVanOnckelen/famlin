@@ -29,7 +29,7 @@ Famlin is a small social network for one family (or a few related ones): share u
 - **More than plain posts** — milestones that stand out, polls for family decisions, trips as a shared travel journal with check-ins, and shared albums anyone in the family can add to.
 - **Stories** — a photo that's visible for 24 hours, with reactions and private replies. Pin the good ones as Highlights.
 - **Reactions, comments and @mentions**, with photos and videos in comments too.
-- **Family chat** — an optional group chat per family.
+- **Chat** — optional family chats plus private one-to-one messages with people you currently share a family with.
 - **Your photos, your storage** — uploads stay on your server, and you can link existing albums from [Immich](https://immich.app) or a local folder.
 - **Who's in the photo** — Immich face recognition tags the family members in linked albums and, with the optional upload mirror, in photos uploaded to Famlin too. Filter the Photos view by person.
 - **Flexible login** — email and password, any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak, …), or Sign in with Apple. Invite links make joining easy.

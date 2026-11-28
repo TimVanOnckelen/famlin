@@ -1,5 +1,5 @@
 import React from 'react'
-import { Alert } from 'react-native'
+import { Alert, Platform, StyleSheet } from 'react-native'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -26,9 +26,14 @@ jest.mock('@react-navigation/native', () => ({
     React.useEffect(effect, [effect])
   },
 }))
-jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
-}))
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react')
+  const { View } = require('react-native')
+  return {
+    SafeAreaView: ({ children, ...props }: { children: React.ReactNode }) => React.createElement(View, props, children),
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
+  }
+})
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 jest.mock('@/components/Avatar', () => ({ Avatar: () => null }))
@@ -153,6 +158,17 @@ beforeEach(() => {
 })
 afterEach(() => jest.restoreAllMocks())
 
+it('keeps the composer at the bottom for a short conversation', async () => {
+  jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
+  jest.mocked(fetchChatConversationMessages).mockResolvedValue({ items: [], nextCursor: null })
+  await renderScreen()
+
+  const list = await screen.findByTestId('direct-message-list', {}, { timeout: 15000 })
+  const listStyle = StyleSheet.flatten(list.props.style)
+  expect(listStyle.flex).toBe(1)
+  expect(screen.getByTestId('direct-message-screen').props.edges).toEqual(['top', 'left', 'right'])
+})
+
 it('opens a video attachment with its authenticated original URL', async () => {
   jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
   jest.mocked(fetchChatConversationMessages).mockResolvedValue({
@@ -209,6 +225,9 @@ it('swipes to quote a private message and sends the reply id', async () => {
   await renderScreen()
 
   expect(await screen.findByText('Original text')).toBeTruthy()
+  const quoteTextStyle = StyleSheet.flatten(screen.getByTestId('chat-reply-quote-text').props.style)
+  expect(quoteTextStyle.flex).toBeUndefined()
+  expect(quoteTextStyle.flexShrink).toBe(1)
   await act(async () => {
     mockPanUpdate?.({ translationX: 40 })
     mockPanEnd?.()
@@ -258,6 +277,18 @@ it('shows unsupported encrypted content as a privacy-safe placeholder', async ()
 
   expect(await screen.findByText('chat.unsupportedEncryption')).toBeTruthy()
   expect(screen.queryByText('message-future')).toBeNull()
+})
+
+it('keeps the empty state upright in the inverted message list', async () => {
+  jest.mocked(fetchChatConversations).mockResolvedValue({ items: [conversation] } as never)
+  jest.mocked(fetchChatConversationMessages).mockResolvedValue({ items: [], nextCursor: null })
+  await renderScreen()
+
+  const emptyTitle = await screen.findByText('chat.emptyTitle')
+  const emptyStateStyle = StyleSheet.flatten(emptyTitle.parent?.props.style)
+  expect(emptyStateStyle.transform).toEqual(
+    Platform.OS === 'android' ? [{ scaleX: -1 }, { scaleY: -1 }] : [{ scaleY: -1 }]
+  )
 })
 
 it('renders a localized unavailable state for stale conversation access', async () => {
